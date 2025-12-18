@@ -109,7 +109,7 @@ export default function UserDetail() {
       });
     } catch (error) {
       console.error('Kullanici detaylari yuklenirken hata:', error);
-      navigate('/users');
+      navigate('/dashboard/users');
     } finally {
       setLoading(false);
     }
@@ -146,7 +146,7 @@ export default function UserDetail() {
     if (!id) return;
     try {
       await userService.delete(id);
-      navigate('/users');
+      navigate('/dashboard/users');
     } catch (error) {
       console.error('Kullanici silinirken hata:', error);
     }
@@ -251,7 +251,7 @@ export default function UserDetail() {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">Kullanici bulunamadi</p>
-        <Button variant="link" onClick={() => navigate('/users')}>
+        <Button variant="link" onClick={() => navigate('/dashboard/users')}>
           Kullanicilara don
         </Button>
       </div>
@@ -263,7 +263,7 @@ export default function UserDetail() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/users')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/users')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-4">

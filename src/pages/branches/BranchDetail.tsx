@@ -117,7 +117,7 @@ export default function BranchDetail() {
       }
     } catch (error) {
       console.error('Sube detaylari yuklenirken hata:', error);
-      navigate('/branches');
+      navigate('/dashboard/branches');
     } finally {
       setLoading(false);
     }
@@ -166,7 +166,7 @@ export default function BranchDetail() {
     if (!id) return;
     try {
       await branchService.delete(id);
-      navigate('/branches');
+      navigate('/dashboard/branches');
     } catch (error) {
       console.error('Sube silinirken hata:', error);
     }
@@ -230,7 +230,7 @@ export default function BranchDetail() {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground">Sube bulunamadi</p>
-        <Button variant="link" onClick={() => navigate('/branches')}>
+        <Button variant="link" onClick={() => navigate('/dashboard/branches')}>
           Subelere don
         </Button>
       </div>
@@ -242,7 +242,7 @@ export default function BranchDetail() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/branches')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/branches')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-4">
@@ -613,9 +613,7 @@ export default function BranchDetail() {
                         <TableBody>
                           {branch.users.map((user: any) => (
                             <TableRow 
-                              key={user.id} 
-                              className="cursor-pointer hover:bg-muted/50"
-                              onClick={() => navigate(`/users/${user.id}`)}
+                              key={user.id}
                             >
                               <TableCell className="font-medium">
                                 <div className="flex items-center gap-2">

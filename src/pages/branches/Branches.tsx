@@ -311,9 +311,7 @@ export default function Branches() {
                 <TableBody>
                   {filteredBranches.map((branch) => (
                     <TableRow 
-                      key={branch.id} 
-                      className="hover:bg-muted/50 cursor-pointer"
-                      onClick={() => navigate(`/branches/${branch.id}`)}
+                      key={branch.id}
                     >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
@@ -354,7 +352,7 @@ export default function Branches() {
                             size="sm" 
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/branches/${branch.id}`);
+                              navigate(`/dashboard/branches/${branch.id}`);
                             }}
                           >
                             <Eye className="h-4 w-4 mr-1" />

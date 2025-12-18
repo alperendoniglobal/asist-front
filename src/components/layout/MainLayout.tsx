@@ -90,13 +90,12 @@ export function MainLayout() {
           {/* Logo - Mavi renkte */}
           <Link to="/dashboard" className="flex-shrink-0 flex items-center gap-3">
             <div className="bg-white dark:bg-white/10 px-3 py-1.5 rounded-lg">
-              <img 
-                src="/cozumasistanlog.svg" 
+            <img 
+              src="/cozumasistanlog.svg" 
                 alt="Cozum Yol Asistan Logo" 
-                className="h-7 logo-primary"
-              />
+              className="h-7 logo-primary"
+            />
             </div>
-            <span className="text-lg font-bold text-foreground hidden sm:inline">Cozum Yol Asistan</span>
           </Link>
 
           {/* Desktop Nav */}

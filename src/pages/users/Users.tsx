@@ -328,8 +328,7 @@ export default function Users() {
                     {paginatedUsers.map((user) => (
                       <TableRow 
                         key={user.id} 
-                        className={`hover:bg-muted/50 cursor-pointer ${!user.is_active ? 'opacity-60' : ''}`}
-                        onClick={() => navigate(`/users/${user.id}`)}
+                        className={`${!user.is_active ? 'opacity-60' : ''}`}
                       >
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
@@ -365,7 +364,7 @@ export default function Users() {
                             size="sm" 
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/users/${user.id}`);
+                              navigate(`/dashboard/users/${user.id}`);
                             }}
                           >
                             <Eye className="h-4 w-4 mr-1" />
