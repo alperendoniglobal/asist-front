@@ -304,7 +304,7 @@ export default function Sales() {
           </h1>
           <p className="text-muted-foreground">Satış kayıtlarını yönetin ve yeni satış oluşturun</p>
         </div>
-        <Button onClick={() => navigate('/sales/new')} className="gap-2">
+        <Button onClick={() => navigate('/dashboard/sales/new')} className="gap-2">
           <Plus className="h-4 w-4" />
           Yeni Satış
         </Button>

@@ -156,7 +156,7 @@ export function MainLayout() {
           <div className="flex items-center gap-2 ml-auto">
             {/* Yeni Satis */}
             <Button 
-              onClick={() => navigate('/sales/new')}
+              onClick={() => navigate('/dashboard/sales/new')}
               className="hidden sm:flex gap-2"
               size="sm"
             >
@@ -251,7 +251,7 @@ export function MainLayout() {
           <div className="p-3 border-b">
             <Button 
               className="w-full"
-              onClick={() => { navigate('/sales/new'); setMobileMenuOpen(false) }}
+              onClick={() => { navigate('/dashboard/sales/new'); setMobileMenuOpen(false) }}
             >
               <Plus className="h-4 w-4 mr-2" />
               Yeni Satis

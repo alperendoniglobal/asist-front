@@ -979,7 +979,7 @@ export default function NewSale() {
       </div>
 
       {/* Basari Modali */}
-      <Dialog open={successModal.open} onOpenChange={(open) => !open && navigate('/sales')}>
+      <Dialog open={successModal.open} onOpenChange={(open) => !open && navigate('/dashboard/sales')}>
         <DialogContent className="max-w-md text-center">
           <DialogHeader>
             <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -1024,7 +1024,7 @@ export default function NewSale() {
             <Button 
               variant="ghost" 
               className="w-full gap-2 mt-4"
-              onClick={() => navigate('/sales')}
+              onClick={() => navigate('/dashboard/sales')}
             >
               Satislara Git
               <ArrowRight className="h-4 w-4" />
