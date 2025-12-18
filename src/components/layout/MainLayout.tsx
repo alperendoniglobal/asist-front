@@ -199,7 +199,7 @@ export function MainLayout() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <DropdownMenuItem onClick={() => navigate('/dashboard/profile')}>
                   <Settings className="h-4 w-4 mr-2" />
                   Profil Ayarlari
                 </DropdownMenuItem>
@@ -300,7 +300,7 @@ export function MainLayout() {
                 variant="ghost" 
                 size="sm"
                 className="flex-1 justify-start"
-                onClick={() => { navigate('/profile'); setMobileMenuOpen(false) }}
+                onClick={() => { navigate('/dashboard/profile'); setMobileMenuOpen(false) }}
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Ayarlar

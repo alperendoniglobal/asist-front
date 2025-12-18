@@ -140,12 +140,12 @@ export default function Dashboard() {
   // ========== BRANCH_USER için Hızlı İşlem Paneli ==========
   if (!isAdmin) {
     const quickActions = [
-      { title: 'Yeni Satış', description: 'Paket sat', icon: Plus, link: '/sales/new', gradient: 'from-blue-500 to-blue-600' },
-      { title: 'Müşteri Ara', description: 'Sorgula', icon: Search, link: '/customers', gradient: 'from-cyan-500 to-cyan-600' },
-      { title: 'Yeni Müşteri', description: 'Kayıt oluştur', icon: UserPlus, link: '/customers', gradient: 'from-emerald-500 to-emerald-600' },
-      { title: 'Araç Ekle', description: 'Araç kaydı', icon: Car, link: '/vehicles', gradient: 'from-amber-500 to-amber-600' },
-      { title: 'Satışlarım', description: 'Görüntüle', icon: FileText, link: '/sales', gradient: 'from-violet-500 to-violet-600' },
-      { title: 'Paketler', description: 'İncele', icon: Package, link: '/packages', gradient: 'from-pink-500 to-pink-600' }
+      { title: 'Yeni Satış', description: 'Paket sat', icon: Plus, link: '/dashboard/sales/new', gradient: 'from-blue-500 to-blue-600' },
+      { title: 'Müşteri Ara', description: 'Sorgula', icon: Search, link: '/dashboard/customers', gradient: 'from-cyan-500 to-cyan-600' },
+      { title: 'Yeni Müşteri', description: 'Kayıt oluştur', icon: UserPlus, link: '/dashboard/customers', gradient: 'from-emerald-500 to-emerald-600' },
+      { title: 'Araç Ekle', description: 'Araç kaydı', icon: Car, link: '/dashboard/vehicles', gradient: 'from-amber-500 to-amber-600' },
+      { title: 'Satışlarım', description: 'Görüntüle', icon: FileText, link: '/dashboard/sales', gradient: 'from-violet-500 to-violet-600' },
+      { title: 'Paketler', description: 'İncele', icon: Package, link: '/dashboard/packages', gradient: 'from-pink-500 to-pink-600' }
     ];
 
     return (
@@ -241,7 +241,7 @@ export default function Dashboard() {
                     <ShoppingCart className="h-4 w-4 text-primary" />
                     Son Satışlarım
                   </CardTitle>
-                  <Link to="/sales">
+                  <Link to="/dashboard/sales">
                     <Button variant="ghost" size="sm" className="h-7 text-xs">
                       Tümü <ArrowUpRight className="h-3 w-3 ml-1" />
                     </Button>
@@ -276,7 +276,7 @@ export default function Dashboard() {
                     <Users className="h-4 w-4 text-primary" />
                     Son Müşterilerim
                   </CardTitle>
-                  <Link to="/customers">
+                  <Link to="/dashboard/customers">
                     <Button variant="ghost" size="sm" className="h-7 text-xs">
                       Tümü <ArrowUpRight className="h-3 w-3 ml-1" />
                     </Button>
@@ -504,12 +504,12 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="mt-4 flex gap-2">
-                <Link to="/branches" className="flex-1">
+                <Link to="/dashboard/branches" className="flex-1">
                   <Button variant="outline" size="sm" className="w-full text-xs">
                     Şubeleri Gör
                   </Button>
                 </Link>
-                <Link to="/agencies">
+                <Link to="/dashboard/agencies">
                   <Button variant="outline" size="sm" className="text-xs">
                     <Building2 className="h-3 w-3" />
                   </Button>
@@ -526,22 +526,22 @@ export default function Dashboard() {
                 <Sparkles className="h-4 w-4 text-amber-500" />
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <Link to="/sales/new">
+                <Link to="/dashboard/sales/new">
                   <Button variant="outline" size="sm" className="w-full text-xs gap-1 h-9">
                     <Plus className="h-3 w-3" /> Satış
                   </Button>
                 </Link>
-                <Link to="/customers">
+                <Link to="/dashboard/customers">
                   <Button variant="outline" size="sm" className="w-full text-xs gap-1 h-9">
                     <UserPlus className="h-3 w-3" /> Müşteri
                   </Button>
                 </Link>
-                <Link to="/packages">
+                <Link to="/dashboard/packages">
                   <Button variant="outline" size="sm" className="w-full text-xs gap-1 h-9">
                     <Package className="h-3 w-3" /> Paketler
                   </Button>
                 </Link>
-                <Link to="/agencies">
+                <Link to="/dashboard/agencies">
                   <Button variant="outline" size="sm" className="w-full text-xs gap-1 h-9">
                     <Building2 className="h-3 w-3" /> Acenteler
                   </Button>
@@ -779,7 +779,7 @@ export default function Dashboard() {
             </CardTitle>
                 <CardDescription>En son yapılan satışlar</CardDescription>
               </div>
-              <Link to="/sales">
+              <Link to="/dashboard/sales">
                 <Button variant="ghost" size="sm" className="gap-1">
                   Tümünü Gör <Eye className="h-3 w-3" />
                 </Button>
@@ -816,7 +816,7 @@ export default function Dashboard() {
               <div className="py-12 text-center">
                 <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground/20 mb-3" />
                 <p className="text-muted-foreground">Henüz satış bulunmuyor</p>
-                <Link to="/sales/new">
+                <Link to="/dashboard/sales/new">
                   <Button size="sm" className="mt-3 gap-1">
                     <Plus className="h-4 w-4" /> İlk Satışı Yap
                   </Button>
@@ -837,7 +837,7 @@ export default function Dashboard() {
             </CardTitle>
                 <CardDescription>En son eklenen müşteriler</CardDescription>
               </div>
-              <Link to="/customers">
+              <Link to="/dashboard/customers">
                 <Button variant="ghost" size="sm" className="gap-1">
                   Tümünü Gör <Eye className="h-3 w-3" />
                 </Button>
@@ -878,7 +878,7 @@ export default function Dashboard() {
               <div className="py-12 text-center">
                 <Users className="h-12 w-12 mx-auto text-muted-foreground/20 mb-3" />
                 <p className="text-muted-foreground">Henüz müşteri bulunmuyor</p>
-                <Link to="/customers">
+                <Link to="/dashboard/customers">
                   <Button size="sm" className="mt-3 gap-1">
                     <UserPlus className="h-4 w-4" /> Müşteri Ekle
                   </Button>
