@@ -16,4 +16,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // Server ayarları - PM2 ile çalıştırmak için
+  server: {
+    port: 5173,
+    host: '0.0.0.0',
+    strictPort: true,
+  },
+  preview: {
+    port: 5173,
+    host: '0.0.0.0',
+    strictPort: true,
+  },
 })

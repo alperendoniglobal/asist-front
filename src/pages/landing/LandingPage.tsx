@@ -234,7 +234,6 @@ export default function LandingPage() {
                 className="h-8"
               />
             </div>
-            <span className="text-white font-bold text-xl">Cozum Yol Asistan</span>
           </div>
           <Link to="/login">
             <Button size="lg" className="gap-2 bg-white text-slate-900 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all">
@@ -806,7 +805,7 @@ export default function LandingPage() {
               </div>
             </div>
             <p className="text-sm text-slate-400">
-              © {new Date().getFullYear()} Yol Asistan. Tüm hakları saklıdır.
+              © 2021 Yol Asistan. Tüm hakları saklıdır.
             </p>
           </div>
         </div>

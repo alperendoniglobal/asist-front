@@ -85,7 +85,7 @@ export default function Login() {
 
         <div className="relative z-10">
           <p className="text-slate-500 text-sm">
-            © 2025 Yol Asistan. Tüm hakları saklıdır.
+            © 2021 Yol Asistan. Tüm hakları saklıdır.
           </p>
         </div>
       </div>
