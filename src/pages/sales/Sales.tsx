@@ -74,6 +74,12 @@ export default function Sales() {
 
   // İade yapabilme yetkisi kontrolü - sadece Agency Admin ve üstü yapabilir
   const canRefund = user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.AGENCY_ADMIN;
+  
+  // Komisyon görüntüleme yetkisi - sadece Super Admin, Agency Admin ve Branch Admin görebilir
+  // Branch User komisyonu göremez
+  const canViewCommission = user?.role === UserRole.SUPER_ADMIN 
+    || user?.role === UserRole.AGENCY_ADMIN 
+    || user?.role === UserRole.BRANCH_ADMIN;
 
   useEffect(() => {
     fetchData();
@@ -363,6 +369,7 @@ export default function Sales() {
                       <TableHead>Paket</TableHead>
                       <TableHead>Musteri</TableHead>
                       <TableHead>Arac</TableHead>
+                      <TableHead>Satisi Yapan</TableHead>
                       <TableHead>Baslangic</TableHead>
                       <TableHead>Bitis</TableHead>
                       <TableHead>Fiyat</TableHead>
@@ -379,6 +386,14 @@ export default function Sales() {
                           {sale.customer?.name} {sale.customer?.surname}
                         </TableCell>
                         <TableCell>{sale.vehicle?.plate || '-'}</TableCell>
+                        <TableCell>
+                          {sale.user?.name} {sale.user?.surname}
+                          {sale.branch?.name && (
+                            <span className="text-xs text-muted-foreground block">
+                              {sale.branch.name}
+                            </span>
+                          )}
+                        </TableCell>
                         <TableCell>{formatDate(sale.start_date)}</TableCell>
                         <TableCell>{formatDate(sale.end_date)}</TableCell>
                         <TableCell className="font-semibold">{formatCurrency(sale.price)}</TableCell>
@@ -531,10 +546,13 @@ export default function Sales() {
                     <span>Fiyat:</span>
                     <span className="font-semibold">{formatCurrency(formData.price)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Komisyon:</span>
-                    <span className="font-semibold text-emerald-600">{formatCurrency(formData.commission)}</span>
-                  </div>
+                  {/* Komisyon sadece yetkili kullanıcılar görebilir (Super Admin, Agency Admin, Branch Admin) */}
+                  {canViewCommission && (
+                    <div className="flex justify-between">
+                      <span>Komisyon:</span>
+                      <span className="font-semibold text-emerald-600">{formatCurrency(formData.commission)}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -715,7 +733,7 @@ export default function Sales() {
 
       {/* Detay Modal */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -741,55 +759,132 @@ export default function Sales() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                  <User className="h-4 w-4" />
-                  Müşteri
+            {/* Yatay Layout - Sol ve Sağ Kolonlar */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* Sol Kolon */}
+              <div className="space-y-4">
+                {/* Müşteri ve Araç */}
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <User className="h-4 w-4" />
+                    <span className="font-medium">Müşteri</span>
+                  </div>
+                  <p className="font-semibold text-lg">
+                    {selectedSale?.customer?.name} {selectedSale?.customer?.surname}
+                  </p>
+                  {selectedSale?.customer?.phone && (
+                    <p className="text-sm text-muted-foreground mt-1">{selectedSale.customer.phone}</p>
+                  )}
+                  {selectedSale?.customer?.email && (
+                    <p className="text-sm text-muted-foreground">{selectedSale.customer.email}</p>
+                  )}
                 </div>
-                <p className="font-medium">
-                  {selectedSale?.customer?.name} {selectedSale?.customer?.surname}
-                </p>
-              </div>
-              <div className="p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                  <Car className="h-4 w-4" />
-                  Araç
+
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <Car className="h-4 w-4" />
+                    <span className="font-medium">Araç</span>
+                  </div>
+                  <p className="font-semibold text-lg">{selectedSale?.vehicle?.plate || '-'}</p>
+                  {selectedSale?.vehicle?.model_year && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Model Yılı: {selectedSale.vehicle.model_year}
+                    </p>
+                  )}
                 </div>
-                <p className="font-medium">{selectedSale?.vehicle?.plate}</p>
-              </div>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <PackageIcon className="h-4 w-4" />
-                Paket
-              </div>
-              <p className="font-medium">{selectedSale?.package?.name || '-'}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                  <Calendar className="h-4 w-4" />
-                  Başlangıç
+
+                {/* Paket */}
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <PackageIcon className="h-4 w-4" />
+                    <span className="font-medium">Paket</span>
+                  </div>
+                  <p className="font-semibold">{selectedSale?.package?.name || '-'}</p>
+                  {selectedSale?.package?.description && (
+                    <p className="text-sm text-muted-foreground mt-1">{selectedSale.package.description}</p>
+                  )}
                 </div>
-                <p className="font-medium">{selectedSale && formatDate(selectedSale.start_date)}</p>
               </div>
-              <div className="p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                  <Calendar className="h-4 w-4" />
-                  Bitiş
+
+              {/* Sağ Kolon */}
+              <div className="space-y-4">
+                {/* Satışı Yapan ve Acente/Şube */}
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <User className="h-4 w-4" />
+                    <span className="font-medium">Satışı Yapan</span>
+                  </div>
+                  <p className="font-semibold text-lg">
+                    {selectedSale?.user?.name} {selectedSale?.user?.surname}
+                  </p>
+                  {selectedSale?.user?.email && (
+                    <p className="text-sm text-muted-foreground mt-1">{selectedSale.user.email}</p>
+                  )}
                 </div>
-                <p className="font-medium">{selectedSale && formatDate(selectedSale.end_date)}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-primary/10">
-                <div className="text-muted-foreground mb-1">Fiyat</div>
-                <p className="font-bold text-xl">{formatCurrency(selectedSale?.price || 0)}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                <div className="text-muted-foreground mb-1">Komisyon</div>
-                <p className="font-bold text-xl text-emerald-600">{formatCurrency(selectedSale?.commission || 0)}</p>
+
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                    <ShoppingCart className="h-4 w-4" />
+                    <span className="font-medium">Acente / Şube</span>
+                  </div>
+                  <p className="font-semibold">{selectedSale?.agency?.name || '-'}</p>
+                  {selectedSale?.branch?.name && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Şube: {selectedSale.branch.name}
+                    </p>
+                  )}
+                </div>
+
+                {/* Tarihler */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1 text-xs">
+                      <Calendar className="h-3 w-3" />
+                      Başlangıç
+                    </div>
+                    <p className="font-medium">{selectedSale && formatDate(selectedSale.start_date)}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2 text-muted-foreground mb-1 text-xs">
+                      <Calendar className="h-3 w-3" />
+                      Bitiş
+                    </div>
+                    <p className="font-medium">{selectedSale && formatDate(selectedSale.end_date)}</p>
+                  </div>
+                </div>
+
+                {/* Fiyat ve Komisyon */}
+                <div className={canViewCommission ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3"}>
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <div className="text-muted-foreground mb-1 text-xs">Fiyat</div>
+                    <p className="font-bold text-lg">{formatCurrency(selectedSale?.price || 0)}</p>
+                  </div>
+                  {/* Komisyon sadece yetkili kullanıcılar görebilir (Super Admin, Agency Admin, Branch Admin) */}
+                  {canViewCommission && (
+                    <div className="p-3 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+                      <div className="text-muted-foreground mb-1 text-xs">Komisyon</div>
+                      <p className="font-bold text-lg text-emerald-600">{formatCurrency(selectedSale?.commission || 0)}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Poliçe Numarası ve Oluşturulma Tarihi */}
+                {(selectedSale?.policy_number || selectedSale?.created_at) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {selectedSale?.policy_number && (
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <div className="text-muted-foreground mb-1 text-xs">Poliçe No</div>
+                        <p className="font-medium text-sm">{selectedSale.policy_number}</p>
+                      </div>
+                    )}
+                    {selectedSale?.created_at && (
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <div className="text-muted-foreground mb-1 text-xs">Oluşturulma</div>
+                        <p className="font-medium text-sm">{formatDate(selectedSale.created_at)}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             

@@ -33,6 +33,7 @@ export interface Agency {
   commission_rate: number;     // Komisyon oranı (%) - örn: 25.00 = %25
   balance: number;             // Bakiye (TL) - Biriken komisyonlar
   status: EntityStatus;        // Acente durumu
+  logo?: string | null;         // Logo (Base64 formatında)
   created_at: string;
   updated_at: string;
   branches?: Branch[];         // Acenteye bağlı şubeler (opsiyonel)

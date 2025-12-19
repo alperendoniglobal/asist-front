@@ -19,7 +19,7 @@ import type { Agency } from '@/types';
 import { EntityStatus } from '@/types';
 import { 
   Plus, Search, Edit, Trash2, Eye, Building2, 
-  Phone, Mail, MapPin, Wallet, RefreshCcw, Calendar, Percent
+  Phone, Mail, MapPin, Wallet, RefreshCcw, Calendar, Percent, Upload, X, Image as ImageIcon
 } from 'lucide-react';
 
 // Durum etiketleri ve renkleri
@@ -52,7 +52,8 @@ export default function Agencies() {
     phone: '',
     email: '',
     commission_rate: 20, // Varsayılan %20 komisyon
-    status: EntityStatus.ACTIVE
+    status: EntityStatus.ACTIVE,
+    logo: null as string | null // Base64 logo
   });
 
   useEffect(() => {
@@ -129,7 +130,8 @@ export default function Agencies() {
       phone: agency.phone || '',
       email: agency.email || '',
       commission_rate: Number(agency.commission_rate) || 20,
-      status: agency.status
+      status: agency.status,
+      logo: agency.logo || null
     });
     setIsEditOpen(true);
   };
@@ -142,9 +144,43 @@ export default function Agencies() {
       phone: '',
       email: '',
       commission_rate: 20,
-      status: EntityStatus.ACTIVE
+      status: EntityStatus.ACTIVE,
+      logo: null
     });
     setSelectedAgency(null);
+  };
+
+  // Logo yükleme fonksiyonu - Base64'e çevirir
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Dosya tipi kontrolü (sadece resim)
+    if (!file.type.startsWith('image/')) {
+      alert('Lütfen bir resim dosyası seçin!');
+      return;
+    }
+
+    // Dosya boyutu kontrolü (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Logo dosyası 2MB\'dan büyük olamaz!');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setFormData({ ...formData, logo: base64String });
+    };
+    reader.onerror = () => {
+      alert('Logo yüklenirken bir hata oluştu!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Logo silme fonksiyonu
+  const handleLogoRemove = () => {
+    setFormData({ ...formData, logo: null });
   };
 
   const formatDate = (date: string) => {
@@ -285,6 +321,7 @@ export default function Agencies() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Logo</TableHead>
                     <TableHead>Acente Adı</TableHead>
                     <TableHead>Vergi No</TableHead>
                     <TableHead>Telefon</TableHead>
@@ -297,6 +334,19 @@ export default function Agencies() {
                 <TableBody>
                   {filteredAgencies.map((agency) => (
                     <TableRow key={agency.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        {agency.logo ? (
+                          <img 
+                            src={agency.logo} 
+                            alt={`${agency.name} logosu`}
+                            className="h-10 w-10 object-contain rounded"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded bg-muted flex items-center justify-center">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">{agency.name}</TableCell>
                       <TableCell className="font-mono">{agency.tax_number || '-'}</TableCell>
                       <TableCell>{agency.phone || '-'}</TableCell>
@@ -412,6 +462,57 @@ export default function Agencies() {
                 rows={2}
               />
             </div>
+
+            {/* Logo Yükleme */}
+            <div className="space-y-2">
+              <Label>Logo</Label>
+              {formData.logo ? (
+                <div className="relative">
+                  <div className="border rounded-lg p-4 flex items-center gap-4">
+                    <img 
+                      src={formData.logo} 
+                      alt="Acente logosu" 
+                      className="h-20 w-20 object-contain rounded border"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">Logo yüklendi</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLogoRemove}
+                        className="mt-2"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Logoyu Kaldır
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                  <Label htmlFor="logo-upload" className="cursor-pointer">
+                    <Button type="button" variant="outline" asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Logo Yükle
+                      </span>
+                    </Button>
+                  </Label>
+                  <Input
+                    id="logo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    PNG, JPG veya GIF (Max 2MB)
+                  </p>
+                </div>
+              )}
+            </div>
             
             <div className="space-y-2">
               <Label>Durum</Label>
@@ -505,6 +606,57 @@ export default function Agencies() {
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 rows={2}
               />
+            </div>
+
+            {/* Logo Yükleme */}
+            <div className="space-y-2">
+              <Label>Logo</Label>
+              {formData.logo ? (
+                <div className="relative">
+                  <div className="border rounded-lg p-4 flex items-center gap-4">
+                    <img 
+                      src={formData.logo} 
+                      alt="Acente logosu" 
+                      className="h-20 w-20 object-contain rounded border"
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">Logo yüklendi</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLogoRemove}
+                        className="mt-2"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Logoyu Kaldır
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  <ImageIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                  <Label htmlFor="logo-upload-edit" className="cursor-pointer">
+                    <Button type="button" variant="outline" asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Logo Yükle
+                      </span>
+                    </Button>
+                  </Label>
+                  <Input
+                    id="logo-upload-edit"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    PNG, JPG veya GIF (Max 2MB)
+                  </p>
+                </div>
+              )}
             </div>
             
             <div className="space-y-2">
