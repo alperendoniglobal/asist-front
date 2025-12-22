@@ -2,7 +2,8 @@ export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
   AGENCY_ADMIN = 'AGENCY_ADMIN',
   BRANCH_ADMIN = 'BRANCH_ADMIN',
-  BRANCH_USER = 'BRANCH_USER'
+  BRANCH_USER = 'BRANCH_USER',
+  SUPPORT = 'SUPPORT' // Destek ekibi - Sadece SUPER_ADMIN oluşturabilir
 }
 
 export interface User {
@@ -188,6 +189,9 @@ export interface Sale {
   customer?: Customer;
   vehicle?: Vehicle;
   package?: Package;
+  user?: User;              // Satışı yapan kullanıcı
+  agency?: Agency;          // Acente bilgisi
+  branch?: Branch;          // Şube bilgisi
 }
 
 // İade hesaplama sonucu (API'den dönen)

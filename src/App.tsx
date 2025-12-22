@@ -3,6 +3,7 @@ import { AuthProvider } from "./contexts/AuthContext"
 import { ThemeProvider } from "./contexts/ThemeContext"
 import ProtectedRoute from "./routes/ProtectedRoute"
 import { MainLayout } from "./components/layout/MainLayout"
+import { SupportLayout } from "./components/layout/SupportLayout"
 import Login from "./pages/auth/Login"
 import LandingPage from "./pages/landing/LandingPage"
 import Dashboard from "./pages/dashboard/Dashboard"
@@ -19,6 +20,9 @@ import NewSale from "./pages/sales/NewSale"
 import Payments from "./pages/payments/Payments"
 import Commissions from "./pages/commissions/Commissions"
 import Support from "./pages/support/Support"
+import SupportSales from "./pages/support/SupportSales"
+import SupportFiles from "./pages/support/SupportFiles"
+import CreateFile from "./pages/support/CreateFile"
 import Profile from "./pages/profile/Profile"
 import { UserRole } from "./types"
 import { Toaster } from "./components/ui/sonner"
@@ -35,7 +39,23 @@ function App() {
             {/* Login - Public */}
             <Route path="/login" element={<Login />} />
 
-            {/* Protected Routes - Dashboard and all app routes */}
+            {/* SUPPORT Rolü için Özel Routes - Destek Ekibi */}
+            <Route
+              path="/dashboard/support"
+              element={
+                <ProtectedRoute allowedRoles={[UserRole.SUPPORT]}>
+                  <SupportLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="sales" element={<SupportSales />} />
+              <Route path="files" element={<SupportFiles />} />
+              <Route path="files/create" element={<CreateFile />} />
+              <Route path="profile" element={<Profile />} />
+              <Route index element={<Navigate to="/dashboard/support/sales" replace />} />
+            </Route>
+
+            {/* Protected Routes - Dashboard and all app routes (SUPPORT hariç) */}
             <Route
               path="/dashboard"
               element={

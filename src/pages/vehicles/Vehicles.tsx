@@ -31,6 +31,7 @@ export default function Vehicles() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [carBrands, setCarBrands] = useState<CarBrand[]>([]);
   const [carModels, setCarModels] = useState<CarModel[]>([]);
+  const [modelSearchQuery, setModelSearchQuery] = useState(''); // Model arama sorgusu
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   // Pagination state
@@ -79,6 +80,7 @@ export default function Vehicles() {
   // Marka seçildiğinde modelleri çek
   const handleBrandChange = async (brandId: string) => {
     setFormData({ ...formData, brand_id: brandId, model_id: '' });
+    setModelSearchQuery(''); // Marka değiştiğinde arama sorgusunu temizle
     if (brandId) {
       try {
         const models = await carModelService.getByBrandId(parseInt(brandId));
@@ -513,18 +515,49 @@ export default function Vehicles() {
                 <Label>Model *</Label>
                 <Select
                   value={formData.model_id}
-                  onValueChange={(value) => setFormData({ ...formData, model_id: value })}
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, model_id: value });
+                    setModelSearchQuery(''); // Seçim yapıldığında arama sorgusunu temizle
+                  }}
                   disabled={!formData.brand_id}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Model seçin" />
                   </SelectTrigger>
                   <SelectContent>
-                    {carModels.map((model) => (
-                      <SelectItem key={model.id} value={model.id.toString()}>
-                        {model.name}
-                      </SelectItem>
-                    ))}
+                    {/* Model arama input'u */}
+                    <div className="sticky top-0 z-10 bg-background p-2 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Model ara..."
+                          value={modelSearchQuery}
+                          onChange={(e) => setModelSearchQuery(e.target.value)}
+                          className="pl-8"
+                          onClick={(e) => e.stopPropagation()} // Select'in kapanmasını engelle
+                          onKeyDown={(e) => e.stopPropagation()} // Select'in kapanmasını engelle
+                        />
+                      </div>
+                    </div>
+                    {/* Filtrelenmiş modeller */}
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {carModels
+                        .filter((model) =>
+                          model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                        )
+                        .map((model) => (
+                          <SelectItem key={model.id} value={model.id.toString()}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
+                      {carModels.filter((model) =>
+                        model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                      ).length === 0 && (
+                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                          Model bulunamadı
+                        </div>
+                      )}
+                    </div>
                   </SelectContent>
                 </Select>
               </div>
@@ -673,18 +706,49 @@ export default function Vehicles() {
                 <Label>Model *</Label>
                 <Select
                   value={formData.model_id}
-                  onValueChange={(value) => setFormData({ ...formData, model_id: value })}
+                  onValueChange={(value) => {
+                    setFormData({ ...formData, model_id: value });
+                    setModelSearchQuery(''); // Seçim yapıldığında arama sorgusunu temizle
+                  }}
                   disabled={!formData.brand_id}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Model seçin" />
                   </SelectTrigger>
                   <SelectContent>
-                    {carModels.map((model) => (
-                      <SelectItem key={model.id} value={model.id.toString()}>
-                        {model.name}
-                      </SelectItem>
-                    ))}
+                    {/* Model arama input'u */}
+                    <div className="sticky top-0 z-10 bg-background p-2 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Model ara..."
+                          value={modelSearchQuery}
+                          onChange={(e) => setModelSearchQuery(e.target.value)}
+                          className="pl-8"
+                          onClick={(e) => e.stopPropagation()} // Select'in kapanmasını engelle
+                          onKeyDown={(e) => e.stopPropagation()} // Select'in kapanmasını engelle
+                        />
+                      </div>
+                    </div>
+                    {/* Filtrelenmiş modeller */}
+                    <div className="max-h-[300px] overflow-y-auto">
+                      {carModels
+                        .filter((model) =>
+                          model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                        )
+                        .map((model) => (
+                          <SelectItem key={model.id} value={model.id.toString()}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
+                      {carModels.filter((model) =>
+                        model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                      ).length === 0 && (
+                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                          Model bulunamadı
+                        </div>
+                      )}
+                    </div>
                   </SelectContent>
                 </Select>
               </div>

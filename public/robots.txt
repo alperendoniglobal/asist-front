@@ -1,0 +1,20 @@
+# robots.txt for Çözüm Asistan
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://cozum.net/sitemap.xml
+
+# Disallow admin and API routes
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /login
+Disallow: /admin/
+
+# Allow important pages
+Allow: /
+Allow: /landing
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+

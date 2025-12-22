@@ -103,17 +103,24 @@ export default function Users() {
   // Kullanici olustur
   const handleCreate = async () => {
     try {
+      // SUPPORT rolü global bir rol olduğu için agency_id ve branch_id boş olmalı
       const createData = {
         ...formData,
-        agency_id: isSuperAdmin ? formData.agency_id : currentUser?.agency_id,
-        branch_id: isAgencyAdmin && !formData.branch_id ? currentUser?.branch_id : formData.branch_id
+        agency_id: formData.role === UserRole.SUPPORT 
+          ? '' 
+          : (isSuperAdmin ? formData.agency_id : currentUser?.agency_id),
+        branch_id: formData.role === UserRole.SUPPORT 
+          ? '' 
+          : (isAgencyAdmin && !formData.branch_id ? currentUser?.branch_id : formData.branch_id)
       };
       await userService.create(createData);
       setIsCreateOpen(false);
       resetForm();
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Kullanici olusturulurken hata:', error);
+      // Hata mesajını kullanıcıya göster (örn: toast notification)
+      alert(error?.response?.data?.message || error?.message || 'Kullanici olusturulurken bir hata olustu');
     }
   };
 
@@ -153,6 +160,8 @@ export default function Users() {
         return 'Sube Yoneticisi';
       case UserRole.BRANCH_USER:
         return 'Kullanici';
+      case UserRole.SUPPORT:
+        return 'Destek Ekibi';
       default:
         return role;
     }
@@ -169,15 +178,18 @@ export default function Users() {
         return 'secondary';
       case UserRole.BRANCH_USER:
         return 'outline';
+      case UserRole.SUPPORT:
+        return 'default'; // Destek ekibi için özel renk
       default:
         return 'outline';
     }
   };
 
   // Kullanilabilir roller
+  // SUPPORT rolü sadece SUPER_ADMIN tarafından oluşturulabilir
   const getAvailableRoles = () => {
     if (isSuperAdmin) {
-      return [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
+      return [UserRole.SUPER_ADMIN, UserRole.SUPPORT, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
     }
     if (isAgencyAdmin) {
       return [UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
@@ -445,7 +457,15 @@ export default function Users() {
               <Label>Rol *</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}
+                onValueChange={(value) => {
+                  const newRole = value as UserRole;
+                  // SUPPORT rolü seçildiğinde acente ve şube bilgilerini temizle (global rol)
+                  if (newRole === UserRole.SUPPORT) {
+                    setFormData({ ...formData, role: newRole, agency_id: '', branch_id: '' });
+                  } else {
+                    setFormData({ ...formData, role: newRole });
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Rol secin" />
@@ -459,7 +479,8 @@ export default function Users() {
                 </SelectContent>
               </Select>
             </div>
-            {isSuperAdmin && (
+            {/* SUPPORT rolü global bir rol olduğu için acente ve şube seçimi gerekmez */}
+            {isSuperAdmin && formData.role !== UserRole.SUPPORT && (
               <div className="space-y-2">
                 <Label>Acente</Label>
                 <Select
@@ -479,7 +500,8 @@ export default function Users() {
                 </Select>
               </div>
             )}
-            {(isSuperAdmin || isAgencyAdmin) && (
+            {/* SUPPORT rolü global bir rol olduğu için şube seçimi gerekmez */}
+            {(isSuperAdmin || isAgencyAdmin) && formData.role !== UserRole.SUPPORT && (
               <div className="space-y-2">
                 <Label>Sube</Label>
                 <Select
@@ -497,6 +519,13 @@ export default function Users() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+            {/* SUPPORT rolü bilgilendirmesi */}
+            {formData.role === UserRole.SUPPORT && (
+              <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
+                <p className="font-medium">Destek Ekibi Rolü</p>
+                <p className="text-xs mt-1">Bu rol global bir roldür ve acente/şube ataması gerektirmez. Tüm sistem verilerine erişim sağlar.</p>
               </div>
             )}
           </div>

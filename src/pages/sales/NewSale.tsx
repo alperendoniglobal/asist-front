@@ -13,13 +13,16 @@ import {
   customerService, packageService, saleService,
   carBrandService, carModelService, agencyService, pdfService
 } from '@/services/apiService';
+import { extractRegistrationInfo } from '@/services/ocrService';
+import { toast } from 'sonner';
+import { validateTCKN, validateVKN } from '@/utils/validators';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Customer, Package, CarBrand, CarModel, Sale, Agency } from '@/types';
 import { PaymentType, UserRole } from '@/types';
 import { 
   User, Car, CreditCard, Wallet, Package as PackageIcon,
   Search, CheckCircle, AlertCircle, History, Shield, Building2, Globe,
-  Download, ExternalLink, ArrowRight
+  Download, ExternalLink, ArrowRight, Upload, Image as ImageIcon, X, Loader2
 } from 'lucide-react';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
@@ -60,6 +63,7 @@ export default function NewSale() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [carBrands, setCarBrands] = useState<CarBrand[]>([]);
   const [carModels, setCarModels] = useState<CarModel[]>([]);
+  const [modelSearchQuery, setModelSearchQuery] = useState(''); // Model arama sorgusu
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentType>(PaymentType.IYZICO);
   const [agreements, setAgreements] = useState({ kvkk: false, contract: false });
@@ -73,6 +77,13 @@ export default function NewSale() {
     open: false,
     saleId: null
   });
+
+  // Ruhsat fotoğrafı ve OCR state
+  const [registrationPhoto, setRegistrationPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
+  const [ocrModalOpen, setOcrModalOpen] = useState(false);
 
   // Form Data - Müşteri Bilgileri
   const [customerForm, setCustomerForm] = useState({
@@ -88,6 +99,9 @@ export default function NewSale() {
     district: '',             // İlçe
     address: '',
   });
+
+  // TC/VKN validasyon hatası
+  const [tcVknError, setTcVknError] = useState<string>('');
 
   // Form Data - Araç Bilgileri
   const [vehicleForm, setVehicleForm] = useState({
@@ -251,9 +265,194 @@ export default function NewSale() {
     filterPackagesByVehicle(vehicleForm.model_year, usageType);
   };
 
+  // Ruhsat fotoğrafı yükleme
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Dosya tipi kontrolü
+    if (!file.type.startsWith('image/')) {
+      toast.error('Lütfen bir resim dosyası seçin!');
+      return;
+    }
+
+    // Dosya boyutu kontrolü (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Ruhsat fotoğrafı 10MB\'dan büyük olamaz!');
+      return;
+    }
+
+    setRegistrationPhoto(file);
+    
+    // Önizleme oluştur
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.onerror = () => {
+      toast.error('Fotoğraf yüklenirken bir hata oluştu!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // OCR ile bilgi çıkarma
+  const handleOcrExtraction = async () => {
+    if (!registrationPhoto || !carBrands.length) {
+      toast.error('Ruhsat fotoğrafı ve marka listesi gerekli!');
+      return;
+    }
+
+    setOcrLoading(true);
+    setOcrProgress(0);
+
+    try {
+      // Progress simülasyonu (Tesseract.js kendi progress'ini döndürmez, bu yüzden simüle ediyoruz)
+      const progressInterval = setInterval(() => {
+        setOcrProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      // OCR işlemi
+      const ocrResult = await extractRegistrationInfo(registrationPhoto, carBrands, carModels);
+      
+      clearInterval(progressInterval);
+      setOcrProgress(100);
+
+      // Debug: OCR sonuçlarını logla
+      console.log('OCR Sonuçları (Forma doldurulacak):', ocrResult);
+
+      // Müşteri bilgilerini forma doldur
+      const updatedCustomerForm: any = {};
+      if (ocrResult.tc_vkn) {
+        updatedCustomerForm.tc_vkn = ocrResult.tc_vkn;
+        console.log('TC Kimlik dolduruluyor:', ocrResult.tc_vkn);
+      }
+      if (ocrResult.name) {
+        updatedCustomerForm.name = ocrResult.name;
+        console.log('Ad dolduruluyor:', ocrResult.name);
+      }
+      if (ocrResult.surname) {
+        updatedCustomerForm.surname = ocrResult.surname;
+        console.log('Soyad dolduruluyor:', ocrResult.surname);
+      }
+      if (ocrResult.address) {
+        updatedCustomerForm.address = ocrResult.address;
+        console.log('Adres dolduruluyor:', ocrResult.address);
+      }
+      if (ocrResult.city) {
+        // İl değerini CITIES array'inde ara (case-insensitive)
+        const cityMatch = CITIES.find(city => 
+          city.toUpperCase() === ocrResult.city!.toUpperCase() ||
+          city.toUpperCase().replace(/İ/g, 'I') === ocrResult.city!.toUpperCase().replace(/İ/g, 'I')
+        );
+        if (cityMatch) {
+          updatedCustomerForm.city = cityMatch; // Tam eşleşmeyi kullan
+          console.log('İl dolduruluyor:', cityMatch, '(OCR:', ocrResult.city, ')');
+        } else {
+          // Eşleşme bulunamadıysa yine de dene (belki Select kabul eder)
+          updatedCustomerForm.city = ocrResult.city;
+          console.log('İl dolduruluyor (eşleşme bulunamadı):', ocrResult.city);
+        }
+      }
+      if (ocrResult.district) {
+        updatedCustomerForm.district = ocrResult.district;
+        console.log('İlçe dolduruluyor:', ocrResult.district);
+      }
+      
+      if (Object.keys(updatedCustomerForm).length > 0) {
+        setCustomerForm(prev => ({ ...prev, ...updatedCustomerForm }));
+        console.log('Müşteri formu güncellendi:', updatedCustomerForm);
+      }
+
+      // Araç bilgilerini forma doldur
+      const updatedVehicleForm: any = {};
+      if (ocrResult.plate) {
+        updatedVehicleForm.plate = ocrResult.plate.toUpperCase();
+        console.log('Plaka dolduruluyor:', ocrResult.plate);
+      }
+      if (ocrResult.registration_serial) {
+        updatedVehicleForm.registration_serial = ocrResult.registration_serial.toUpperCase();
+        console.log('Ruhsat Seri dolduruluyor:', ocrResult.registration_serial);
+      }
+      if (ocrResult.registration_number) {
+        updatedVehicleForm.registration_number = ocrResult.registration_number;
+        console.log('Ruhsat No dolduruluyor:', ocrResult.registration_number);
+      }
+      if (ocrResult.brand_id) {
+        updatedVehicleForm.brand_id = ocrResult.brand_id.toString();
+        console.log('Marka ID dolduruluyor:', ocrResult.brand_id);
+        // Marka seçildiğinde modelleri de yükle
+        await handleBrandChange(ocrResult.brand_id.toString());
+        if (ocrResult.model_id) {
+          updatedVehicleForm.model_id = ocrResult.model_id.toString();
+          console.log('Model ID dolduruluyor:', ocrResult.model_id);
+        }
+      }
+      if (ocrResult.model_year) {
+        updatedVehicleForm.model_year = ocrResult.model_year.toString();
+        console.log('Model Yılı dolduruluyor:', ocrResult.model_year);
+        // Paketleri filtrele
+        const usageType = ocrResult.usage_type || vehicleForm.usage_type;
+        filterPackagesByVehicle(ocrResult.model_year.toString(), usageType);
+      }
+      if (ocrResult.usage_type) {
+        updatedVehicleForm.usage_type = ocrResult.usage_type;
+        console.log('Kullanım Tipi dolduruluyor:', ocrResult.usage_type);
+        // Paketleri filtrele
+        const modelYear = ocrResult.model_year?.toString() || vehicleForm.model_year || '';
+        if (modelYear) {
+          filterPackagesByVehicle(modelYear, ocrResult.usage_type);
+        }
+      }
+      
+      if (Object.keys(updatedVehicleForm).length > 0) {
+        setVehicleForm(prev => ({ ...prev, ...updatedVehicleForm }));
+        console.log('Araç formu güncellendi:', updatedVehicleForm);
+      }
+
+      // Başarı mesajı
+      const foundFields = [];
+      if (ocrResult.tc_vkn) foundFields.push('TC Kimlik');
+      if (ocrResult.name || ocrResult.surname) foundFields.push('Ad/Soyad');
+      if (ocrResult.address) foundFields.push('Adres');
+      if (ocrResult.plate) foundFields.push('Plaka');
+      if (ocrResult.registration_serial || ocrResult.registration_number) foundFields.push('Ruhsat');
+      if (ocrResult.brand_id) foundFields.push('Marka');
+      if (ocrResult.model_id) foundFields.push('Model');
+      if (ocrResult.model_year) foundFields.push('Model Yılı');
+
+      if (foundFields.length > 0) {
+        toast.success(`${foundFields.join(', ')} bilgileri otomatik dolduruldu. Lütfen kontrol edin.`);
+      } else {
+        toast.warning('Ruhsat fotoğrafından bilgi çıkarılamadı. Lütfen manuel girin.');
+      }
+
+      // Eşleşmeyen marka/model uyarısı
+      if (ocrResult.brand_id && !ocrResult.model_id) {
+        toast.info('Marka bulundu ancak model eşleşmedi. Lütfen modeli manuel seçin.');
+      }
+
+      // Başarılı OCR sonrası modal'ı kapat
+      setOcrModalOpen(false);
+
+    } catch (error: any) {
+      console.error('OCR hatası:', error);
+      toast.error(`OCR işlemi başarısız: ${error.message || 'Bilinmeyen hata'}`);
+    } finally {
+      setOcrLoading(false);
+      setOcrProgress(0);
+    }
+  };
+
   // Marka seçildiğinde modelleri getir
   const handleBrandChange = async (brandId: string) => {
     setVehicleForm({ ...vehicleForm, brand_id: brandId, model_id: '' });
+    setModelSearchQuery(''); // Marka değiştiğinde arama sorgusunu temizle
     if (brandId) {
       try {
         const models = await carModelService.getByBrandId(parseInt(brandId));
@@ -301,6 +500,26 @@ export default function NewSale() {
   // Satışı tamamla - Transaction ile tek seferde işlenir
   // Hata olursa hiçbir kayıt oluşturulmaz (müşteri, araç dahil)
   const handleSubmit = async () => {
+    // TC/VKN validasyonu
+    if (customerForm.tc_vkn) {
+      const isValid = customerForm.is_corporate 
+        ? validateVKN(customerForm.tc_vkn)
+        : validateTCKN(customerForm.tc_vkn);
+      
+      if (!isValid) {
+        setTcVknError(
+          customerForm.is_corporate 
+            ? 'Geçersiz Vergi Kimlik Numarası!'
+            : 'Geçersiz T.C. Kimlik Numarası!'
+        );
+        toast.error(
+          customerForm.is_corporate 
+            ? 'Geçersiz Vergi Kimlik Numarası! Lütfen doğru bir numara girin.'
+            : 'Geçersiz T.C. Kimlik Numarası! Lütfen doğru bir numara girin.'
+        );
+        return;
+      }
+    }
     if (!agreements.kvkk || !agreements.contract) {
       alert('Lütfen sözleşmeleri onaylayın');
       return;
@@ -379,14 +598,25 @@ export default function NewSale() {
   return (
     <div className="space-y-6 pb-8 animate-fadeIn">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <Shield className="h-8 w-8 text-primary" />
-          Yeni Paket Satışı
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Müşteri bilgilerini girerek yeni paket satışı yapın
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Shield className="h-8 w-8 text-primary" />
+            Yeni Paket Satışı
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Müşteri bilgilerini girerek yeni paket satışı yapın
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setOcrModalOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <ImageIcon className="h-4 w-4" />
+          Ruhsat OCR
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -407,12 +637,16 @@ export default function NewSale() {
               </div>
               <Switch
                 checked={customerForm.is_corporate}
-                onCheckedChange={(checked) => setCustomerForm({ 
-                  ...customerForm, 
-                  is_corporate: checked,
-                  surname: checked ? '' : customerForm.surname,
-                  tax_office: checked ? customerForm.tax_office : '',
-                })}
+                onCheckedChange={(checked) => {
+                  setCustomerForm({ 
+                    ...customerForm, 
+                    is_corporate: checked,
+                    tc_vkn: '', // TC/VKN'i temizle
+                    surname: checked ? '' : customerForm.surname,
+                    tax_office: checked ? customerForm.tax_office : '',
+                  });
+                  setTcVknError(''); // Validasyon hatasını temizle
+                }}
               />
             </div>
 
@@ -422,12 +656,46 @@ export default function NewSale() {
                 {customerForm.is_corporate ? 'Vergi Kimlik No' : 'T.C. Kimlik No'} <span className="text-red-500">*</span>
               </Label>
               <div className="flex gap-2">
-                <Input
-                  value={customerForm.tc_vkn}
-                  onChange={(e) => setCustomerForm({ ...customerForm, tc_vkn: e.target.value })}
-                  placeholder={customerForm.is_corporate ? 'Vergi Kimlik Numarası' : 'T.C. Kimlik Numarası'}
-                  maxLength={11}
-                />
+                <div className="flex-1">
+                  <Input
+                    value={customerForm.tc_vkn}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, ''); // Sadece rakam
+                      const maxLength = customerForm.is_corporate ? 10 : 11;
+                      const newValue = value.slice(0, maxLength);
+                      
+                      setCustomerForm({ ...customerForm, tc_vkn: newValue });
+                      
+                      // Validasyon kontrolü
+                      if (newValue.length === maxLength) {
+                        const isValid = customerForm.is_corporate 
+                          ? validateVKN(newValue)
+                          : validateTCKN(newValue);
+                        
+                        if (!isValid) {
+                          setTcVknError(
+                            customerForm.is_corporate 
+                              ? 'Geçersiz Vergi Kimlik Numarası!'
+                              : 'Geçersiz T.C. Kimlik Numarası!'
+                          );
+                        } else {
+                          setTcVknError('');
+                        }
+                      } else {
+                        setTcVknError('');
+                      }
+                    }}
+                    placeholder={customerForm.is_corporate ? 'Vergi Kimlik Numarası (10 haneli)' : 'T.C. Kimlik Numarası (11 haneli)'}
+                    maxLength={customerForm.is_corporate ? 10 : 11}
+                    className={tcVknError ? 'border-red-500' : ''}
+                  />
+                  {tcVknError && (
+                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {tcVknError}
+                    </p>
+                  )}
+                </div>
                 <Button 
                   variant="outline" 
                   size="icon"
@@ -658,18 +926,49 @@ export default function NewSale() {
               <Label className="text-sm">Araç Model <span className="text-red-500">*</span></Label>
               <Select
                 value={vehicleForm.model_id}
-                onValueChange={(value) => setVehicleForm({ ...vehicleForm, model_id: value })}
+                onValueChange={(value) => {
+                  setVehicleForm({ ...vehicleForm, model_id: value });
+                  setModelSearchQuery(''); // Seçim yapıldığında arama sorgusunu temizle
+                }}
                 disabled={!vehicleForm.brand_id}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Önce Marka Seçiniz" />
                 </SelectTrigger>
                 <SelectContent>
-                  {carModels.map((model) => (
-                    <SelectItem key={model.id} value={model.id.toString()}>
-                      {model.name}
-                    </SelectItem>
-                  ))}
+                  {/* Model arama input'u */}
+                  <div className="sticky top-0 z-10 bg-background p-2 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Model ara..."
+                        value={modelSearchQuery}
+                        onChange={(e) => setModelSearchQuery(e.target.value)}
+                        className="pl-8"
+                        onClick={(e) => e.stopPropagation()} // Select'in kapanmasını engelle
+                        onKeyDown={(e) => e.stopPropagation()} // Select'in kapanmasını engelle
+                      />
+                    </div>
+                  </div>
+                  {/* Filtrelenmiş modeller */}
+                  <div className="max-h-[300px] overflow-y-auto">
+                    {carModels
+                      .filter((model) =>
+                        model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                      )
+                      .map((model) => (
+                        <SelectItem key={model.id} value={model.id.toString()}>
+                          {model.name}
+                        </SelectItem>
+                      ))}
+                    {carModels.filter((model) =>
+                      model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                    ).length === 0 && (
+                      <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                        Model bulunamadı
+                      </div>
+                    )}
+                  </div>
                 </SelectContent>
               </Select>
             </div>
@@ -977,6 +1276,105 @@ export default function NewSale() {
           </CardContent>
         </Card>
       </div>
+
+      {/* OCR Modal */}
+      <Dialog open={ocrModalOpen} onOpenChange={setOcrModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Ruhsat Fotoğrafı Yükle ve OCR Yap</DialogTitle>
+            <DialogDescription>
+              Ruhsat fotoğrafını yükleyin, OCR ile bilgileri otomatik olarak doldurun.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            {photoPreview ? (
+              <div className="relative">
+                <div className="border rounded-lg p-4">
+                  <img 
+                    src={photoPreview} 
+                    alt="Ruhsat önizleme" 
+                    className="w-full h-64 object-contain rounded border bg-muted"
+                  />
+                  <div className="mt-4 flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setRegistrationPhoto(null);
+                        setPhotoPreview(null);
+                      }}
+                      className="flex-1"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Kaldır
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      onClick={handleOcrExtraction}
+                      disabled={ocrLoading || !registrationPhoto}
+                      className="flex-1"
+                    >
+                      {ocrLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          OCR İşleniyor...
+                        </>
+                      ) : (
+                        <>
+                          <ImageIcon className="h-4 w-4 mr-2" />
+                          OCR ile Doldur
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  {ocrLoading && (
+                    <div className="mt-4">
+                      <div className="w-full bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${ocrProgress}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        Ruhsat fotoğrafı analiz ediliyor... {Math.round(ocrProgress)}%
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                <ImageIcon className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <Label htmlFor="registration-photo-modal" className="cursor-pointer">
+                  <Button type="button" variant="outline" size="lg" asChild>
+                    <span>
+                      <Upload className="h-5 w-5 mr-2" />
+                      Ruhsat Fotoğrafı Yükle
+                    </span>
+                  </Button>
+                </Label>
+                <Input
+                  id="registration-photo-modal"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+                <p className="text-sm text-muted-foreground mt-4">
+                  PNG, JPG veya JPEG formatında ruhsat fotoğrafı yükleyin (Max 10MB)
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Fotoğraf net ve okunabilir olmalıdır
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Basari Modali */}
       <Dialog open={successModal.open} onOpenChange={(open) => !open && navigate('/dashboard/sales')}>

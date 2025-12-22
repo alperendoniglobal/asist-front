@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/types';
 import { 
   Mail, Lock, LogIn, AlertTriangle, 
   Car, Users, CreditCard, TrendingUp 
@@ -28,7 +29,13 @@ export default function Login() {
 
     try {
       await login(formData.email, formData.password);
-      navigate('/dashboard');
+      // SUPPORT rolü için özel yönlendirme
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (storedUser.role === UserRole.SUPPORT) {
+        navigate('/dashboard/support/sales');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
     } finally {

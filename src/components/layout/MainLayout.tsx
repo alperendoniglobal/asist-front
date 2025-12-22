@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"
 import { 
   LayoutDashboard, Building2, Users, UserCircle, Car, Package, 
@@ -48,6 +48,18 @@ export function MainLayout() {
   const { theme, setTheme } = useTheme()
   const { user, logout } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // SUPPORT rolü için SupportLayout'a yönlendir
+  useEffect(() => {
+    if (user?.role === UserRole.SUPPORT) {
+      navigate('/dashboard/support/sales', { replace: true });
+    }
+  }, [user?.role, navigate]);
+
+  // SUPPORT rolü ise hiçbir şey render etme
+  if (user?.role === UserRole.SUPPORT) {
+    return null;
+  }
 
   // Kullanicinin gorebilecegi menuler
   const visibleMenuItems = menuItems.filter(item => 

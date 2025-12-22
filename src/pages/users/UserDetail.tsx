@@ -74,6 +74,7 @@ export default function UserDetail() {
     phone: '',
     password: '',
     role: UserRole.BRANCH_USER as UserRole,
+    agency_id: '',
     branch_id: ''
   });
 
@@ -105,6 +106,7 @@ export default function UserDetail() {
         phone: userData.phone || '',
         password: '',
         role: userData.role,
+        agency_id: userData.agency_id || '',
         branch_id: userData.branch_id || ''
       });
     } catch (error) {
@@ -131,11 +133,17 @@ export default function UserDetail() {
     try {
       setSaving(true);
       const { password, ...updateData } = formData;
-      await userService.update(id, password ? formData : updateData);
+      // SUPPORT rolü global bir rol olduğu için agency_id ve branch_id boş olmalı
+      const finalUpdateData = formData.role === UserRole.SUPPORT
+        ? { ...updateData, agency_id: '', branch_id: '' }
+        : updateData;
+      await userService.update(id, password ? { ...formData, ...finalUpdateData } : finalUpdateData);
       await fetchUserDetail();
       setIsEditMode(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Kullanici guncellenirken hata:', error);
+      // Hata mesajını kullanıcıya göster (örn: toast notification)
+      alert(error?.response?.data?.message || error?.message || 'Kullanici guncellenirken bir hata olustu');
     } finally {
       setSaving(false);
     }
@@ -191,6 +199,8 @@ export default function UserDetail() {
         return 'Sube Yoneticisi';
       case UserRole.BRANCH_USER:
         return 'Kullanici';
+      case UserRole.SUPPORT:
+        return 'Destek Ekibi';
       default:
         return role;
     }
@@ -207,15 +217,18 @@ export default function UserDetail() {
         return 'secondary';
       case UserRole.BRANCH_USER:
         return 'outline';
+      case UserRole.SUPPORT:
+        return 'default'; // Destek ekibi için özel renk
       default:
         return 'outline';
     }
   };
 
   // Kullanilabilir roller
+  // SUPPORT rolü sadece SUPER_ADMIN tarafından oluşturulabilir
   const getAvailableRoles = () => {
     if (isSuperAdmin) {
-      return [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
+      return [UserRole.SUPER_ADMIN, UserRole.SUPPORT, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
     }
     if (isAgencyAdmin) {
       return [UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
@@ -233,6 +246,7 @@ export default function UserDetail() {
         phone: user.phone || '',
         password: '',
         role: user.role,
+        agency_id: user.agency_id || '',
         branch_id: user.branch_id || ''
       });
     }
@@ -389,7 +403,15 @@ export default function UserDetail() {
                     <Label>Rol</Label>
                     <Select
                       value={formData.role}
-                      onValueChange={(value) => setFormData({ ...formData, role: value as UserRole })}
+                      onValueChange={(value) => {
+                        const newRole = value as UserRole;
+                        // SUPPORT rolü seçildiğinde acente ve şube bilgilerini temizle (global rol)
+                        if (newRole === UserRole.SUPPORT) {
+                          setFormData({ ...formData, role: newRole, agency_id: '', branch_id: '' });
+                        } else {
+                          setFormData({ ...formData, role: newRole });
+                        }
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -403,25 +425,35 @@ export default function UserDetail() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Sube</Label>
-                    <Select
-                      value={formData.branch_id || "none"}
-                      onValueChange={(value) => setFormData({ ...formData, branch_id: value === "none" ? "" : value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sube secin" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sube yok</SelectItem>
-                        {branches.map((branch) => (
-                          <SelectItem key={branch.id} value={branch.id}>
-                            {branch.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* SUPPORT rolü global bir rol olduğu için şube seçimi gerekmez */}
+                  {formData.role !== UserRole.SUPPORT && (
+                    <div className="space-y-2">
+                      <Label>Sube</Label>
+                      <Select
+                        value={formData.branch_id || "none"}
+                        onValueChange={(value) => setFormData({ ...formData, branch_id: value === "none" ? "" : value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sube secin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sube yok</SelectItem>
+                          {branches.map((branch) => (
+                            <SelectItem key={branch.id} value={branch.id}>
+                              {branch.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {/* SUPPORT rolü bilgilendirmesi */}
+                  {formData.role === UserRole.SUPPORT && (
+                    <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
+                      <p className="font-medium">Destek Ekibi Rolü</p>
+                      <p className="text-xs mt-1">Bu rol global bir roldür ve acente/şube ataması gerektirmez. Tüm sistem verilerine erişim sağlar.</p>
+                    </div>
+                  )}
                 </>
               ) : (
                 // Goruntuleme modu
