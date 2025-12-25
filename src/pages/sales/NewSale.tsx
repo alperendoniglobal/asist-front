@@ -11,14 +11,14 @@ import {
 } from '@/components/ui/select';
 import { 
   customerService, packageService, saleService,
-  carBrandService, carModelService, agencyService, pdfService
+  carBrandService, carModelService, motorBrandService, motorModelService, agencyService, pdfService
 } from '@/services/apiService';
 import { contentService } from '@/services/contentService';
 import { extractRegistrationInfo } from '@/services/ocrService';
 import { toast } from 'sonner';
 import { validateTCKN, validateVKN } from '@/utils/validators';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Customer, Package, CarBrand, CarModel, Sale, Agency } from '@/types';
+import type { Customer, Package, CarBrand, CarModel, MotorBrand, MotorModel, Sale, Agency } from '@/types';
 import { PaymentType, UserRole } from '@/types';
 import { 
   User, Car, CreditCard, Wallet, Package as PackageIcon,
@@ -64,11 +64,31 @@ export default function NewSale() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [carBrands, setCarBrands] = useState<CarBrand[]>([]);
   const [carModels, setCarModels] = useState<CarModel[]>([]);
+  const [motorBrands, setMotorBrands] = useState<MotorBrand[]>([]);
+  const [motorModels, setMotorModels] = useState<MotorModel[]>([]);
   const [modelSearchQuery, setModelSearchQuery] = useState(''); // Model arama sorgusu
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentType>(PaymentType.IYZICO);
   const [agreements, setAgreements] = useState({ kvkk: false, contract: false });
   const [currentAgency, setCurrentAgency] = useState<Agency | null>(null);
+  
+  // Araç tipi seçimi (en başta seçilecek)
+  const [selectedVehicleType, setSelectedVehicleType] = useState<string>('');
+  
+  // Araç tipleri listesi
+  const VEHICLE_TYPES = [
+    { value: 'Motosiklet', label: 'Motosiklet' },
+    { value: 'Otomobil', label: 'Otomobil' },
+    { value: 'Minibüs', label: 'Minibüs' },
+    { value: 'Midibüs', label: 'Midibüs' },
+    { value: 'Kamyonet', label: 'Kamyonet' },
+    { value: 'Taksi', label: 'Taksi' },
+    { value: 'Kamyon', label: 'Kamyon' },
+    { value: 'Çekici', label: 'Çekici' },
+  ];
+  
+  // Seçilen araç tipine göre motor mu car mı?
+  const isMotorcycle = selectedVehicleType === 'Motosiklet';
   
   // Araç bilgilerine göre filtrelenmiş paketler
   const [filteredPackages, setFilteredPackages] = useState<Package[]>([]);
@@ -147,13 +167,15 @@ export default function NewSale() {
 
   const fetchInitialData = async () => {
     try {
-      const [packagesData, brandsData] = await Promise.all([
+      const [packagesData, carBrandsData, motorBrandsData] = await Promise.all([
         packageService.getAll(),
         carBrandService.getAll(),
+        motorBrandService.getAll(),
       ]);
       // Status ACTIVE olan paketleri filtrele
       setPackages(packagesData.filter(p => p.status === 'ACTIVE'));
-      setCarBrands(brandsData);
+      setCarBrands(carBrandsData);
+      setMotorBrands(motorBrandsData);
 
       // Kullanıcının acentesini çek (komisyon oranı için)
       if (user?.agency_id) {
@@ -213,38 +235,85 @@ export default function NewSale() {
     }
   };
 
-  // Araç yaşı ve kullanım tarzına göre paketleri filtrele
-  const filterPackagesByVehicle = (modelYear: string, usageType: string) => {
-    if (!modelYear) {
+  // Araç yaşı, kullanım tarzı ve araç tipine göre paketleri filtrele
+  const filterPackagesByVehicleAndType = (modelYear: string, usageType: string, vehicleType?: string) => {
+    if (!modelYear || !selectedVehicleType) {
       setFilteredPackages([]);
       return;
     }
 
     const currentYear = new Date().getFullYear();
     const vehicleAge = currentYear - parseInt(modelYear);
+    const typeToFilter = vehicleType || selectedVehicleType;
 
-    // Kullanım tarzı mapping: PRIVATE -> Hususi, COMMERCIAL -> Ticari, TAXI -> Taksi
-    const usageTypeMapping: { [key: string]: string[] } = {
-      'PRIVATE': ['Hususi', 'Otomobil', 'Binek'],
-      'COMMERCIAL': ['Ticari', 'Kamyon', 'Kamyonet', 'Minibüs'],
-      'TAXI': ['Taksi', 'Ticari'],
-    };
-
-    const matchingKeywords = usageTypeMapping[usageType] || [];
+    const isMotorcycle = typeToFilter === 'Motosiklet';
 
     const filtered = packages.filter(pkg => {
-      // Araç yaşı kontrolü - max_vehicle_age'den küçük veya eşit olmalı
-      const ageOk = vehicleAge <= (pkg.max_vehicle_age || 999);
+      // 1. Araç tipi kontrolü - seçilen araç tipi ile eşleşmeli
+      const typeMatch = pkg.vehicle_type === typeToFilter;
+      if (!typeMatch) return false;
       
-      // Kullanım tarzı kontrolü - vehicle_type içinde arama yap (opsiyonel)
-      // Eğer matchingKeywords boşsa tüm paketler gösterilir
-      const typeOk = matchingKeywords.length === 0 || 
-        matchingKeywords.some(keyword => 
-          pkg.vehicle_type?.toLowerCase().includes(keyword.toLowerCase()) ||
-          pkg.name?.toLowerCase().includes(keyword.toLowerCase())
-        );
+      // 2. Araç yaşı kontrolü - max_vehicle_age'den küçük veya eşit olmalı
+      const ageOk = vehicleAge <= (pkg.max_vehicle_age || 999);
+      if (!ageOk) return false;
+      
+      // 3. Kullanım tarzı kontrolü (Motosiklet için kontrol yapılmaz)
+      if (isMotorcycle) {
+        return true; // Motosiklet için tüm paketler geçerli
+      }
 
-      return ageOk && typeOk;
+      // Paket adı ve vehicle_type'ı normalize et (küçük harfe çevir)
+      const pkgName = (pkg.name || '').toLowerCase();
+      const pkgVehicleType = (pkg.vehicle_type || '').toLowerCase();
+      const combinedText = `${pkgName} ${pkgVehicleType}`;
+
+      // Paket adında kullanım tarzı belirtilmiş mi kontrol et
+      const hasHususi = combinedText.includes('hususi');
+      const hasTicari = combinedText.includes('ticari');
+      const hasTaksi = combinedText.includes('taksi');
+      const hasOtomobil = combinedText.includes('otomobil') || combinedText.includes('binek');
+      
+      // Kullanım tarzı belirtilmiş mi?
+      const hasUsageTypeSpecified = hasHususi || hasTicari || hasTaksi;
+
+      // Kullanım tarzına göre kontrol
+      if (usageType === 'PRIVATE') {
+        // Hususi için:
+        // - Paket adında "Hususi", "Otomobil", "Binek" varsa -> Kabul et
+        // - Paket adında kullanım tarzı belirtilmemişse (sadece araç tipi) -> Kabul et
+        // - Paket adında "Ticari" veya "Taksi" varsa -> Reddet
+        if (hasTicari || hasTaksi) {
+          return false; // Ticari/Taksi paketleri Hususi için uygun değil
+        }
+        if (hasHususi || hasOtomobil) {
+          return true; // Hususi/Otomobil paketleri uygun
+        }
+        // Kullanım tarzı belirtilmemişse, sadece araç tipi varsa kabul et
+        return !hasUsageTypeSpecified;
+      } 
+      
+      if (usageType === 'COMMERCIAL') {
+        // Ticari için:
+        // - Paket adında "Ticari" varsa -> Kabul et
+        // - Paket adında kullanım tarzı belirtilmemişse (sadece araç tipi) -> Kabul et
+        // - Paket adında "Hususi" varsa -> Reddet (ama Otomobil/Binek olabilir, çünkü onlar da ticari olabilir)
+        if (hasTicari) {
+          return true; // Ticari paketleri uygun
+        }
+        if (hasHususi && !hasOtomobil) {
+          return false; // Sadece Hususi varsa (Otomobil değilse) reddet
+        }
+        // Kullanım tarzı belirtilmemişse, sadece araç tipi varsa kabul et
+        return !hasUsageTypeSpecified;
+      }
+      
+      if (usageType === 'TAXI') {
+        // Taksi için: Paket adında "Taksi" veya "Ticari" olmalı
+        return hasTaksi || hasTicari;
+      }
+
+      // Diğer durumlar için true döndür (güvenlik için)
+      return true;
     });
 
     setFilteredPackages(filtered);
@@ -261,16 +330,25 @@ export default function NewSale() {
     }
   };
 
+  // Eski fonksiyon - geriye dönük uyumluluk için
+  const filterPackagesByVehicle = (modelYear: string, usageType: string) => {
+    filterPackagesByVehicleAndType(modelYear, usageType);
+  };
+
   // Model yılı değiştiğinde paketleri filtrele
   const handleModelYearChange = (year: string) => {
     setVehicleForm({ ...vehicleForm, model_year: year });
-    filterPackagesByVehicle(year, vehicleForm.usage_type);
+    if (selectedVehicleType) {
+      filterPackagesByVehicleAndType(year, vehicleForm.usage_type);
+    }
   };
 
   // Kullanım tarzı değiştiğinde paketleri filtrele
   const handleUsageTypeChange = (usageType: string) => {
     setVehicleForm({ ...vehicleForm, usage_type: usageType });
-    filterPackagesByVehicle(vehicleForm.model_year, usageType);
+    if (selectedVehicleType && vehicleForm.model_year) {
+      filterPackagesByVehicleAndType(vehicleForm.model_year, usageType);
+    }
   };
 
   // KVKK Modal açma ve içerik çekme
@@ -493,20 +571,47 @@ export default function NewSale() {
     }
   };
 
-  // Marka seçildiğinde modelleri getir
+  // Araç tipi seçildiğinde marka/model listesini sıfırla ve paketleri filtrele
+  const handleVehicleTypeChange = (vehicleType: string) => {
+    setSelectedVehicleType(vehicleType);
+    // Form verilerini sıfırla
+    setVehicleForm({ ...vehicleForm, brand_id: '', model_id: '' });
+    setCarModels([]);
+    setMotorModels([]);
+    setSelectedPackage(null);
+    setSaleForm({ ...saleForm, package_id: '', price: 0, commission: 0 });
+    
+    // Model yılı ve kullanım tarzı varsa paketleri filtrele
+    if (vehicleForm.model_year && vehicleForm.usage_type) {
+      filterPackagesByVehicleAndType(vehicleForm.model_year, vehicleForm.usage_type, vehicleType);
+    }
+  };
+
+  // Marka seçildiğinde modelleri getir (araç tipine göre motor veya car)
   const handleBrandChange = async (brandId: string) => {
     setVehicleForm({ ...vehicleForm, brand_id: brandId, model_id: '' });
     setModelSearchQuery(''); // Marka değiştiğinde arama sorgusunu temizle
     if (brandId) {
       try {
-        const models = await carModelService.getByBrandId(parseInt(brandId));
-        setCarModels(models);
+        if (isMotorcycle) {
+          // Motosiklet için motor modellerini getir
+          const models = await motorModelService.getByBrandId(parseInt(brandId));
+          setMotorModels(models);
+          setCarModels([]); // Car modellerini temizle
+        } else {
+          // Diğer araç tipleri için car modellerini getir
+          const models = await carModelService.getByBrandId(parseInt(brandId));
+          setCarModels(models);
+          setMotorModels([]); // Motor modellerini temizle
+        }
       } catch (error) {
         console.error('Modeller yüklenirken hata:', error);
         setCarModels([]);
+        setMotorModels([]);
       }
     } else {
       setCarModels([]);
+      setMotorModels([]);
     }
   };
 
@@ -591,14 +696,21 @@ export default function NewSale() {
         },
         // Araç bilgileri
         vehicle: {
-        is_foreign_plate: vehicleForm.is_foreign_plate,
-        plate: vehicleForm.plate.toUpperCase(),
+          vehicle_type: selectedVehicleType, // Araç tipi: Motosiklet, Otomobil, vs.
+          is_foreign_plate: vehicleForm.is_foreign_plate,
+          plate: vehicleForm.plate.toUpperCase(),
           registration_serial: vehicleForm.registration_serial.toUpperCase() || undefined,
           registration_number: vehicleForm.registration_number || undefined,
-        brand_id: parseInt(vehicleForm.brand_id),
-        model_id: parseInt(vehicleForm.model_id),
-        model_year: parseInt(vehicleForm.model_year),
-        usage_type: vehicleForm.usage_type,
+          // Motosiklet için motor_brand_id ve motor_model_id, otomobil için brand_id ve model_id
+          ...(isMotorcycle ? {
+            motor_brand_id: parseInt(vehicleForm.brand_id),
+            motor_model_id: parseInt(vehicleForm.model_id),
+          } : {
+            brand_id: parseInt(vehicleForm.brand_id),
+            model_id: parseInt(vehicleForm.model_id),
+          }),
+          model_year: parseInt(vehicleForm.model_year),
+          usage_type: vehicleForm.usage_type,
         },
         // Satış bilgileri
         sale: {
@@ -898,6 +1010,26 @@ export default function NewSale() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Araç Tipi Seçimi - EN BAŞTA */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Araç Tipi <span className="text-red-500">*</span></Label>
+              <Select
+                value={selectedVehicleType}
+                onValueChange={handleVehicleTypeChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Araç Tipi Seçiniz" />
+                </SelectTrigger>
+                <SelectContent>
+                  {VEHICLE_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Yabancı Plaka Toggle */}
             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
               <div className="flex items-center gap-2">
@@ -945,22 +1077,33 @@ export default function NewSale() {
               </div>
             </div>
 
-            {/* Araç Marka */}
+            {/* Araç Marka - Araç tipine göre motor veya car */}
             <div className="space-y-2">
               <Label className="text-sm">Araç Marka <span className="text-red-500">*</span></Label>
               <Select
                 value={vehicleForm.brand_id}
                 onValueChange={handleBrandChange}
+                disabled={!selectedVehicleType}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Marka Seçiniz" />
+                  <SelectValue placeholder={selectedVehicleType ? "Marka Seçiniz" : "Önce Araç Tipi Seçiniz"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {carBrands.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id.toString()}>
-                      {brand.name}
-                    </SelectItem>
-                  ))}
+                  {isMotorcycle ? (
+                    // Motosiklet için motor markaları
+                    motorBrands.map((brand) => (
+                      <SelectItem key={brand.id} value={brand.id.toString()}>
+                        {brand.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    // Diğer araç tipleri için car markaları
+                    carBrands.map((brand) => (
+                      <SelectItem key={brand.id} value={brand.id.toString()}>
+                        {brand.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -994,20 +1137,32 @@ export default function NewSale() {
                       />
                     </div>
                   </div>
-                  {/* Filtrelenmiş modeller */}
+                  {/* Filtrelenmiş modeller - Paket tipine göre motor veya car */}
                   <div className="max-h-[300px] overflow-y-auto">
-                    {carModels
-                      .filter((model) =>
-                        model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
-                      )
-                      .map((model) => (
-                        <SelectItem key={model.id} value={model.id.toString()}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                    {carModels.filter((model) =>
-                      model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
-                    ).length === 0 && (
+                    {isMotorcycle ? (
+                      // Motosiklet için motor modelleri
+                      motorModels
+                        .filter((model) =>
+                          model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                        )
+                        .map((model) => (
+                          <SelectItem key={model.id} value={model.id.toString()}>
+                            {model.name}
+                          </SelectItem>
+                        ))
+                    ) : (
+                      // Diğer araç tipleri için car modelleri
+                      carModels
+                        .filter((model) =>
+                          model.name.toLowerCase().includes(modelSearchQuery.toLowerCase())
+                        )
+                        .map((model) => (
+                          <SelectItem key={model.id} value={model.id.toString()}>
+                            {model.name}
+                          </SelectItem>
+                        ))
+                    )}
+                    {((isMotorcycle && motorModels.length === 0) || (!isMotorcycle && carModels.length === 0)) && (
                       <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                         Model bulunamadı
                       </div>
@@ -1111,15 +1266,17 @@ export default function NewSale() {
               <Select
                 value={saleForm.package_id}
                 onValueChange={handlePackageChange}
-                disabled={!vehicleForm.model_year || filteredPackages.length === 0}
+                disabled={!selectedVehicleType || !vehicleForm.model_year || filteredPackages.length === 0}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={
-                    !vehicleForm.model_year 
-                      ? "Önce model yılı seçin" 
-                      : filteredPackages.length === 0 
-                        ? "Bu araç için uygun paket yok" 
-                        : "Paket Seçiniz"
+                    !selectedVehicleType 
+                      ? "Önce araç tipi seçin" 
+                      : !vehicleForm.model_year 
+                        ? "Önce model yılı seçin" 
+                        : filteredPackages.length === 0 
+                          ? "Bu araç için uygun paket yok" 
+                          : "Paket Seçiniz"
                   } />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">

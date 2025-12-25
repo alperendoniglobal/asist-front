@@ -670,9 +670,9 @@ export default function Sales() {
                         )
                       ) : (
                         // Şube yoksa: Sadece acente komisyonu göster
-                        <div className="flex justify-between">
-                          <span>Komisyon:</span>
-                          <span className="font-semibold text-emerald-600">{formatCurrency(formData.commission)}</span>
+                    <div className="flex justify-between">
+                      <span>Komisyon:</span>
+                      <span className="font-semibold text-emerald-600">{formatCurrency(formData.commission)}</span>
                         </div>
                       )}
                     </div>
@@ -1012,8 +1012,8 @@ export default function Sales() {
                       ) : (
                         // Şube yoksa: Sadece acente komisyonu göster
                         <>
-                          <div className="text-muted-foreground mb-1 text-xs">Komisyon</div>
-                          <p className="font-bold text-lg text-emerald-600">{formatCurrency(selectedSale?.commission || 0)}</p>
+                      <div className="text-muted-foreground mb-1 text-xs">Komisyon</div>
+                      <p className="font-bold text-lg text-emerald-600">{formatCurrency(selectedSale?.commission || 0)}</p>
                         </>
                       )}
                     </div>

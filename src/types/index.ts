@@ -126,6 +126,23 @@ export interface CarModel {
   updated_at: string;
 }
 
+export interface MotorBrand {
+  id: number;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  models?: MotorModel[];
+}
+
+export interface MotorModel {
+  id: number;
+  brand_id: number;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  brand?: MotorBrand;
+}
+
 // Entity durumu enum'u - Backend ile senkronize
 export enum EntityStatus {
   ACTIVE = 'ACTIVE',

@@ -15,6 +15,8 @@ import type {
   DashboardStats,
   CarBrand,
   CarModel,
+  MotorBrand,
+  MotorModel,
   RefundCalculation
 } from '../types';
 
@@ -237,12 +239,15 @@ export const saleService = {
       address?: string;
     };
     vehicle: {
+      vehicle_type: string; // Araç tipi: Otomobil, Motosiklet, vs.
       is_foreign_plate: boolean;
       plate: string;
       registration_serial?: string;
       registration_number?: string;
-      brand_id: number;
-      model_id: number;
+      brand_id?: number; // Otomobil için
+      model_id?: number; // Otomobil için
+      motor_brand_id?: number; // Motosiklet için
+      motor_model_id?: number; // Motosiklet için
       model_year: number;
       usage_type: string;
     };
@@ -404,6 +409,45 @@ export const carModelService = {
 
   async getByBrandId(brandId: number): Promise<CarModel[]> {
     const response = await apiClient.get<ApiResponse<CarModel[]>>(`/car-models/brand/${brandId}`);
+    return response.data.data;
+  }
+};
+
+// Motor Brand Service
+export const motorBrandService = {
+  async getAll(): Promise<MotorBrand[]> {
+    const response = await apiClient.get<ApiResponse<MotorBrand[]>>('/motor-brands');
+    return response.data.data;
+  },
+
+  async getById(id: number): Promise<MotorBrand> {
+    const response = await apiClient.get<ApiResponse<MotorBrand>>(`/motor-brands/${id}`);
+    return response.data.data;
+  }
+};
+
+// Motor Model Service
+export const motorModelService = {
+  async getAll(): Promise<MotorModel[]> {
+    const response = await apiClient.get<ApiResponse<MotorModel[]>>('/motor-models');
+    return response.data.data;
+  },
+
+  async getById(id: number): Promise<MotorModel | null> {
+    try {
+      const response = await apiClient.get<ApiResponse<MotorModel>>(`/motor-models/${id}`);
+      return response.data.data;
+    } catch (error: any) {
+      // Model bulunamazsa null döndür
+      if (error?.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  async getByBrandId(brandId: number): Promise<MotorModel[]> {
+    const response = await apiClient.get<ApiResponse<MotorModel[]>>(`/motor-models/brand/${brandId}`);
     return response.data.data;
   }
 };

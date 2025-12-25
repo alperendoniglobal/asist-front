@@ -126,10 +126,10 @@ export default function SupportFiles() {
         </div>
         <div className="flex gap-2">
           {canCreateFile && (
-            <Button onClick={() => navigate('/dashboard/support/files/create')} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Yeni Dosya
-            </Button>
+          <Button onClick={() => navigate('/dashboard/support/files/create')} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Yeni Dosya
+          </Button>
           )}
           <Button onClick={fetchFiles} variant="outline" className="gap-2">
             <RefreshCcw className="h-4 w-4" />
@@ -180,13 +180,13 @@ export default function SupportFiles() {
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground">Henüz dosya bulunmuyor</p>
               {canCreateFile && (
-                <Button
-                  onClick={() => navigate('/dashboard/support/files/create')}
-                  className="mt-4 gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  İlk Dosyayı Oluştur
-                </Button>
+              <Button
+                onClick={() => navigate('/dashboard/support/files/create')}
+                className="mt-4 gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                İlk Dosyayı Oluştur
+              </Button>
               )}
             </div>
           ) : (
@@ -405,8 +405,8 @@ export default function SupportFiles() {
                       <p className="font-medium">
                         {selectedFile.created_at ? formatDate(selectedFile.created_at) : '-'}
                       </p>
-                    </div>
-                    <div>
+                  </div>
+                  <div>
                       <p className="text-sm text-muted-foreground">Talep Tarihi</p>
                       <p className="font-medium">
                         {selectedFile.request_date_time ? formatDate(selectedFile.request_date_time) : '-'}

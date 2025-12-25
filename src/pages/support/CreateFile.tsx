@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { FilePlus, ArrowLeft, Search, Loader2, FileText, User, Car, MapPin, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { saleService, carModelService, packageService, supportFileService } from '@/services/apiService';
+import { saleService, carBrandService, carModelService, motorBrandService, motorModelService, packageService, supportFileService } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Sale } from '@/types';
 
@@ -138,10 +138,15 @@ export default function CreateFile() {
         const policyNumber = sale.policy_number || sale.id.slice(0, 8).toUpperCase();
         
         // Model adını çek (model null ise ama model_id varsa)
+        // Paket tipine göre motor veya car model servisini kullan
         let modelName = sale.vehicle?.model?.name || '';
+        const isMotorcyclePackage = sale.package?.vehicle_type === 'Motosiklet';
+        
         if (!modelName && sale.vehicle?.model_id) {
           try {
-            const model = await carModelService.getById(sale.vehicle.model_id);
+            const model = isMotorcyclePackage 
+              ? await motorModelService.getById(sale.vehicle.model_id)
+              : await carModelService.getById(sale.vehicle.model_id);
             if (model && model.name) {
               modelName = model.name;
             }
@@ -150,6 +155,21 @@ export default function CreateFile() {
             // Beklenmeyen hata durumunda log yaz ama devam et
             console.warn('Model adı çekilirken hata (model_id: ' + sale.vehicle.model_id + '):', error.message);
             // Model adı boş kalacak, kullanıcı manuel girebilir
+          }
+        }
+        
+        // Brand adını çek (brand null ise ama brand_id varsa)
+        let brandName = sale.vehicle?.brand?.name || '';
+        if (!brandName && sale.vehicle?.brand_id) {
+          try {
+            const brand = isMotorcyclePackage
+              ? await motorBrandService.getById(sale.vehicle.brand_id)
+              : await carBrandService.getById(sale.vehicle.brand_id);
+            if (brand && brand.name) {
+              brandName = brand.name;
+            }
+          } catch (error: any) {
+            console.warn('Brand adı çekilirken hata (brand_id: ' + sale.vehicle.brand_id + '):', error.message);
           }
         }
         
@@ -201,7 +221,7 @@ export default function CreateFile() {
           vehicle_plate: sale.vehicle?.plate || '',
           vehicle_model: modelName,
           model_year: sale.vehicle?.model_year?.toString() || '',
-          vehicle_brand: sale.vehicle?.brand?.name || (sale.vehicle?.brand_id ? `Brand ID: ${sale.vehicle.brand_id}` : ''),
+          vehicle_brand: brandName || sale.vehicle?.brand?.name || (sale.vehicle?.brand_id ? `Brand ID: ${sale.vehicle.brand_id}` : ''),
           vehicle_segment: sale.package?.vehicle_type || '',
         }));
         

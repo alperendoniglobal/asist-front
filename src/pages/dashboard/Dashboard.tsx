@@ -418,7 +418,11 @@ export default function Dashboard() {
               </div>
                 <div className="flex items-center gap-1.5 text-xs text-violet-100/70">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Kazanılan komisyon
+                  {user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER 
+                    ? 'Şube komisyonu' 
+                    : user?.role === UserRole.AGENCY_ADMIN 
+                    ? 'Acente komisyonu' 
+                    : 'Kazanılan komisyon'}
                 </div>
               </div>
               <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
