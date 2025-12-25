@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,8 +26,6 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage() {
-  const navigate = useNavigate();
-  
   // Backend'den çekilen veriler
   const [landingContent, setLandingContent] = useState<LandingPageContent | null>(null);
   const [banners, setBanners] = useState<LandingPageBanner[]>([]);
@@ -1155,20 +1153,20 @@ export default function LandingPage() {
                 {activePages.map((page) => {
                   const slugToPath: Record<string, string> = {
                     'about': '/about',
-                    'distance-sales-contract': '/mesafeli-satis-sozlesmesi',
-                    'privacy-policy': '/gizlilik-politikasi',
+                    'distance-sales-contract': '/distance-sales-contract',
+                    'privacy-policy': '/privacy-policy',
                     'kvkk': '/kvkk',
-                    'delivery-return': '/teslimat-ve-iade'
+                    'delivery-return': '/delivery-return'
                   };
                   const path = slugToPath[page.slug] || `/${page.slug}`;
                   return (
                     <li key={page.slug}>
-                      <button 
-                        onClick={() => navigate(path)} 
+                      <Link 
+                        to={path}
                         className="text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
                       >
                         {page.title}
-                      </button>
+                      </Link>
                     </li>
                   );
                 })}
@@ -1216,18 +1214,18 @@ export default function LandingPage() {
                   .filter(page => ['privacy-policy', 'distance-sales-contract'].includes(page.slug))
                   .map((page) => {
                     const slugToPath: Record<string, string> = {
-                      'distance-sales-contract': '/mesafeli-satis-sozlesmesi',
-                      'privacy-policy': '/gizlilik-politikasi'
+                      'distance-sales-contract': '/distance-sales-contract',
+                      'privacy-policy': '/privacy-policy'
                     };
                     const path = slugToPath[page.slug] || `/${page.slug}`;
                     return (
-                      <button 
+                      <Link 
                         key={page.slug}
-                        onClick={() => navigate(path)} 
+                        to={path}
                         className="text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
                       >
                         {page.slug === 'privacy-policy' ? 'Gizlilik Politikası' : page.slug === 'distance-sales-contract' ? 'Mesafeli Satış' : page.title}
-                      </button>
+                      </Link>
                     );
                   })}
               </div>
