@@ -19,9 +19,10 @@ import { branchService, agencyService } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Branch, Agency } from '@/types';
 import { UserRole } from '@/types';
+import { formatIBAN, validateIBAN } from '@/utils/validators';
 import { 
   Plus, Search, Edit, Trash2, Eye, GitBranch, 
-  RefreshCcw, Percent
+  RefreshCcw, Percent, CreditCard, CheckCircle2
 } from 'lucide-react';
 
 export default function Branches() {
@@ -40,7 +41,9 @@ export default function Branches() {
     agency_id: '',
     address: '',
     phone: '',
-    commission_rate: ''  // Zorunlu alan
+    commission_rate: '',  // Zorunlu alan
+    account_name: '', // Banka hesap adı
+    iban: '' // IBAN
   });
   
   // Seçili acentenin maksimum komisyon oranı (validasyon için)
@@ -89,12 +92,22 @@ export default function Branches() {
         return;
       }
       
+      // IBAN validasyonu - IBAN girildiyse geçerli format olmalı
+      if (formData.iban && formData.iban.trim().length > 0) {
+        if (!validateIBAN(formData.iban)) {
+          alert('Lütfen geçerli bir IBAN formatı giriniz (TR + 24 karakter)');
+          return;
+        }
+      }
+      
       const createData = {
         name: formData.name,
         agency_id: isSuperAdmin ? formData.agency_id : user?.agency_id,
         address: formData.address,
         phone: formData.phone,
-        commission_rate: commissionRate
+        commission_rate: commissionRate,
+        account_name: formData.account_name || null,
+        iban: formData.iban || null
       };
       
       await branchService.create(createData);
@@ -124,12 +137,22 @@ export default function Branches() {
         return;
       }
       
+      // IBAN validasyonu - IBAN girildiyse geçerli format olmalı
+      if (formData.iban && formData.iban.trim().length > 0) {
+        if (!validateIBAN(formData.iban)) {
+          alert('Lütfen geçerli bir IBAN formatı giriniz (TR + 24 karakter)');
+          return;
+        }
+      }
+      
       const updateData = {
         name: formData.name,
         agency_id: formData.agency_id,
         address: formData.address,
         phone: formData.phone,
-        commission_rate: commissionRate
+        commission_rate: commissionRate,
+        account_name: formData.account_name || null,
+        iban: formData.iban || null
       };
       
       await branchService.update(selectedBranch.id, updateData);
@@ -161,7 +184,9 @@ export default function Branches() {
       agency_id: branch.agency_id,
       address: branch.address,
       phone: branch.phone,
-      commission_rate: String(branch.commission_rate)
+      commission_rate: String(branch.commission_rate),
+      account_name: branch.account_name || '',
+      iban: branch.iban || ''
     });
     // Acentenin maksimum komisyon oranını ayarla
     if (branch.agency_max_commission) {
@@ -178,7 +203,9 @@ export default function Branches() {
       agency_id: '',
       address: '',
       phone: '',
-      commission_rate: ''
+      commission_rate: '',
+      account_name: '',
+      iban: ''
     });
     setSelectedBranch(null);
     setMaxCommissionRate(100);
@@ -386,7 +413,7 @@ export default function Branches() {
 
       {/* Yeni Sube Modal */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Yeni Sube</DialogTitle>
             <DialogDescription>Yeni sube kaydi olusturun</DialogDescription>
@@ -412,59 +439,113 @@ export default function Branches() {
                 </Select>
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="name">Sube Adi *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefon *</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="address">Adres</Label>
-              <Textarea
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                rows={3}
-              />
-            </div>
             
-            {/* Komisyon Oranı Alanı - ZORUNLU */}
-            <div className="space-y-3 p-4 rounded-lg border bg-purple-50/50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-700">
-              <Label className="text-sm font-medium flex items-center gap-2 text-purple-700 dark:text-purple-400">
-                <Percent className="h-4 w-4" />
-                Komisyon Orani *
-              </Label>
-              
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max={maxCommissionRate}
-                  placeholder="Orn: 20"
-                  value={formData.commission_rate}
-                  onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
-                  className="w-24"
-                  required
-                />
-                <span className="text-sm text-muted-foreground">%</span>
+            {/* İki Kolonlu Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Sol Kolon */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Sube Adi *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefon *</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Adres</Label>
+                  <Textarea
+                    id="address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    rows={3}
+                  />
+                </div>
               </div>
-              
-              <p className="text-xs text-muted-foreground">
-                Komisyon orani zorunludur ve acente komisyonundan
-                <span className="font-semibold text-purple-600 dark:text-purple-400"> (maks. %{maxCommissionRate}) </span>
-                fazla olamaz.
-              </p>
+
+              {/* Sağ Kolon */}
+              <div className="space-y-4">
+                {/* Komisyon Oranı Alanı - ZORUNLU */}
+                <div className="space-y-3 p-4 rounded-lg border bg-purple-50/50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-700">
+                  <Label className="text-sm font-medium flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                    <Percent className="h-4 w-4" />
+                    Komisyon Orani *
+                  </Label>
+                  
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max={maxCommissionRate}
+                      placeholder="Orn: 20"
+                      value={formData.commission_rate}
+                      onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
+                      className="w-24"
+                      required
+                    />
+                    <span className="text-sm text-muted-foreground">%</span>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    Komisyon orani zorunludur ve acente komisyonundan
+                    <span className="font-semibold text-purple-600 dark:text-purple-400"> (maks. %{maxCommissionRate}) </span>
+                    fazla olamaz.
+                  </p>
+                </div>
+
+                {/* Hesap Bilgileri */}
+                <div className="space-y-4 p-4 border rounded-lg bg-slate-50">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-slate-600" />
+                    <Label className="text-base font-semibold">Hesap Bilgileri</Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="account_name">Hesap Adı</Label>
+                    <Input
+                      id="account_name"
+                      value={formData.account_name}
+                      onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+                      placeholder="Banka hesap adı"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="iban">IBAN</Label>
+                    <Input
+                      id="iban"
+                      value={formData.iban}
+                      onChange={(e) => {
+                        const formatted = formatIBAN(e.target.value);
+                        setFormData({ ...formData, iban: formatted });
+                      }}
+                      placeholder="TR00 0000 0000 0000 0000 0000 00"
+                      maxLength={34}
+                    />
+                    {formData.iban && formData.iban.trim().length > 0 && (
+                      <div className="flex items-center gap-2 mt-1">
+                        {validateIBAN(formData.iban) ? (
+                          <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
+                            <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                            <span>Geçerli IBAN formatı</span>
+                          </div>
+                        ) : formData.iban.replace(/\s/g, '').length >= 26 ? (
+                          <p className="text-xs text-red-500">Geçersiz IBAN formatı</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">TR + 24 karakter giriniz</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -476,7 +557,7 @@ export default function Branches() {
 
       {/* Duzenle Modal */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Sube Duzenle</DialogTitle>
             <DialogDescription>Sube bilgilerini guncelleyin</DialogDescription>
@@ -502,59 +583,96 @@ export default function Branches() {
                 </Select>
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="edit_name">Sube Adi *</Label>
-              <Input
-                id="edit_name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit_phone">Telefon *</Label>
-              <Input
-                id="edit_phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit_address">Adres</Label>
-              <Textarea
-                id="edit_address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                rows={3}
-              />
-            </div>
             
-            {/* Komisyon Oranı Alanı - Düzenleme - ZORUNLU */}
-            <div className="space-y-3 p-4 rounded-lg border bg-purple-50/50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-700">
-              <Label className="text-sm font-medium flex items-center gap-2 text-purple-700 dark:text-purple-400">
-                <Percent className="h-4 w-4" />
-                Komisyon Orani *
-              </Label>
-              
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max={maxCommissionRate}
-                  placeholder="Orn: 20"
-                  value={formData.commission_rate}
-                  onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
-                  className="w-24"
-                  required
-                />
-                <span className="text-sm text-muted-foreground">%</span>
+            {/* İki Kolonlu Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Sol Kolon */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_name">Sube Adi *</Label>
+                  <Input
+                    id="edit_name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_phone">Telefon *</Label>
+                  <Input
+                    id="edit_phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_address">Adres</Label>
+                  <Textarea
+                    id="edit_address"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    rows={3}
+                  />
+                </div>
               </div>
-              
-              <p className="text-xs text-muted-foreground">
-                Komisyon orani zorunludur ve acente komisyonundan
-                <span className="font-semibold text-purple-600 dark:text-purple-400"> (maks. %{maxCommissionRate}) </span>
-                fazla olamaz.
-              </p>
+
+              {/* Sağ Kolon */}
+              <div className="space-y-4">
+                {/* Komisyon Oranı Alanı - Düzenleme - ZORUNLU */}
+                <div className="space-y-3 p-4 rounded-lg border bg-purple-50/50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-700">
+                  <Label className="text-sm font-medium flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                    <Percent className="h-4 w-4" />
+                    Komisyon Orani *
+                  </Label>
+                  
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max={maxCommissionRate}
+                      placeholder="Orn: 20"
+                      value={formData.commission_rate}
+                      onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
+                      className="w-24"
+                      required
+                    />
+                    <span className="text-sm text-muted-foreground">%</span>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    Komisyon orani zorunludur ve acente komisyonundan
+                    <span className="font-semibold text-purple-600 dark:text-purple-400"> (maks. %{maxCommissionRate}) </span>
+                    fazla olamaz.
+                  </p>
+                </div>
+
+                {/* Hesap Bilgileri */}
+                <div className="space-y-4 p-4 border rounded-lg bg-slate-50">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-slate-600" />
+                    <Label className="text-base font-semibold">Hesap Bilgileri</Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_account_name">Hesap Adı</Label>
+                    <Input
+                      id="edit_account_name"
+                      value={formData.account_name}
+                      onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+                      placeholder="Banka hesap adı"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_iban">IBAN</Label>
+                    <Input
+                      id="edit_iban"
+                      value={formData.iban}
+                      onChange={(e) => setFormData({ ...formData, iban: e.target.value.toUpperCase() })}
+                      placeholder="TR00 0000 0000 0000 0000 0000 00"
+                      maxLength={34}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>

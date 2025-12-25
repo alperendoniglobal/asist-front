@@ -48,6 +48,12 @@ const createCRUDService = <T>(endpoint: string) => ({
 // Agency Service
 export const agencyService = {
   ...createCRUDService<Agency>('/agencies'),
+
+  // Acente için şube bazlı komisyon dağılım raporu
+  async getBranchCommissionDistribution(agencyId: string): Promise<any> {
+    const response = await apiClient.get<ApiResponse<any>>(`/agencies/${agencyId}/commission-distribution`);
+    return response.data.data;
+  },
 };
 
 // Branch Service - Sube yonetimi
@@ -284,6 +290,24 @@ export const saleService = {
   async processRefund(saleId: string, reason: string): Promise<Sale> {
     const response = await apiClient.post<ApiResponse<Sale>>(`/sales/${saleId}/refund`, { reason });
     return response.data.data;
+  },
+
+  /**
+   * Satışları Excel formatında export et
+   * Rol bazlı filtreleme otomatik olarak uygulanır
+   * @param startDate - Başlangıç tarihi (opsiyonel, format: YYYY-MM-DD)
+   * @param endDate - Bitiş tarihi (opsiyonel, format: YYYY-MM-DD)
+   * @returns Excel dosyası blob
+   */
+  async exportToExcel(startDate?: string, endDate?: string): Promise<Blob> {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    const response = await apiClient.get(`/sales/export?${params.toString()}`, {
+      responseType: 'blob'
+    });
+    return response.data;
   }
 };
 
@@ -365,6 +389,19 @@ export const carModelService = {
     return response.data.data;
   },
 
+  async getById(id: number): Promise<CarModel | null> {
+    try {
+      const response = await apiClient.get<ApiResponse<CarModel>>(`/car-models/${id}`);
+      return response.data.data;
+    } catch (error: any) {
+      // Model bulunamazsa null döndür
+      if (error?.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
   async getByBrandId(brandId: number): Promise<CarModel[]> {
     const response = await apiClient.get<ApiResponse<CarModel[]>>(`/car-models/brand/${brandId}`);
     return response.data.data;
@@ -431,4 +468,15 @@ export const pdfService = {
     const baseUrl = apiClient.defaults.baseURL || '';
     return `${baseUrl}/pdf/sale/${saleId}/view`;
   }
+};
+
+// Support File Service - Destek ekibi hasar dosyaları
+export const supportFileService = {
+  ...createCRUDService<any>('/support-files'),
+
+  // Satış ID'ye göre hasar dosyalarını getir
+  async getBySaleId(saleId: string): Promise<any[]> {
+    const response = await apiClient.get<ApiResponse<any[]>>(`/support-files/sale/${saleId}`);
+    return response.data.data;
+  },
 };

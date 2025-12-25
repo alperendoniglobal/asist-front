@@ -8,6 +8,7 @@ import Login from "./pages/auth/Login"
 import LandingPage from "./pages/landing/LandingPage"
 import Dashboard from "./pages/dashboard/Dashboard"
 import Agencies from "./pages/agencies/Agencies"
+import AgencyCommissionDistribution from "./pages/agencies/AgencyCommissionDistribution"
 import Branches from "./pages/branches/Branches"
 import BranchDetail from "./pages/branches/BranchDetail"
 import Users from "./pages/users/Users"
@@ -24,6 +25,12 @@ import SupportSales from "./pages/support/SupportSales"
 import SupportFiles from "./pages/support/SupportFiles"
 import CreateFile from "./pages/support/CreateFile"
 import Profile from "./pages/profile/Profile"
+import ContentManagement from "./pages/content/ContentManagement"
+import AboutPage from "./pages/about/AboutPage"
+import DistanceSalesContractPage from "./pages/legal/DistanceSalesContractPage"
+import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage"
+import KVKKPage from "./pages/legal/KVKKPage"
+import DeliveryReturnPage from "./pages/legal/DeliveryReturnPage"
 import { UserRole } from "./types"
 import { Toaster } from "./components/ui/sonner"
 
@@ -39,23 +46,14 @@ function App() {
             {/* Login - Public */}
             <Route path="/login" element={<Login />} />
 
-            {/* SUPPORT Rolü için Özel Routes - Destek Ekibi */}
-            <Route
-              path="/dashboard/support"
-              element={
-                <ProtectedRoute allowedRoles={[UserRole.SUPPORT]}>
-                  <SupportLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="sales" element={<SupportSales />} />
-              <Route path="files" element={<SupportFiles />} />
-              <Route path="files/create" element={<CreateFile />} />
-              <Route path="profile" element={<Profile />} />
-              <Route index element={<Navigate to="/dashboard/support/sales" replace />} />
-            </Route>
+            {/* Public Pages - SEO için */}
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/distance-sales-contract" element={<DistanceSalesContractPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/kvkk" element={<KVKKPage />} />
+            <Route path="/delivery-return" element={<DeliveryReturnPage />} />
 
-            {/* Protected Routes - Dashboard and all app routes (SUPPORT hariç) */}
+            {/* Protected Routes - Dashboard and all app routes */}
             <Route
               path="/dashboard"
               element={
@@ -112,8 +110,58 @@ function App() {
               <Route path="sales/new" element={<NewSale />} />
               <Route path="payments" element={<Payments />} />
               <Route path="commissions" element={<Commissions />} />
-              <Route path="support" element={<Support />} />
+              {/* Acente Komisyon Dağılım Raporu - Acente Admin ve Super Admin için */}
+              <Route
+                path="commission-distribution"
+                element={
+                  <ProtectedRoute allowedRoles={[UserRole.AGENCY_ADMIN, UserRole.SUPER_ADMIN]}>
+                    <AgencyCommissionDistribution />
+                  </ProtectedRoute>
+                }
+              />
+              {/* System Support - SUPPORT rolü hariç diğer roller için (destek talebi oluşturma) */}
+              <Route
+                path="system-support"
+                element={
+                  <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER]}>
+                    <Support />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Support Files - Acente, Şube ve Super Admin için */}
+              <Route
+                path="support-files"
+                element={
+                  <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN]}>
+                    <SupportFiles />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="content"
+                element={
+                  <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                    <ContentManagement />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="profile" element={<Profile />} />
+            </Route>
+
+            {/* SUPPORT Rolü için Özel Routes - Destek Ekibi (Hasar Dosyaları) */}
+            <Route
+              path="/dashboard/support"
+              element={
+                <ProtectedRoute allowedRoles={[UserRole.SUPPORT]}>
+                  <SupportLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="sales" element={<SupportSales />} />
+              <Route path="files" element={<SupportFiles />} />
+              <Route path="files/create" element={<CreateFile />} />
+              <Route path="profile" element={<Profile />} />
+              <Route index element={<Navigate to="/dashboard/support/sales" replace />} />
             </Route>
             
             {/* Redirect old routes to dashboard */}
@@ -126,7 +174,7 @@ function App() {
             <Route path="sales" element={<Navigate to="/dashboard/sales" replace />} />
             <Route path="payments" element={<Navigate to="/dashboard/payments" replace />} />
             <Route path="commissions" element={<Navigate to="/dashboard/commissions" replace />} />
-            <Route path="support" element={<Navigate to="/dashboard/support" replace />} />
+            <Route path="support" element={<Navigate to="/dashboard/system-support" replace />} />
             <Route path="profile" element={<Navigate to="/dashboard/profile" replace />} />
             
             {/* Catch all - redirect to landing page */}

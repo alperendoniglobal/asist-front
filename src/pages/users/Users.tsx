@@ -100,6 +100,7 @@ export default function Users() {
     setCurrentPage(1);
   }, [searchQuery]);
 
+
   // Kullanici olustur
   const handleCreate = async () => {
     try {
@@ -113,7 +114,10 @@ export default function Users() {
           ? '' 
           : (isAgencyAdmin && !formData.branch_id ? currentUser?.branch_id : formData.branch_id)
       };
+      
+      // Kullanıcıyı oluştur
       await userService.create(createData);
+      
       setIsCreateOpen(false);
       resetForm();
       fetchData();
@@ -528,6 +532,7 @@ export default function Users() {
                 <p className="text-xs mt-1">Bu rol global bir roldür ve acente/şube ataması gerektirmez. Tüm sistem verilerine erişim sağlar.</p>
               </div>
             )}
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Iptal</Button>

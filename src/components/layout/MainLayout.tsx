@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, Users, UserCircle, Car, Package, 
   ShoppingCart, CreditCard, MessageSquare, TrendingUp, GitBranch,
   Menu, X, Plus, Sun, Moon, LogOut, Settings, ChevronDown,
-  MoreHorizontal
+  MoreHorizontal, FileText, Calculator
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -39,7 +39,10 @@ const menuItems = [
   { icon: ShoppingCart, label: "Satislar", path: "/dashboard/sales", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
   { icon: CreditCard, label: "Odemeler", path: "/dashboard/payments", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
   { icon: TrendingUp, label: "Komisyonlar", path: "/dashboard/commissions", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN] },
-  { icon: MessageSquare, label: "Destek", path: "/dashboard/support", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
+  { icon: Calculator, label: "Komisyon Dağılımı", path: "/dashboard/commission-distribution", roles: [UserRole.AGENCY_ADMIN, UserRole.SUPER_ADMIN] },
+  { icon: MessageSquare, label: "Destek", path: "/dashboard/system-support", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
+  { icon: FileText, label: "Hasar Dosyaları", path: "/dashboard/support-files", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN] },
+  { icon: Settings, label: "İçerik Yönetimi", path: "/dashboard/content", roles: [UserRole.SUPER_ADMIN] },
 ]
 
 export function MainLayout() {

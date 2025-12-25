@@ -1,8 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { contentService, type LandingPageContent, type LandingPageBanner, type LandingPageFeature, type LandingPageStat } from '@/services/contentService';
+import * as LucideIcons from 'lucide-react';
 import {
   Users,
   Car,
@@ -24,16 +26,25 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage() {
-  // Sürekli değişen istatistikler
-  const stats = [
+  const navigate = useNavigate();
+  
+  // Backend'den çekilen veriler
+  const [landingContent, setLandingContent] = useState<LandingPageContent | null>(null);
+  const [banners, setBanners] = useState<LandingPageBanner[]>([]);
+  const [features, setFeatures] = useState<LandingPageFeature[]>([]);
+  const [stats, setStats] = useState<LandingPageStat[]>([]);
+  const [activePages, setActivePages] = useState<Array<{slug: string, title: string}>>([]);
+  const [, setLoading] = useState(true);
+
+  // Fallback değerler (backend'den veri gelmezse)
+  const fallbackStats = [
     { label: 'Aktif Kullanıcı', value: 1250, icon: Users, color: 'text-blue-600', bg: 'bg-blue-100', borderHover: 'hover:border-blue-300' },
     { label: 'Toplam Satış', value: 8500, icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-100', borderHover: 'hover:border-emerald-300' },
     { label: 'Müşteri Memnuniyeti', value: 98, suffix: '%', icon: Star, color: 'text-amber-600', bg: 'bg-amber-100', borderHover: 'hover:border-amber-300' },
     { label: 'Sistem Uptime', value: 99.9, suffix: '%', icon: Activity, color: 'text-cyan-600', bg: 'bg-cyan-100', borderHover: 'hover:border-cyan-300' },
   ];
 
-  // Banner slider verileri - Her banner için sol ve sağ içerik
-  const banners = [
+  const fallbackBanners = [
     {
       image: '/banner1.jpeg',
       // Sol taraf içeriği
@@ -113,62 +124,44 @@ export default function LandingPage() {
 
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   
-  // Banner istatistikleri için state - İlk banner'ın stats'ı ile başlat
-  const [animatedBannerStats, setAnimatedBannerStats] = useState(
-    banners[0]?.bannerStats?.map(s => ({ ...s, displayValue: 0 })) || stats.map(s => ({ ...s, displayValue: 0 }))
-  );
-
-
-  // Banner slider animasyonu - 12 saniyede bir değişiyor (daha yavaş ve uzun süre duruyor)
+  // Backend'den veri çek
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
-    }, 12000); // 12 saniye (önceden 5 saniyeydi)
-    return () => clearInterval(interval);
-  }, [banners.length]);
-  
-  // Banner değiştiğinde istatistikleri sıfırla ve animasyonu başlat
-  useEffect(() => {
-    const currentBannerStats = banners[currentBannerIndex]?.bannerStats || stats;
-    setAnimatedBannerStats(currentBannerStats.map(s => ({ ...s, displayValue: 0 })));
-    
-    const duration = 1500;
-    const steps = 60;
-    const stepDuration = duration / steps;
-    const timers: ReturnType<typeof setInterval>[] = [];
-
-    currentBannerStats.forEach((stat, index) => {
-      let currentStep = 0;
-      const increment = stat.value / steps;
-
-      const timer = setInterval(() => {
-        currentStep++;
-        const newValue = Math.min(Math.floor(increment * currentStep), stat.value);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [contentData, bannersData, featuresData, statsData, pagesData] = await Promise.all([
+          contentService.getLandingPageContent().catch(() => null),
+          contentService.getActiveBanners().catch(() => []),
+          contentService.getActiveFeatures().catch(() => []),
+          contentService.getActiveStats().catch(() => []),
+          contentService.getAllPages().catch(() => []),
+        ]);
         
-        setAnimatedBannerStats((prev) => {
-          const updated = [...prev];
-          if (updated[index]) {
-            updated[index] = { ...updated[index], displayValue: newValue };
-          }
-          return updated;
-        });
-
-        if (currentStep >= steps) {
-          clearInterval(timer);
-        }
-      }, stepDuration);
-      
-      timers.push(timer);
-    });
-
-    return () => {
-      timers.forEach(timer => clearInterval(timer));
+        if (contentData) setLandingContent(contentData);
+        if (bannersData.length > 0) setBanners(bannersData);
+        if (featuresData.length > 0) setFeatures(featuresData);
+        if (statsData.length > 0) setStats(statsData);
+        
+        // Aktif sayfaları filtrele ve slug-title mapping oluştur
+        const active = pagesData
+          .filter(page => page.is_active)
+          .map(page => ({
+            slug: page.slug,
+            title: page.title
+          }));
+        setActivePages(active);
+      } catch (error) {
+        console.error('Landing page verileri yüklenirken hata:', error);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, [currentBannerIndex]);
+    
+    fetchData();
+  }, []);
 
-
-  // Özellikler listesi
-  const features = [
+  // Fallback features
+  const fallbackFeatures = [
     {
       icon: Users,
       title: 'Müşteri Yönetimi',
@@ -206,6 +199,101 @@ export default function LandingPage() {
       gradient: 'from-pink-500 via-rose-600 to-red-700'
     }
   ];
+
+  // Kullanılacak veriler (backend'den gelen veya fallback) - useMemo ile memoize edildi
+  const displayBanners = useMemo(() => {
+    return banners.length > 0 ? banners : fallbackBanners;
+  }, [banners]);
+  
+  const displayStats = useMemo(() => {
+    return stats.length > 0 ? stats : fallbackStats;
+  }, [stats]);
+  
+  // Backend'den gelen feature'ları icon component'lerine dönüştür - useMemo ile memoize edildi
+  const displayFeatures = useMemo(() => {
+    return features.length > 0 
+      ? features.map((f) => ({
+          icon: (LucideIcons as any)[f.icon_name] || Users,
+          title: f.title,
+          description: f.description,
+          gradient: f.gradient || 'from-blue-500 via-blue-600 to-blue-700'
+        }))
+      : fallbackFeatures;
+  }, [features]);
+
+  // Banner istatistikleri için state - İlk banner'ın stats'ı ile başlat
+  const getInitialBannerStats = () => {
+    if (displayBanners.length === 0) {
+      return displayStats.map((s: any) => ({ ...s, displayValue: 0 }));
+    }
+    const firstBanner = displayBanners[0];
+    if (typeof firstBanner === 'object' && 'banner_stats' in firstBanner) {
+      return (firstBanner.banner_stats || []).map((s: any) => ({ ...s, displayValue: 0 }));
+    }
+    return (firstBanner as any)?.bannerStats?.map((s: any) => ({ ...s, displayValue: 0 })) || displayStats.map((s: any) => ({ ...s, displayValue: 0 }));
+  };
+  
+  const [animatedBannerStats, setAnimatedBannerStats] = useState(getInitialBannerStats());
+
+  // Banner slider animasyonu - 12 saniyede bir değişiyor
+  useEffect(() => {
+    if (displayBanners.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % displayBanners.length);
+    }, 12000);
+    return () => clearInterval(interval);
+  }, [displayBanners.length]);
+  
+  // Banner değiştiğinde istatistikleri sıfırla ve animasyonu başlat
+  useEffect(() => {
+    if (displayBanners.length === 0) return;
+    
+    const currentBanner = displayBanners[currentBannerIndex];
+    if (!currentBanner) return;
+    
+    // Banner stats'ı al - fallback olarak displayStats kullan
+    const currentBannerStats = (typeof currentBanner === 'object' && 'banner_stats' in currentBanner)
+      ? currentBanner.banner_stats || []
+      : (currentBanner as any)?.bannerStats || displayStats;
+    
+    // İlk değerleri ayarla
+    const initialStats = currentBannerStats.map((s: any) => ({ ...s, displayValue: 0 }));
+    setAnimatedBannerStats(initialStats);
+    
+    const duration = 1500;
+    const steps = 60;
+    const stepDuration = duration / steps;
+    const timers: ReturnType<typeof setInterval>[] = [];
+
+    currentBannerStats.forEach((stat: any, index: number) => {
+      let currentStep = 0;
+      const increment = stat.value / steps;
+
+      const timer = setInterval(() => {
+        currentStep++;
+        const newValue = Math.min(Math.floor(increment * currentStep), stat.value);
+        
+        setAnimatedBannerStats((prev: any) => {
+          const updated = [...prev];
+          if (updated[index]) {
+            updated[index] = { ...updated[index], displayValue: newValue };
+          }
+          return updated;
+        });
+
+        if (currentStep >= steps) {
+          clearInterval(timer);
+        }
+      }, stepDuration);
+      
+      timers.push(timer);
+    });
+
+    return () => {
+      timers.forEach(timer => clearInterval(timer));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentBannerIndex, banners.length, stats.length]);
 
   // Avantajlar listesi
   const benefits = [
@@ -294,7 +382,7 @@ export default function LandingPage() {
         "name": "Yol yardım hizmeti nasıl alınır?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yol yardım hizmeti için 0850 304 54 40 numaralı telefonu arayabilirsiniz. Yol yardım çekici hizmeti Türkiye genelinde 7/24 hizmetinizdedir."
+          "text": `Yol yardım hizmeti için ${landingContent?.support_phone || '+90 (850) 304 54 40'} numaralı telefonu arayabilirsiniz. Yol yardım çekici hizmeti Türkiye genelinde 7/24 hizmetinizdedir.`
         }
       },
       {
@@ -310,7 +398,7 @@ export default function LandingPage() {
         "name": "Yol yardım hizmeti ücreti ne kadar?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yol yardım hizmeti ücretleri paket içeriğinize göre değişiklik gösterir. Yol yardım çekici hizmeti için detaylı bilgi almak için 0850 304 54 40 numaralı telefonu arayabilirsiniz."
+          "text": `Yol yardım hizmeti ücretleri paket içeriğinize göre değişiklik gösterir. Yol yardım çekici hizmeti için detaylı bilgi almak için ${landingContent?.support_phone || '+90 (850) 304 54 40'} numaralı telefonu arayabilirsiniz.`
         }
       }
     ]
@@ -360,7 +448,7 @@ export default function LandingPage() {
       <Helmet>
         <html lang="tr" />
         <title>Yol Yardım | 7/24 Çekici Hizmeti | Çözüm Asistan - Türkiye Geneli</title>
-        <meta name="description" content="Yol yardım hizmetleri Türkiye genelinde 7/24. Yol yardım çekici, tamirci ve acil durum desteği. Yol yardım hizmeti için hemen arayın: 0850 304 54 40. Profesyonel yol yardım çözümleri." />
+        <meta name="description" content={`Yol yardım hizmetleri Türkiye genelinde 7/24. Yol yardım çekici, tamirci ve acil durum desteği. Yol yardım hizmeti için hemen arayın: ${landingContent?.support_phone || '+90 (850) 304 54 40'}. Profesyonel yol yardım çözümleri.`} />
         <meta name="keywords" content="yol yardım, yol yardım hizmeti, yol yardım çekici, yol yardım servisi, 7/24 yol yardım, yol yardım Türkiye, çekici hizmeti, araç kurtarma, lastik patlaması, yakıt bitmesi, arıza yardım, yol asistan, acil yol yardım, yol yardım telefon, yol yardım numarası" />
         <meta name="author" content="Çözüm Asistan" />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
@@ -388,7 +476,7 @@ export default function LandingPage() {
         
         {/* Mobile */}
         <meta name="theme-color" content="#1e40af" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Çözüm Asistan" />
         
@@ -443,12 +531,33 @@ export default function LandingPage() {
         <section aria-label="Ana banner slider ve hizmet tanıtımı" className="relative min-h-screen md:h-screen overflow-hidden">
         {/* Banner Slider - Tüm section */}
         <div className="relative w-full h-full min-h-screen md:min-h-0">
-          {banners.map((banner, index) => {
+          {displayBanners.map((banner, index) => {
             const isActive = index === currentBannerIndex;
+            // Backend'den gelen banner verisi veya fallback
+            // Backend'den gelen banner veya fallback banner
+            const bannerData = typeof banner === 'object' && 'image_path' in banner 
+              ? {
+                  id: banner.id,
+                  image: banner.image_path,
+                  leftContent: {
+                    badge: banner.badge || '',
+                    ...(banner.left_content || {}),
+                    feature_icon: banner.left_content?.feature_icon || 'TrendingUp',
+                  },
+                  rightContent: banner.right_content || { title: '', subtitle: '', description: '' },
+                  bannerStats: banner.banner_stats || [],
+                }
+              : {
+                  id: `fallback-${index}`,
+                  ...banner,
+                };
+            const FeatureIcon = (bannerData.leftContent as any)?.feature_icon 
+              ? (LucideIcons as any)[(bannerData.leftContent as any).feature_icon] || TrendingUp
+              : (bannerData.leftContent as any)?.featureIcon || TrendingUp;
             
             return (
               <div
-                key={index}
+                key={(banner as any).id || `banner-${index}`}
                 className={`absolute inset-0 ${
                   isActive 
                     ? 'opacity-100 z-10' 
@@ -468,8 +577,8 @@ export default function LandingPage() {
                 {/* Arka plan görseli */}
                 <div className="absolute inset-0">
                   <img
-                    src={banner.image}
-                    alt={`${banner.rightContent.title} - ${banner.rightContent.subtitle} - Çözüm Asistan Yol Yardım Hizmetleri`}
+                    src={bannerData.image}
+                    alt={`${bannerData.rightContent?.title || ''} - ${bannerData.rightContent?.subtitle || ''} - Çözüm Asistan Yol Yardım Hizmetleri`}
                     className="w-full h-full object-cover"
                     loading={index === 0 ? "eager" : "lazy"}
                   />
@@ -492,41 +601,45 @@ export default function LandingPage() {
                         }}
                       >
                         <div className="space-y-3 md:space-y-4">
-                          <div className="inline-block">
-                            <span className="px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-blue-500/30 backdrop-blur-sm text-blue-200 text-xs md:text-sm font-semibold border border-blue-400/30">
-                              {banner.leftContent.badge}
-                            </span>
-                          </div>
+                          {(bannerData.leftContent?.badge || (bannerData.leftContent as any)?.badge) && (
+                            <div className="inline-block">
+                              <span className="px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-blue-500/30 backdrop-blur-sm text-blue-200 text-xs md:text-sm font-semibold border border-blue-400/30">
+                                {bannerData.leftContent?.badge || (bannerData.leftContent as any)?.badge}
+                              </span>
+                            </div>
+                          )}
                           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-tight">
-                            {banner.leftContent.title}
+                            {bannerData.leftContent?.title || ''}
                           </h1>
                           <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white/90">
-                            {banner.leftContent.subtitle}
+                            {bannerData.leftContent?.subtitle || ''}
                           </p>
                           <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/80 leading-relaxed">
-                            {banner.leftContent.description}
+                            {bannerData.leftContent?.description || ''}
                           </p>
                         </div>
 
                         {/* Özellik */}
-                        <div 
-                          className="flex items-center gap-2 md:gap-3 p-3 md:p-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/20"
-                          style={{
-                            opacity: isActive ? 1 : 0,
-                            transform: isActive ? 'translateX(0)' : 'translateX(-20px)',
-                            transition: 'opacity 0.9s ease-out 0.3s, transform 0.9s ease-out 0.3s',
-                            willChange: 'opacity, transform'
-                          }}
-                        >
-                          <div className="p-1.5 md:p-2 rounded-lg bg-blue-500/30 flex-shrink-0">
-                            <banner.leftContent.featureIcon className="h-4 w-4 md:h-5 md:w-5 text-blue-200" />
+                        {bannerData.leftContent?.feature && (
+                          <div 
+                            className="flex items-center gap-2 md:gap-3 p-3 md:p-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/20"
+                            style={{
+                              opacity: isActive ? 1 : 0,
+                              transform: isActive ? 'translateX(0)' : 'translateX(-20px)',
+                              transition: 'opacity 0.9s ease-out 0.3s, transform 0.9s ease-out 0.3s',
+                              willChange: 'opacity, transform'
+                            }}
+                          >
+                            <div className="p-1.5 md:p-2 rounded-lg bg-blue-500/30 flex-shrink-0">
+                              <FeatureIcon className="h-4 w-4 md:h-5 md:w-5 text-blue-200" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm md:text-base font-medium text-white">
+                                {bannerData.leftContent.feature}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm md:text-base font-medium text-white">
-                              {banner.leftContent.feature}
-                            </p>
-                          </div>
-                        </div>
+                        )}
 
                         {/* CTA Butonları */}
                         <div 
@@ -588,26 +701,28 @@ export default function LandingPage() {
                               </div>
                               <div className="min-w-0 flex-1">
                                 <p className="font-bold text-xs md:text-sm">7/24 Çağrı Destek</p>
-                                <a href="tel:08501234567" className="text-[10px] md:text-xs text-blue-200 hover:text-blue-100 transition-colors font-semibold">
-                                  0850 123 45 67
+                                  <a href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '08503045440'}`} className="text-[10px] md:text-xs text-blue-200 hover:text-blue-100 transition-colors font-semibold">
+                                  {landingContent?.support_phone || '+90 (850) 304 54 40'}
                                 </a>
                               </div>
                             </div>
                           </div>
                           
-                          {/* Banner yazıları */}
+                        {/* Banner yazıları */}
                           <div className="space-y-3 md:space-y-4 text-white mb-6 md:mb-8">
-                            <div>
-                              <p className="text-xs md:text-sm font-semibold text-blue-300 mb-1 md:mb-2">{banner.rightContent.subtitle}</p>
-                              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black mb-2 md:mb-3 leading-tight">{banner.rightContent.title}</h2>
-                              <p className="text-sm md:text-base lg:text-lg text-white/90">{banner.rightContent.description}</p>
-                            </div>
+                          <div>
+                              <p className="text-xs md:text-sm font-semibold text-blue-300 mb-1 md:mb-2">{bannerData.rightContent?.subtitle || ''}</p>
+                              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black mb-2 md:mb-3 leading-tight">{bannerData.rightContent?.title || ''}</h2>
+                              <p className="text-sm md:text-base lg:text-lg text-white/90">{bannerData.rightContent?.description || ''}</p>
                           </div>
-                          
-                          {/* Alt kısım - İstatistikler (Banner'a özel) */}
+                        </div>
+                        
+                        {/* Alt kısım - İstatistikler (Banner'a özel) */}
                           <div className="grid grid-cols-2 gap-2 md:gap-4">
-                            {animatedBannerStats.map((stat, statIndex) => {
-                              const Icon = stat.icon;
+                          {animatedBannerStats.map((stat: any, statIndex: number) => {
+                            const Icon = typeof stat.icon === 'string' 
+                              ? (LucideIcons as any)[stat.icon] || Activity
+                              : stat.icon || Activity;
                               return (
                                 <div 
                                   key={statIndex}
@@ -643,7 +758,7 @@ export default function LandingPage() {
         
         {/* Slider kontrolleri - Mobilde daha görünür */}
         <div className="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 backdrop-blur-md">
-          {banners.map((_, index) => (
+          {displayBanners.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentBannerIndex(index)}
@@ -692,7 +807,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature, index) => {
+            {displayFeatures.map((feature, index) => {
               const Icon = feature.icon;
               // Her kart için farklı renk tonu - Header/banner ile uyumlu (slate-900 ana renk)
               const colorClasses = [
@@ -841,13 +956,13 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-4 gap-6">
-            {[
-              { number: '500+', label: 'Aktif Kaynak', icon: Users },
-              { number: '1.2K+', label: 'Toplam Şube', icon: Package },
-              { number: '50K+', label: 'Mutlu Müşteri', icon: Star },
-              { number: '99.9%', label: 'Uptime Oranı', icon: Activity },
-            ].map((stat, index) => {
-              const Icon = stat.icon;
+            {displayStats.slice(0, 4).map((stat: any, index: number) => {
+              const Icon = stat.icon_name 
+                ? (LucideIcons as any)[stat.icon_name] || Activity
+                : stat.icon || Activity;
+              const number = stat.suffix 
+                ? `${stat.value}${stat.suffix}`
+                : stat.value.toString();
               return (
                 <Card key={index} className="border-0 bg-slate-800/50 backdrop-blur-md hover:bg-slate-800/70 transition-all group cursor-pointer border border-slate-700">
                   <CardContent className="p-8 text-center">
@@ -856,7 +971,7 @@ export default function LandingPage() {
                         <Icon className="h-6 w-6 text-slate-300" />
                       </div>
                     </div>
-                    <p className="text-4xl md:text-5xl font-black mb-2 text-white">{stat.number}</p>
+                    <p className="text-4xl md:text-5xl font-black mb-2 text-white">{number}</p>
                     <p className="text-sm text-slate-200 font-medium">{stat.label}</p>
                   </CardContent>
                 </Card>
@@ -1005,22 +1120,141 @@ export default function LandingPage() {
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }}></div>
         
-        <div className="container mx-auto px-4 py-10 relative z-10">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                <img 
-                  src="/cozumasistanlog.svg" 
-                  alt="Çözüm Asistan - Yol Yardım Hizmetleri Logo" 
-                  className="h-8"
-                  width="120"
-                  height="40"
-                />
+        <div className="container mx-auto px-4 py-12 relative z-10">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
+            {/* Logo ve Açıklama */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+                  <img 
+                    src="/cozumasistanlog.svg" 
+                    alt="Çözüm Asistan - Yol Yardım Hizmetleri Logo" 
+                    className="h-8"
+                    width="120"
+                    height="40"
+                  />
+                </div>
+              </div>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Türkiye genelinde 7/24 yol yardım hizmetleri. Profesyonel çözümler ve güvenilir hizmet.
+              </p>
+              {landingContent?.support_phone && (
+                <div className="flex items-center gap-2 text-slate-300">
+                  <Phone className="h-4 w-4" />
+                  <a href={`tel:${landingContent.support_phone.replace(/\s/g, '')}`} className="text-sm hover:text-white transition-colors">
+                    {landingContent.support_phone}
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Hızlı Linkler */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-white">Hızlı Linkler</h3>
+              <ul className="space-y-2">
+                {activePages.map((page) => {
+                  const slugToPath: Record<string, string> = {
+                    'about': '/about',
+                    'distance-sales-contract': '/mesafeli-satis-sozlesmesi',
+                    'privacy-policy': '/gizlilik-politikasi',
+                    'kvkk': '/kvkk',
+                    'delivery-return': '/teslimat-ve-iade'
+                  };
+                  const path = slugToPath[page.slug] || `/${page.slug}`;
+                  return (
+                    <li key={page.slug}>
+                      <button 
+                        onClick={() => navigate(path)} 
+                        className="text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        {page.title}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            {/* İletişim */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-white">İletişim</h3>
+              <div className="space-y-2 text-sm text-slate-400">
+                {landingContent?.support_email && (
+                  <p>
+                    <span className="text-slate-500">E-posta:</span>{' '}
+                    <a href={`mailto:${landingContent.support_email}`} className="hover:text-white transition-colors">
+                      {landingContent.support_email}
+                    </a>
+                  </p>
+                )}
+                {landingContent?.support_phone && (
+                  <p>
+                    <span className="text-slate-500">Telefon:</span>{' '}
+                    <a href={`tel:${landingContent.support_phone.replace(/\s/g, '')}`} className="hover:text-white transition-colors">
+                      {landingContent.support_phone}
+                    </a>
+                  </p>
+                )}
+                {landingContent?.company_address && (
+                  <p>
+                    <span className="text-slate-500">Adres:</span>{' '}
+                    <span className="text-slate-300">{landingContent.company_address}</span>
+                  </p>
+                )}
               </div>
             </div>
-            <p className="text-sm text-slate-400">
-              © 2021 Yol Asistan. Tüm hakları saklıdır.
-            </p>
+          </div>
+
+          {/* Alt Kısım */}
+          <div className="border-t border-slate-800 pt-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-slate-400">
+                © 2023 {landingContent?.company_name || 'Yol Asistan'}. Tüm hakları saklıdır.
+              </p>
+              <div className="flex items-center gap-6">
+                {activePages
+                  .filter(page => ['privacy-policy', 'distance-sales-contract'].includes(page.slug))
+                  .map((page) => {
+                    const slugToPath: Record<string, string> = {
+                      'distance-sales-contract': '/mesafeli-satis-sozlesmesi',
+                      'privacy-policy': '/gizlilik-politikasi'
+                    };
+                    const path = slugToPath[page.slug] || `/${page.slug}`;
+                    return (
+                      <button 
+                        key={page.slug}
+                        onClick={() => navigate(path)} 
+                        className="text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                      >
+                        {page.slug === 'privacy-policy' ? 'Gizlilik Politikası' : page.slug === 'distance-sales-contract' ? 'Mesafeli Satış' : page.title}
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+            {/* Ödeme Logoları */}
+            <div className="mt-6 pt-6 border-t border-slate-800">
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-xs text-slate-500">Güvenli Ödeme</p>
+                <div className="flex items-center justify-center gap-6 opacity-80 hover:opacity-100 transition-opacity">
+                  <img 
+                    src="/iyzicologo.png" 
+                    alt="Iyzico" 
+                    className="h-8 w-auto object-contain"
+                  />
+                  <img 
+                    src="/visalogo.png" 
+                    alt="Visa" 
+                    className="h-8 w-auto object-contain"
+                  />
+                  <img 
+                    src="/mastercardlogo.png" 
+                    alt="Mastercard" 
+                    className="h-8 w-auto object-contain"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

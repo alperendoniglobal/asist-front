@@ -8,6 +8,91 @@
  * @param tckn - TC Kimlik Numarası (string veya number)
  * @returns true eğer geçerli bir TC kimlik numarası ise
  */
+/**
+ * Türkiye IBAN formatını kontrol eder
+ * Format: TR + 2 haneli kontrol + 4 haneli banka kodu + 1 rezerv + 16 haneli hesap = 26 karakter
+ */
+export function formatIBAN(value: string): string {
+  // Sadece harf ve rakamları al, boşlukları kaldır
+  let cleaned = value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+  
+  // TR ile başlamıyorsa ekle
+  if (!cleaned.startsWith('TR')) {
+    cleaned = 'TR' + cleaned.replace(/^TR/i, '');
+  }
+  
+  // Maksimum 26 karakter (TR dahil)
+  cleaned = cleaned.substring(0, 26);
+  
+  // Formatla: TR00 0000 0000 0000 0000 0000 00
+  if (cleaned.length <= 2) {
+    return cleaned;
+  }
+  
+  const parts = [];
+  parts.push(cleaned.substring(0, 2)); // TR
+  if (cleaned.length > 2) {
+    parts.push(cleaned.substring(2, 4)); // Kontrol rakamları
+  }
+  if (cleaned.length > 4) {
+    parts.push(cleaned.substring(4, 8)); // Banka kodu
+  }
+  if (cleaned.length > 8) {
+    parts.push(cleaned.substring(8, 12)); // İlk 4 hesap hanesi
+  }
+  if (cleaned.length > 12) {
+    parts.push(cleaned.substring(12, 16)); // İkinci 4 hesap hanesi
+  }
+  if (cleaned.length > 16) {
+    parts.push(cleaned.substring(16, 20)); // Üçüncü 4 hesap hanesi
+  }
+  if (cleaned.length > 20) {
+    parts.push(cleaned.substring(20, 24)); // Dördüncü 4 hesap hanesi
+  }
+  if (cleaned.length > 24) {
+    parts.push(cleaned.substring(24, 26)); // Son 2 hesap hanesi
+  }
+  
+  return parts.join(' ');
+}
+
+/**
+ * Türkiye IBAN formatını doğrular
+ * Format: TR + 2 kontrol + 5 banka kodu + 1 rezerv + 16 hesap = 26 karakter
+ * Veya: TR + 2 kontrol + 4 banka kodu + 1 rezerv + 17 hesap = 26 karakter
+ */
+export function validateIBAN(iban: string): boolean {
+  if (!iban || iban.trim().length === 0) {
+    return false;
+  }
+  
+  // Boşlukları kaldır
+  const cleaned = iban.replace(/\s/g, '').toUpperCase();
+  
+  // TR ile başlamalı
+  if (!cleaned.startsWith('TR')) {
+    return false;
+  }
+  
+  // Toplam 26 karakter olmalı
+  if (cleaned.length !== 26) {
+    return false;
+  }
+  
+  // Sadece harf ve rakam içermeli
+  if (!/^[A-Z0-9]+$/.test(cleaned)) {
+    return false;
+  }
+  
+  // TR'den sonraki kısım sadece rakam olmalı (24 karakter)
+  const numericPart = cleaned.substring(2);
+  if (!/^\d{24}$/.test(numericPart)) {
+    return false;
+  }
+  
+  return true;
+}
+
 export function validateTCKN(tckn: string | number): boolean {
   // String'e çevir
   const tcknStr = String(tckn).trim();

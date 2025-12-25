@@ -17,10 +17,11 @@ import { branchService } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Branch, User } from '@/types';
 import { UserRole } from '@/types';
+import { formatIBAN, validateIBAN } from '@/utils/validators';
 import { 
   ArrowLeft, Edit, Trash2, Phone, Calendar,
   ShoppingCart, DollarSign, Users, TrendingUp,
-  Building2, MapPin, Save, X, Trophy, UserCheck, Percent
+  Building2, MapPin, Save, X, Trophy, UserCheck, Percent, CreditCard, CheckCircle2
 } from 'lucide-react';
 
 // Sube istatistikleri tipi
@@ -77,7 +78,9 @@ export default function BranchDetail() {
     name: '',
     address: '',
     phone: '',
-    commission_rate: ''  // Zorunlu alan
+    commission_rate: '',  // Zorunlu alan
+    account_name: '', // Banka hesap adı
+    iban: '' // IBAN
   });
   
   // Acentenin maksimum komisyon oranı (validasyon için)
@@ -106,7 +109,9 @@ export default function BranchDetail() {
         name: data.name || '',
         address: data.address || '',
         phone: data.phone || '',
-        commission_rate: String(data.commission_rate)
+        commission_rate: String(data.commission_rate),
+        account_name: data.account_name || '',
+        iban: data.iban || ''
       });
       
       // Acentenin maksimum komisyon oranını ayarla
@@ -141,13 +146,23 @@ export default function BranchDetail() {
         return;
       }
       
+      // IBAN validasyonu - IBAN girildiyse geçerli format olmalı
+      if (formData.iban && formData.iban.trim().length > 0) {
+        if (!validateIBAN(formData.iban)) {
+          alert('Lütfen geçerli bir IBAN formatı giriniz (TR + 24 karakter)');
+          return;
+        }
+      }
+      
       setSaving(true);
       
       const updateData = {
         name: formData.name,
         address: formData.address,
         phone: formData.phone,
-        commission_rate: commissionRate
+        commission_rate: commissionRate,
+        account_name: formData.account_name || null,
+        iban: formData.iban || null
       };
       
       await branchService.update(id, updateData);
@@ -212,7 +227,9 @@ export default function BranchDetail() {
         name: branch.name || '',
         address: branch.address || '',
         phone: branch.phone || '',
-        commission_rate: String(branch.commission_rate)
+        commission_rate: String(branch.commission_rate),
+        account_name: branch.account_name || '',
+        iban: branch.iban || ''
       });
     }
     setIsEditMode(false);
@@ -436,6 +453,50 @@ export default function BranchDetail() {
                       fazla olamaz.
                     </p>
                   </div>
+
+                  {/* Hesap Bilgileri */}
+                  <div className="space-y-4 p-4 border rounded-lg bg-slate-50">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-slate-600" />
+                      <Label className="text-base font-semibold">Hesap Bilgileri</Label>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="account_name">Hesap Adı</Label>
+                      <Input
+                        id="account_name"
+                        value={formData.account_name}
+                        onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
+                        placeholder="Banka hesap adı"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="iban">IBAN</Label>
+                      <Input
+                        id="iban"
+                        value={formData.iban}
+                        onChange={(e) => {
+                          const formatted = formatIBAN(e.target.value);
+                          setFormData({ ...formData, iban: formatted });
+                        }}
+                        placeholder="TR00 0000 0000 0000 0000 0000 00"
+                        maxLength={34}
+                      />
+                      {formData.iban && formData.iban.trim().length > 0 && (
+                        <div className="flex items-center gap-2 mt-1">
+                          {validateIBAN(formData.iban) ? (
+                            <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
+                              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                              <span>Geçerli IBAN formatı</span>
+                            </div>
+                          ) : formData.iban.replace(/\s/g, '').length >= 26 ? (
+                            <p className="text-xs text-red-500">Geçersiz IBAN formatı</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">TR + 24 karakter giriniz</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </>
               ) : (
                 // Goruntuleme modu
@@ -485,6 +546,28 @@ export default function BranchDetail() {
                       <p className="font-medium">{formatDate(branch.created_at)}</p>
                     </div>
                   </div>
+
+                  {/* Hesap Bilgileri */}
+                  {(branch.account_name || branch.iban) && (
+                    <div className="p-4 rounded-lg border bg-blue-50/50">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <Label className="text-sm font-semibold text-blue-900">Hesap Bilgileri</Label>
+                      </div>
+                      {branch.account_name && (
+                        <div className="mb-2">
+                          <div className="text-muted-foreground text-xs mb-1">Hesap Adı</div>
+                          <p className="font-medium text-sm">{branch.account_name}</p>
+                        </div>
+                      )}
+                      {branch.iban && (
+                        <div>
+                          <div className="text-muted-foreground text-xs mb-1">IBAN</div>
+                          <p className="font-mono font-medium text-sm">{branch.iban}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </CardContent>

@@ -35,6 +35,8 @@ export interface Agency {
   balance: number;             // Bakiye (TL) - Biriken komisyonlar
   status: EntityStatus;        // Acente durumu
   logo?: string | null;         // Logo (Base64 formatında)
+  account_name?: string | null; // Banka hesap adı
+  iban?: string | null;        // IBAN (Uluslararası Banka Hesap Numarası)
   created_at: string;
   updated_at: string;
   branches?: Branch[];         // Acenteye bağlı şubeler (opsiyonel)
@@ -52,6 +54,8 @@ export interface Branch {
   commission_rate: number;
   // Şube bakiyesi (TL) - Biriken komisyonlar
   balance: number;
+  account_name?: string | null; // Banka hesap adı
+  iban?: string | null;        // IBAN (Uluslararası Banka Hesap Numarası)
   // Acentenin maksimum komisyon oranı (validasyon için)
   agency_max_commission?: number;
   status?: string;
@@ -174,6 +178,9 @@ export interface Sale {
   package_id: string;
   price: number;
   commission: number;
+  // Dağılımlı komisyon alanları
+  branch_commission?: number | null;  // Şube komisyonu (TL) - Şube varsa şube kendi komisyonunu alır
+  agency_commission?: number | null;  // Acente komisyonu (TL) - Şube varsa kalan kısım (acente komisyonu - şube komisyonu), yoksa tamamı
   start_date: string;
   end_date: string;
   policy_number?: string;

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,59 +42,52 @@ const ITEMS_PER_PAGE = 20;
  */
 export default function SupportSales() {
   const [sales, setSales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
-  useEffect(() => {
-    fetchSales();
-  }, []);
+  // Otomatik arama kaldırıldı - sadece butona basıldığında arama yapılacak
 
-  // Tüm satışları getir (SUPPORT rolü tüm satışları görebilir)
-  const fetchSales = async () => {
+  // Satışları getir (sadece search query ile)
+  const fetchSales = async (query: string) => {
+    if (!query.trim()) {
+      setSales([]);
+      return;
+    }
+    
     try {
-      setLoading(true);
-      const salesData = await saleService.getAll();
+      setIsSearching(true);
+      const salesData = await saleService.getAll({ search: query.trim() });
       setSales(salesData);
     } catch (error) {
       console.error('Satışlar yüklenirken hata:', error);
+      setSales([]);
     } finally {
-      setLoading(false);
+      setIsSearching(false);
     }
   };
 
-  // Filtrelenmiş satışlar
-  const filteredSales = useMemo(() => {
-    if (!searchQuery) return sales;
-    
-    const query = searchQuery.toLowerCase();
-    return sales.filter(sale => {
-      // Müşteri adı/soyadı
-      const customerName = `${sale.customer?.name || ''} ${sale.customer?.surname || ''}`.toLowerCase();
-      // TC/VKN
-      const tcVkn = sale.customer?.tc_vkn?.toLowerCase() || '';
-      // Plaka
-      const plate = sale.vehicle?.plate?.toLowerCase() || '';
-      // Paket adı
-      const packageName = sale.package?.name?.toLowerCase() || '';
-      // Acente adı
-      const agencyName = (sale.agency as any)?.name?.toLowerCase() || '';
-      // Şube adı
-      const branchName = (sale.branch as any)?.name?.toLowerCase() || '';
-      // Satış ID
-      const saleId = sale.id.toLowerCase();
+  // Sorgula butonuna tıklandığında
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      setSales([]);
+      return;
+    }
+    setCurrentPage(1); // Yeni arama yapıldığında sayfa numarasını sıfırla
+    fetchSales(searchQuery);
+  };
 
-      return customerName.includes(query) ||
-             tcVkn.includes(query) ||
-             plate.includes(query) ||
-             packageName.includes(query) ||
-             agencyName.includes(query) ||
-             branchName.includes(query) ||
-             saleId.includes(query);
-    });
-  }, [sales, searchQuery]);
+  // Enter tuşuna basıldığında da arama yap
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  // Filtrelenmiş satışlar (artık backend'de filtreleniyor, burada sadece pagination için)
+  const filteredSales = sales;
 
   // Pagination hesaplamaları
   const totalPages = Math.ceil(filteredSales.length / ITEMS_PER_PAGE);
@@ -103,10 +96,6 @@ export default function SupportSales() {
     return filteredSales.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredSales, currentPage]);
 
-  // Arama değiştiğinde sayfa numarasını sıfırla
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
 
   // Satış detayını görüntüle
   const handleViewSale = (sale: Sale) => {
@@ -135,12 +124,8 @@ export default function SupportSales() {
             <ShoppingCart className="h-8 w-8" />
             Satış Sorgulama
           </h1>
-          <p className="text-muted-foreground">Tüm satışları görüntüleyip sorgulayabilirsiniz</p>
+          <p className="text-muted-foreground">Satışları sorgulamak için arama yapın</p>
         </div>
-        <Button onClick={fetchSales} variant="outline" className="gap-2">
-          <RefreshCcw className="h-4 w-4" />
-          Yenile
-        </Button>
       </div>
 
       {/* Arama */}
@@ -153,13 +138,18 @@ export default function SupportSales() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Müşteri adı, TC/VKN, plaka, paket, acente, şube veya satış ID ile ara..."
+                placeholder="Satış numarası veya plaka ile ara..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
                 className="pl-10"
               />
             </div>
-            <Button onClick={() => setSearchQuery('')} variant="outline" className="gap-2">
+            <Button onClick={handleSearch} disabled={isSearching || !searchQuery.trim()} className="gap-2">
+              <Search className="h-4 w-4" />
+              Sorgula
+            </Button>
+            <Button onClick={() => { setSearchQuery(''); setSales([]); }} variant="outline" className="gap-2">
               <RefreshCcw className="h-4 w-4" />
               Sıfırla
             </Button>
@@ -176,14 +166,20 @@ export default function SupportSales() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isSearching ? (
             <div className="flex items-center justify-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : !searchQuery.trim() ? (
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground mb-2">Arama yapmak için yukarıdaki arama kutusuna satış numarası veya plaka girin ve "Sorgula" butonuna basın</p>
+              <p className="text-sm text-muted-foreground">Satış numarası veya plaka ile arama yapabilirsiniz</p>
             </div>
           ) : filteredSales.length === 0 ? (
             <div className="text-center py-12">
               <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Henüz satış bulunmuyor</p>
+              <p className="text-muted-foreground">Arama kriterlerinize uygun satış bulunamadı</p>
             </div>
           ) : (
             <>

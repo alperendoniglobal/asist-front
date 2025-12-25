@@ -92,7 +92,7 @@ export default function Login() {
 
         <div className="relative z-10">
           <p className="text-slate-500 text-sm">
-            © 2021 Yol Asistan. Tüm hakları saklıdır.
+            © 2023 Yol Asistan. Tüm hakları saklıdır.
           </p>
         </div>
       </div>
@@ -171,6 +171,30 @@ export default function Login() {
                 )}
               </Button>
             </form>
+
+            {/* Ödeme Logoları - Login formunun altında */}
+            <div className="mt-8 pt-6 border-t">
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-xs text-muted-foreground">Güvenli Ödeme</p>
+                <div className="flex items-center justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
+                  <img 
+                    src="/iyzicologo.png" 
+                    alt="Iyzico" 
+                    className="h-7 w-auto object-contain"
+                  />
+                  <img 
+                    src="/visalogo.png" 
+                    alt="Visa" 
+                    className="h-7 w-auto object-contain"
+                  />
+                  <img 
+                    src="/mastercardlogo.png" 
+                    alt="Mastercard" 
+                    className="h-7 w-auto object-contain"
+                  />
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -17,9 +17,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { userService, branchService } from '@/services/apiService';
+import { userService, branchService, agencyService } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
-import type { User, Branch } from '@/types';
+import type { User, Branch, Agency } from '@/types';
 import { UserRole } from '@/types';
 import { 
   ArrowLeft, Edit, Trash2, Mail, Phone, Shield, Calendar,
@@ -61,6 +61,7 @@ export default function UserDetail() {
   // State'ler
   const [user, setUser] = useState<UserWithActivity | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [agencies, setAgencies] = useState<Agency[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -88,6 +89,9 @@ export default function UserDetail() {
     if (id) {
       fetchUserDetail();
       fetchBranches();
+      if (isSuperAdmin) {
+        fetchAgencies();
+      }
     }
   }, [id]);
 
@@ -98,6 +102,7 @@ export default function UserDetail() {
       setLoading(true);
       const userData = await userService.getByIdWithActivity(id);
       setUser(userData);
+      
       // Form'u doldur
       setFormData({
         name: userData.name || '',
@@ -107,7 +112,7 @@ export default function UserDetail() {
         password: '',
         role: userData.role,
         agency_id: userData.agency_id || '',
-        branch_id: userData.branch_id || ''
+        branch_id: userData.branch_id || '',
       });
     } catch (error) {
       console.error('Kullanici detaylari yuklenirken hata:', error);
@@ -127,6 +132,40 @@ export default function UserDetail() {
     }
   };
 
+  // Acenteleri yukle
+  const fetchAgencies = async () => {
+    try {
+      const data = await agencyService.getAll();
+      setAgencies(data);
+    } catch (error) {
+      console.error('Acenteler yuklenirken hata:', error);
+    }
+  };
+
+  // Acente seçildiğinde hesap bilgilerini yükle
+  useEffect(() => {
+    if (formData.agency_id && isEditMode) {
+      const selectedAgency = agencies.find(a => a.id === formData.agency_id);
+      if (selectedAgency) {
+        setFormData(prev => ({
+          ...prev,
+        }));
+      }
+    }
+  }, [formData.agency_id, agencies, isEditMode]);
+
+  // Şube seçildiğinde hesap bilgilerini yükle
+  useEffect(() => {
+    if (formData.branch_id && isEditMode) {
+      const selectedBranch = branches.find(b => b.id === formData.branch_id);
+      if (selectedBranch) {
+        setFormData(prev => ({
+          ...prev,
+        }));
+      }
+    }
+  }, [formData.branch_id, branches, isEditMode]);
+
   // Kullanici guncelle
   const handleSave = async () => {
     if (!id) return;
@@ -137,7 +176,10 @@ export default function UserDetail() {
       const finalUpdateData = formData.role === UserRole.SUPPORT
         ? { ...updateData, agency_id: '', branch_id: '' }
         : updateData;
+      
+      // Kullanıcıyı güncelle
       await userService.update(id, password ? { ...formData, ...finalUpdateData } : finalUpdateData);
+      
       await fetchUserDetail();
       setIsEditMode(false);
     } catch (error: any) {
@@ -237,18 +279,10 @@ export default function UserDetail() {
   };
 
   // Duzenlemeyi iptal et
-  const handleCancelEdit = () => {
+  const handleCancelEdit = async () => {
     if (user) {
-      setFormData({
-        name: user.name || '',
-        surname: user.surname || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        password: '',
-        role: user.role,
-        agency_id: user.agency_id || '',
-        branch_id: user.branch_id || ''
-      });
+      // Kullanıcı bilgilerini yeniden yükle
+      await fetchUserDetail();
     }
     setIsEditMode(false);
   };
@@ -425,6 +459,28 @@ export default function UserDetail() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {/* SUPPORT rolü global bir rol olduğu için acente ve şube seçimi gerekmez */}
+                  {isSuperAdmin && formData.role !== UserRole.SUPPORT && (
+                    <div className="space-y-2">
+                      <Label>Acente</Label>
+                      <Select
+                        value={formData.agency_id || "none"}
+                        onValueChange={(value) => setFormData({ ...formData, agency_id: value === "none" ? "" : value, branch_id: '' })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Acente secin" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Acente yok</SelectItem>
+                          {agencies.map((agency) => (
+                            <SelectItem key={agency.id} value={agency.id}>
+                              {agency.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   {/* SUPPORT rolü global bir rol olduğu için şube seçimi gerekmez */}
                   {formData.role !== UserRole.SUPPORT && (
                     <div className="space-y-2">
@@ -438,7 +494,7 @@ export default function UserDetail() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">Sube yok</SelectItem>
-                          {branches.map((branch) => (
+                          {branches.filter(b => !formData.agency_id || b.agency_id === formData.agency_id).map((branch) => (
                             <SelectItem key={branch.id} value={branch.id}>
                               {branch.name}
                             </SelectItem>
@@ -447,6 +503,8 @@ export default function UserDetail() {
                       </Select>
                     </div>
                   )}
+                  
+
                   {/* SUPPORT rolü bilgilendirmesi */}
                   {formData.role === UserRole.SUPPORT && (
                     <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">

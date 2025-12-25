@@ -18,7 +18,7 @@ import { DataPagination } from '@/components/ui/pagination';
 import { vehicleService, customerService, carBrandService, carModelService } from '@/services/apiService';
 import type { Vehicle, Customer, CarBrand, CarModel } from '@/types';
 import { 
-  Plus, Search, Edit, Trash2, Eye, Car, User, Calendar,
+  Search, Eye, Car, User, Calendar,
   Hash, Settings, RefreshCcw, Building2, MapPin, FileText, Globe
 } from 'lucide-react';
 
@@ -178,50 +178,12 @@ export default function Vehicles() {
     }
   };
 
-  // Araç sil
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bu aracı silmek istediğinize emin misiniz?')) return;
-    try {
-      await vehicleService.delete(id);
-      fetchData();
-    } catch (error) {
-      console.error('Araç silinirken hata:', error);
-    }
-  };
-
   // Detay görüntüle
   const handleView = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
     setIsViewOpen(true);
   };
 
-  // Düzenleme modunu aç
-  const handleEdit = async (vehicle: Vehicle) => {
-    setSelectedVehicle(vehicle);
-    
-    // Önce marka için modelleri çek
-    if (vehicle.brand_id) {
-      try {
-        const models = await carModelService.getByBrandId(vehicle.brand_id);
-        setCarModels(models);
-      } catch (error) {
-        console.error('Modeller yüklenirken hata:', error);
-      }
-    }
-    
-    setFormData({
-      customer_id: vehicle.customer_id,
-      is_foreign_plate: vehicle.is_foreign_plate || false,
-      plate: vehicle.plate,
-      registration_serial: vehicle.registration_serial || '',
-      registration_number: vehicle.registration_number || '',
-      brand_id: vehicle.brand_id?.toString() || '',
-      model_id: vehicle.model_id?.toString() || '',
-      model_year: vehicle.model_year || new Date().getFullYear(),
-      usage_type: vehicle.usage_type || 'PRIVATE'
-    });
-    setIsEditOpen(true);
-  };
 
   // Form sıfırla
   const resetForm = () => {
@@ -280,10 +242,10 @@ export default function Vehicles() {
           </h1>
           <p className="text-muted-foreground">Araç kayıtlarını yönetin</p>
         </div>
-        <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} className="gap-2">
+        {/* <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} className="gap-2">
           <Plus className="h-4 w-4" />
           Yeni Araç
-        </Button>
+        </Button> */}
       </div>
 
       {/* Arama */}
@@ -387,17 +349,17 @@ export default function Vehicles() {
                             <Button variant="ghost" size="sm" onClick={() => handleView(vehicle)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(vehicle)}>
+                            {/* <Button variant="ghost" size="sm" onClick={() => handleEdit(vehicle)}>
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
+                            </Button> */}
+                            {/* <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDelete(vehicle.id)}
                               className="text-destructive hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </Button>
+                            </Button> */}
                           </div>
                         </TableCell>
                       </TableRow>

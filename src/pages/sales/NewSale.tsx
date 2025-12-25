@@ -13,6 +13,7 @@ import {
   customerService, packageService, saleService,
   carBrandService, carModelService, agencyService, pdfService
 } from '@/services/apiService';
+import { contentService } from '@/services/contentService';
 import { extractRegistrationInfo } from '@/services/ocrService';
 import { toast } from 'sonner';
 import { validateTCKN, validateVKN } from '@/utils/validators';
@@ -84,6 +85,13 @@ export default function NewSale() {
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrModalOpen, setOcrModalOpen] = useState(false);
+
+  // KVKK ve Mesafeli Satış Sözleşmesi Modal state
+  const [kvkkModalOpen, setKvkkModalOpen] = useState(false);
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [kvkkContent, setKvkkContent] = useState<string>('');
+  const [contractContent, setContractContent] = useState<string>('');
+  const [loadingContent, setLoadingContent] = useState(false);
 
   // Form Data - Müşteri Bilgileri
   const [customerForm, setCustomerForm] = useState({
@@ -263,6 +271,42 @@ export default function NewSale() {
   const handleUsageTypeChange = (usageType: string) => {
     setVehicleForm({ ...vehicleForm, usage_type: usageType });
     filterPackagesByVehicle(vehicleForm.model_year, usageType);
+  };
+
+  // KVKK Modal açma ve içerik çekme
+  const handleOpenKvkkModal = async () => {
+    setKvkkModalOpen(true);
+    if (!kvkkContent) {
+      setLoadingContent(true);
+      try {
+        const content = await contentService.getPageBySlug('kvkk');
+        setKvkkContent(content.content || '');
+      } catch (error) {
+        console.error('KVKK içeriği yüklenirken hata:', error);
+        toast.error('KVKK içeriği yüklenirken bir hata oluştu');
+        setKvkkContent('İçerik yüklenemedi.');
+      } finally {
+        setLoadingContent(false);
+      }
+    }
+  };
+
+  // Mesafeli Satış Sözleşmesi Modal açma ve içerik çekme
+  const handleOpenContractModal = async () => {
+    setContractModalOpen(true);
+    if (!contractContent) {
+      setLoadingContent(true);
+      try {
+        const content = await contentService.getPageBySlug('distance-sales-contract');
+        setContractContent(content.content || '');
+      } catch (error) {
+        console.error('Mesafeli Satış Sözleşmesi içeriği yüklenirken hata:', error);
+        toast.error('Mesafeli Satış Sözleşmesi içeriği yüklenirken bir hata oluştu');
+        setContractContent('İçerik yüklenemedi.');
+      } finally {
+        setLoadingContent(false);
+      }
+    }
   };
 
   // Ruhsat fotoğrafı yükleme
@@ -1242,7 +1286,16 @@ export default function NewSale() {
                   className="mt-1"
                 />
                 <span className="text-sm">
-                  <span className="text-primary underline">KVKK Bilgilendirme Metni</span>'ni okudum onaylıyorum.
+                  <span 
+                    className="text-primary underline hover:text-primary/80 cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleOpenKvkkModal();
+                    }}
+                  >
+                    KVKK Bilgilendirme Metni
+                  </span>
+                  'ni okudum onaylıyorum.
                 </span>
               </label>
               <label className="flex items-start gap-2 cursor-pointer">
@@ -1253,7 +1306,16 @@ export default function NewSale() {
                   className="mt-1"
                 />
                 <span className="text-sm">
-                  <span className="text-primary underline">Mesafeli Satış Sözleşmesi</span>'ni okudum onaylıyorum.
+                  <span 
+                    className="text-primary underline hover:text-primary/80 cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleOpenContractModal();
+                    }}
+                  >
+                    Mesafeli Satış Sözleşmesi
+                  </span>
+                  'ni okudum onaylıyorum.
                 </span>
               </label>
             </div>
@@ -1371,6 +1433,58 @@ export default function NewSale() {
                   Fotoğraf net ve okunabilir olmalıdır
                 </p>
               </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* KVKK Bilgilendirme Metni Modal */}
+      <Dialog open={kvkkModalOpen} onOpenChange={setKvkkModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">KVKK Bilgilendirme Metni</DialogTitle>
+            <DialogDescription>
+              Kişisel Verilerin Korunması Kanunu kapsamında bilgilendirme metni
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {loadingContent ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-3 text-muted-foreground">İçerik yükleniyor...</span>
+              </div>
+            ) : (
+              <div 
+                className="prose prose-sm max-w-none dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: kvkkContent }}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mesafeli Satış Sözleşmesi Modal */}
+      <Dialog open={contractModalOpen} onOpenChange={setContractModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Mesafeli Satış Sözleşmesi</DialogTitle>
+            <DialogDescription>
+              Mesafeli satış sözleşmesi ve tüketici hakları
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="mt-4">
+            {loadingContent ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-3 text-muted-foreground">İçerik yükleniyor...</span>
+              </div>
+            ) : (
+              <div 
+                className="prose prose-sm max-w-none dark:prose-invert"
+                dangerouslySetInnerHTML={{ __html: contractContent }}
+              />
             )}
           </div>
         </DialogContent>

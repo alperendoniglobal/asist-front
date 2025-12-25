@@ -53,7 +53,10 @@ export default function Sales() {
     start_date: '',
     end_date: '',
     price: 0,
-    commission: 0
+    commission: 0,
+    branch_id: null as string | null,
+    branch_commission: null as number | null,
+    agency_commission: null as number | null
   });
   const [paymentData, setPaymentData] = useState({
     payment_type: 'IYZICO' as PaymentType,
@@ -71,6 +74,11 @@ export default function Sales() {
   const [refundReason, setRefundReason] = useState('');
   const [refundLoading, setRefundLoading] = useState(false);
   const [refundCalculating, setRefundCalculating] = useState(false);
+
+  // ===== EXCEL EXPORT STATE'LERİ =====
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
+  const [exportLoading, setExportLoading] = useState(false);
 
   // İade yapabilme yetkisi kontrolü - sadece Agency Admin ve üstü yapabilir
   const canRefund = user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.AGENCY_ADMIN;
@@ -154,7 +162,12 @@ export default function Sales() {
 
   const handleCreate = async () => {
     try {
-      const newSale = await saleService.create(formData);
+      // branch_id null ise undefined'a çevir (TypeScript type uyumu için)
+      const saleData = {
+        ...formData,
+        branch_id: formData.branch_id || undefined
+      };
+      const newSale = await saleService.create(saleData);
       setSelectedSale(newSale);
       setIsCreateOpen(false);
       setIsPaymentOpen(true);
@@ -250,6 +263,31 @@ export default function Sales() {
     }
   };
 
+  /**
+   * Excel export işlemini gerçekleştir
+   * Rol bazlı filtreleme backend'de otomatik olarak uygulanır
+   */
+  const handleExportToExcel = async () => {
+    setExportLoading(true);
+    try {
+      const blob = await saleService.exportToExcel(exportStartDate || undefined, exportEndDate || undefined);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.download = `satislar_${dateStr}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      console.error('Excel export hatası:', error);
+      alert(error.response?.data?.message || 'Excel export işlemi başarısız oldu');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       customer_id: '',
@@ -258,7 +296,10 @@ export default function Sales() {
       start_date: '',
       end_date: '',
       price: 0,
-      commission: 0
+      commission: 0,
+      branch_id: null,
+      branch_commission: null,
+      agency_commission: null
     });
     setPaymentData({
       payment_type: 'IYZICO' as PaymentType,
@@ -303,18 +344,71 @@ export default function Sales() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
+        <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <ShoppingCart className="h-8 w-8" />
             Satışlar
           </h1>
           <p className="text-muted-foreground">Satış kayıtlarını yönetin ve yeni satış oluşturun</p>
         </div>
-        <Button onClick={() => navigate('/dashboard/sales/new')} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Yeni Satış
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button onClick={() => navigate('/dashboard/sales/new')} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Yeni Satış
+          </Button>
+        </div>
       </div>
+
+      {/* Excel Export Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Excel'e Aktar</CardTitle>
+          <CardDescription>Satışları Excel formatında indirmek için tarih aralığı seçin (opsiyonel)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="export-start-date">Başlangıç Tarihi</Label>
+                <Input
+                  id="export-start-date"
+                  type="date"
+                  value={exportStartDate}
+                  onChange={(e) => setExportStartDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="export-end-date">Bitiş Tarihi</Label>
+                <Input
+                  id="export-end-date"
+                  type="date"
+                  value={exportEndDate}
+                  onChange={(e) => setExportEndDate(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            <Button 
+              onClick={handleExportToExcel} 
+              disabled={exportLoading}
+              className="gap-2"
+            >
+              {exportLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  İndiriliyor...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Excel'e Aktar
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Arama */}
       <Card>
@@ -548,9 +642,39 @@ export default function Sales() {
                   </div>
                   {/* Komisyon sadece yetkili kullanıcılar görebilir (Super Admin, Agency Admin, Branch Admin) */}
                   {canViewCommission && (
-                    <div className="flex justify-between">
-                      <span>Komisyon:</span>
-                      <span className="font-semibold text-emerald-600">{formatCurrency(formData.commission)}</span>
+                    <div className="space-y-1">
+                      {formData.branch_id && formData.branch_commission ? (
+                        // Şube varsa: Role göre komisyon göster
+                        (user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER) ? (
+                          // Şube kullanıcıları: Sadece kendi komisyonlarını görsün
+                          <div className="flex justify-between">
+                            <span>Komisyon:</span>
+                            <span className="font-semibold text-blue-600">{formatCurrency(formData.branch_commission)}</span>
+                          </div>
+                        ) : (
+                          // Acente kullanıcıları ve Super Admin: Dağılımlı komisyon göster
+                          <>
+                            <div className="flex justify-between">
+                              <span>Şube Komisyonu:</span>
+                              <span className="font-semibold text-blue-600">{formatCurrency(formData.branch_commission)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Acente Komisyonu:</span>
+                              <span className="font-semibold text-purple-600">{formatCurrency(formData.agency_commission || 0)}</span>
+                            </div>
+                            <div className="flex justify-between border-t pt-1">
+                              <span>Toplam Komisyon:</span>
+                              <span className="font-semibold text-emerald-600">{formatCurrency(formData.commission)}</span>
+                            </div>
+                          </>
+                        )
+                      ) : (
+                        // Şube yoksa: Sadece acente komisyonu göster
+                        <div className="flex justify-between">
+                          <span>Komisyon:</span>
+                          <span className="font-semibold text-emerald-600">{formatCurrency(formData.commission)}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -862,8 +986,36 @@ export default function Sales() {
                   {/* Komisyon sadece yetkili kullanıcılar görebilir (Super Admin, Agency Admin, Branch Admin) */}
                   {canViewCommission && (
                     <div className="p-3 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-                      <div className="text-muted-foreground mb-1 text-xs">Komisyon</div>
-                      <p className="font-bold text-lg text-emerald-600">{formatCurrency(selectedSale?.commission || 0)}</p>
+                      {selectedSale?.branch_id && selectedSale?.branch_commission ? (
+                        // Şube varsa: Role göre komisyon göster
+                        (user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER) ? (
+                          // Şube kullanıcıları: Sadece kendi komisyonlarını görsün
+                          <>
+                            <div className="text-muted-foreground mb-1 text-xs">Komisyon</div>
+                            <p className="font-bold text-lg text-blue-600">{formatCurrency(selectedSale.branch_commission)}</p>
+                          </>
+                        ) : (
+                          // Acente kullanıcıları ve Super Admin: Dağılımlı komisyon göster
+                          <div className="space-y-1">
+                            <div className="text-muted-foreground mb-1 text-xs">Komisyon Dağılımı</div>
+                            <div className="text-xs text-blue-600 dark:text-blue-400">
+                              Şube: {formatCurrency(selectedSale.branch_commission)}
+                            </div>
+                            <div className="text-xs text-purple-600 dark:text-purple-400">
+                              Acente: {formatCurrency(selectedSale.agency_commission || 0)}
+                            </div>
+                            <div className="text-xs font-bold text-emerald-600 border-t pt-1 mt-1">
+                              Toplam: {formatCurrency(selectedSale.commission || 0)}
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        // Şube yoksa: Sadece acente komisyonu göster
+                        <>
+                          <div className="text-muted-foreground mb-1 text-xs">Komisyon</div>
+                          <p className="font-bold text-lg text-emerald-600">{formatCurrency(selectedSale?.commission || 0)}</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

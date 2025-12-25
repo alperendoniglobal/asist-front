@@ -23,7 +23,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />
+    // Authenticated kullanıcı ama yetkisi yoksa dashboard'a yönlendir, landing'e değil
+    return <Navigate to="/dashboard" replace />
   }
 
   return <>{children}</>
