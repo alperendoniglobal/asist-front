@@ -841,12 +841,6 @@ export default function LandingPage() {
                       {feature.description}
                     </p>
                     
-                    {/* Arrow indicator */}
-                    <div className="flex items-center text-sm font-medium text-slate-500 group-hover:text-slate-700 transition-colors mt-auto">
-                      <span>Daha fazla</span>
-                      <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                    
                     {/* Subtle background decoration */}
                     <div className={`absolute -bottom-10 -right-10 w-32 h-32 ${colors.icon} rounded-full opacity-10 blur-2xl group-hover:opacity-20 transition-opacity`}></div>
                   </CardContent>
