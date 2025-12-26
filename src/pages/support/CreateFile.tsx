@@ -49,6 +49,44 @@ const DEFAULT_SERVICE_OPTIONS = [
 ];
 
 /**
+ * Sayıyı Türkçe formatına çevirir (15000.00 -> 15.000)
+ * @param value - Formatlanacak değer (string veya number)
+ * @returns Formatlanmış string (örn: "15.000")
+ */
+const formatTurkishNumber = (value: string | number | null | undefined): string => {
+  if (!value && value !== 0) return '';
+  
+  // String ise parse et, number ise direkt kullan
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  
+  if (isNaN(numValue)) return '';
+  
+  // Ondalık kısmı kaldır ve binlik ayırıcı olarak nokta kullan
+  const integerPart = Math.floor(Math.abs(numValue));
+  const formatted = integerPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  
+  return formatted;
+};
+
+/**
+ * Formatlanmış sayıyı parse eder (15.000 -> 15000.00)
+ * @param value - Parse edilecek string (örn: "15.000")
+ * @returns Parse edilmiş sayı string'i (örn: "15000.00")
+ */
+const parseFormattedNumber = (value: string): string => {
+  if (!value || value.trim() === '') return '';
+  
+  // Noktaları kaldır (binlik ayırıcılar)
+  const cleaned = value.replace(/\./g, '');
+  const numValue = parseFloat(cleaned);
+  
+  if (isNaN(numValue)) return '';
+  
+  // İki ondalık basamakla döndür
+  return numValue.toFixed(2);
+};
+
+/**
  * Destek Ekibi için Dosya Oluşturma Sayfası
  * Çağrı merkezi için yeni dosya oluşturur
  */
@@ -68,6 +106,8 @@ export default function CreateFile() {
   // Modal state - dosya detaylarını göstermek için
   const [selectedFile, setSelectedFile] = useState<any | null>(null);
   const [isFileModalOpen, setIsFileModalOpen] = useState(false);
+  // İşlem tutarı validasyon hatası
+  const [serviceAmountError, setServiceAmountError] = useState<string>('');
   const [formData, setFormData] = useState({
     // Satış Bilgileri
     policy_number: '',
@@ -187,12 +227,25 @@ export default function CreateFile() {
               // İlk kapsamı varsayılan olarak seç ve limit_amount'unu ekle
               if (coverTitles.length > 0) {
                 const firstCover = covers[0];
-                setFormData(prev => ({ 
-                  ...prev, 
-                  service_type: coverTitles[0],
-                  // İlk kapsamın limit_amount'unu Yol Yardım Teyminatı alanına ekle
-                  road_assistance_coverage: firstCover.limit_amount || ''
-                }));
+                const limitAmount = formatTurkishNumber(firstCover.limit_amount) || '';
+                setFormData(prev => {
+                  // Teyminat set edilirken mevcut işlem tutarını kontrol et
+                  const serviceAmount = parseFloat(prev.service_amount || '0');
+                  const coverageAmount = parseFloat(parseFormattedNumber(limitAmount));
+                  
+                  if (!isNaN(serviceAmount) && !isNaN(coverageAmount) && serviceAmount > coverageAmount) {
+                    setServiceAmountError(`İşlem tutarı teyminattan (${limitAmount} TL) büyük olamaz!`);
+                  } else {
+                    setServiceAmountError('');
+                  }
+                  
+                  return { 
+                    ...prev, 
+                    service_type: coverTitles[0],
+                    // İlk kapsamın limit_amount'unu formatlanmış şekilde Yol Yardım Teyminatı alanına ekle
+                    road_assistance_coverage: limitAmount
+                  };
+                });
               }
             }
           } catch (error) {
@@ -213,7 +266,8 @@ export default function CreateFile() {
           
           // Hasar dosya bilgileri
           damage_policy_number: policyNumber,
-          policy_start_date: sale.start_date ? new Date(sale.start_date).toLocaleDateString('tr-TR') : '',
+          // policy_start_date'i ISO formatında tut (YYYY-MM-DD) - backend'e gönderirken kullanılacak
+          policy_start_date: sale.start_date ? new Date(sale.start_date).toISOString().split('T')[0] : '',
           
           // Sigortalı bilgileri
           insured_name: `${sale.customer?.name || ''} ${sale.customer?.surname || ''}`.trim(),
@@ -248,6 +302,19 @@ export default function CreateFile() {
       return;
     }
 
+    // Validasyon: İşlem tutarı teyminattan büyük olamaz
+    if (formData.service_amount && formData.road_assistance_coverage) {
+      const serviceAmount = parseFloat(formData.service_amount.toString());
+      const coverageAmount = parseFloat(parseFormattedNumber(formData.road_assistance_coverage));
+      
+      if (!isNaN(serviceAmount) && !isNaN(coverageAmount) && serviceAmount > coverageAmount) {
+        toast.error(`İşlem tutarı teyminattan (${formData.road_assistance_coverage} TL) büyük olamaz!`);
+        setServiceAmountError(`İşlem tutarı teyminattan (${formData.road_assistance_coverage} TL) büyük olamaz!`);
+        setSubmitting(false);
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       // request_date_time'ı parse et (datetime-local formatı: YYYY-MM-DDTHH:mm)
@@ -265,6 +332,38 @@ export default function CreateFile() {
         requestDateTime = new Date();
       }
 
+      // policy_start_date'i parse et ve ISO formatına çevir (YYYY-MM-DD)
+      // Türkçe format (DD.MM.YYYY) veya ISO format (YYYY-MM-DD) gelebilir
+      let policyStartDate: string | null = null;
+      if (formData.policy_start_date && formData.policy_start_date.trim() !== '') {
+        const dateStr = formData.policy_start_date.trim();
+        
+        // ISO format kontrolü (YYYY-MM-DD)
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          // Zaten ISO formatında
+          policyStartDate = dateStr;
+        } else {
+          // Türkçe format kontrolü (DD.MM.YYYY)
+          const turkishFormatMatch = dateStr.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+          if (turkishFormatMatch) {
+            const [, day, month, year] = turkishFormatMatch;
+            // ISO formatına çevir (YYYY-MM-DD)
+            policyStartDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          } else {
+            // Diğer formatları Date constructor ile parse etmeyi dene
+            const parsedDate = new Date(dateStr);
+            if (!isNaN(parsedDate.getTime())) {
+              // Geçerli bir tarih ise ISO formatına çevir
+              policyStartDate = parsedDate.toISOString().split('T')[0];
+            } else {
+              // Parse edilemezse null bırak
+              console.warn('policy_start_date parse edilemedi:', dateStr);
+              policyStartDate = null;
+            }
+          }
+        }
+      }
+
       // Form verilerini backend formatına çevir
       const fileData = {
         sale_id: foundSale.id,
@@ -272,7 +371,8 @@ export default function CreateFile() {
         damage_file_number: '', // Backend otomatik oluşturacak
         policy_number: formData.policy_number || null,
         damage_policy_number: formData.damage_policy_number || null,
-        policy_start_date: formData.policy_start_date ? new Date(formData.policy_start_date).toISOString().split('T')[0] : null,
+        // policy_start_date artık her zaman ISO formatında (YYYY-MM-DD)
+        policy_start_date: policyStartDate,
         insured_name: formData.insured_name,
         insured_phone: formData.insured_phone,
         vehicle_plate: formData.vehicle_plate,
@@ -282,7 +382,10 @@ export default function CreateFile() {
         vehicle_segment: formData.vehicle_segment || null,
         service_type: formData.service_type,
         service_amount: formData.service_amount ? parseFloat(formData.service_amount.toString()) : null,
-        roadside_assistance_coverage: formData.road_assistance_coverage || null,
+        // roadside_assistance_coverage formatlanmış olabilir (15.000), backend'e parse edilmiş gönder (15000.00)
+        roadside_assistance_coverage: formData.road_assistance_coverage 
+          ? parseFormattedNumber(formData.road_assistance_coverage) 
+          : null,
         city: formData.service_city,
         staff_name: user ? `${user.name} ${user.surname}`.trim() : '',
         kilometer: formData.kilometer ? parseInt(formData.kilometer.toString()) : null,
@@ -580,12 +683,24 @@ export default function CreateFile() {
                       onValueChange={(value) => {
                         // Seçilen hizmetin limit_amount'unu bul
                         const selectedCover = packageCovers.find((cover: any) => cover.title === value);
-                        // Yol Yardım Teyminatı alanına limit_amount'u ekle
-                        const limitAmount = selectedCover?.limit_amount || '';
-                        setFormData({ 
-                          ...formData, 
-                          service_type: value,
-                          road_assistance_coverage: limitAmount
+                        // Yol Yardım Teyminatı alanına formatlanmış limit_amount'u ekle
+                        const limitAmount = formatTurkishNumber(selectedCover?.limit_amount) || '';
+                        setFormData(prev => {
+                          // Teyminat değiştiğinde işlem tutarını kontrol et
+                          const serviceAmount = parseFloat(prev.service_amount || '0');
+                          const coverageAmount = parseFloat(parseFormattedNumber(limitAmount));
+                          
+                          if (!isNaN(serviceAmount) && !isNaN(coverageAmount) && serviceAmount > coverageAmount) {
+                            setServiceAmountError(`İşlem tutarı teyminattan (${limitAmount} TL) büyük olamaz!`);
+                          } else {
+                            setServiceAmountError('');
+                          }
+                          
+                          return { 
+                            ...prev, 
+                            service_type: value,
+                            road_assistance_coverage: limitAmount
+                          };
                         });
                       }}
                       disabled={loadingCovers}
@@ -615,20 +730,47 @@ export default function CreateFile() {
                       type="number"
                       step="0.01"
                       value={formData.service_amount}
-                      onChange={(e) => setFormData({ ...formData, service_amount: e.target.value })}
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        setFormData(prev => ({ ...prev, service_amount: inputValue }));
+                        
+                        // Validasyon: İşlem tutarı teyminattan büyük olamaz
+                        if (inputValue && formData.road_assistance_coverage) {
+                          const serviceAmount = parseFloat(inputValue);
+                          const coverageAmount = parseFloat(parseFormattedNumber(formData.road_assistance_coverage));
+                          
+                          if (!isNaN(serviceAmount) && !isNaN(coverageAmount)) {
+                            if (serviceAmount > coverageAmount) {
+                              setServiceAmountError(`İşlem tutarı teyminattan (${formData.road_assistance_coverage} TL) büyük olamaz!`);
+                            } else {
+                              setServiceAmountError('');
+                            }
+                          } else {
+                            setServiceAmountError('');
+                          }
+                        } else {
+                          setServiceAmountError('');
+                        }
+                      }}
                       placeholder="0.00"
+                      className={serviceAmountError ? 'border-red-500' : ''}
                     />
+                    {serviceAmountError && (
+                      <p className="text-xs text-red-500 mt-1">{serviceAmountError}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Maksimum: {formData.road_assistance_coverage || '0'} TL
+                    </p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="road_assistance_coverage" className="text-sm">Yol Yardım Teyminatı (TL)</Label>
                     <Input
                       id="road_assistance_coverage"
-                      type="number"
-                      step="0.01"
+                      type="text"
                       value={formData.road_assistance_coverage}
-                      onChange={(e) => setFormData({ ...formData, road_assistance_coverage: e.target.value })}
                       className="bg-muted/50"
                       readOnly
+                      placeholder="0"
                     />
                   </div>
                 </div>
