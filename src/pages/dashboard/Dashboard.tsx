@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { statsService, saleService, customerService, agencyService, branchService } from '@/services/apiService';
+import { statsService, saleService, customerService, agencyService, branchService, supportFileService } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -16,7 +16,7 @@ import {
   Calendar, Package, ArrowUpRight,
   Building2, GitBranch, Activity, Plus, Search, Car, 
   UserPlus, Clock, CheckCircle, FileText, Zap, 
-  Sparkles, Eye, RotateCcw, XCircle
+  Sparkles, Eye, RotateCcw, XCircle, AlertTriangle, Phone, MapPin
 } from 'lucide-react';
 import type { DashboardStats, Sale, Customer, Agency, Branch } from '@/types';
 import { UserRole } from '@/types';
@@ -56,6 +56,8 @@ export default function Dashboard() {
   const [recentCustomers, setRecentCustomers] = useState<Customer[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
+  // Super Admin için hasar dosyaları
+  const [supportFiles, setSupportFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,6 +77,7 @@ export default function Dashboard() {
       if (user?.role === UserRole.SUPER_ADMIN) {
         promises.push(agencyService.getAll());
         promises.push(branchService.getAll());
+        promises.push(supportFileService.getAll()); // Hasar dosyaları
       }
 
       const results = await Promise.all(promises);
@@ -86,6 +89,7 @@ export default function Dashboard() {
       if (user?.role === UserRole.SUPER_ADMIN) {
         setAgencies(results[3] || []);
         setBranches(results[4] || []);
+        setSupportFiles(results[5]?.slice(0, 10) || []); // Son 10 hasar dosyası
       }
     } catch (error) {
       console.error('Dashboard verileri yüklenirken hata:', error);
@@ -893,8 +897,10 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* ===== İADE BİLGİLERİ - Super Admin ve Agency Admin için ===== */}
-      {(user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.AGENCY_ADMIN) && (
+      {/* ===== İADE VE HASAR DOSYALARI - Super Admin için yan yana ===== */}
+      {user?.role === UserRole.SUPER_ADMIN && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* İade İşlemleri */}
         <Card className="border-red-200 dark:border-red-900/50">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -904,14 +910,153 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <CardTitle className="text-lg">İade İşlemleri</CardTitle>
-                  <CardDescription>
-                    {user?.role === UserRole.SUPER_ADMIN 
-                      ? 'Tüm sistemdeki iade işlemleri' 
-                      : 'Acentenize ait iade işlemleri'}
-                  </CardDescription>
+                    <CardDescription>Tüm sistemdeki iade işlemleri</CardDescription>
                 </div>
               </div>
-              {/* İade Özeti Kartları */}
+                <div className="flex items-center gap-2">
+                  <div className="text-center px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
+                    <p className="text-xl font-bold text-red-600">{stats?.totalRefunds || 0}</p>
+                    <p className="text-[10px] text-red-600/70">İade</p>
+                  </div>
+                  <div className="text-center px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
+                    <p className="text-xl font-bold text-amber-600">{formatShortCurrency(stats?.totalRefundAmount || 0)}</p>
+                    <p className="text-[10px] text-amber-600/70">Tutar</p>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {stats?.recentRefunds && stats.recentRefunds.length > 0 ? (
+                <div className="space-y-2 max-h-[320px] overflow-y-auto">
+                  {stats.recentRefunds.slice(0, 5).map((refund) => (
+                    <div key={refund.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                        <XCircle className="h-5 w-5 text-red-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">
+                            {refund.customer?.name} {refund.customer?.surname}
+                          </p>
+                          <Badge variant="outline" className="font-mono text-[10px] flex-shrink-0">
+                            {refund.vehicle?.plate}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {refund.refund_reason || refund.package?.name || '-'}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-bold text-red-600 text-sm">
+                          {formatCurrency(refund.refund_amount || 0)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {refund.refunded_at ? formatDate(refund.refunded_at) : '-'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center">
+                  <div className="h-12 w-12 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
+                    <CheckCircle className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <p className="text-sm font-medium text-emerald-600">Harika!</p>
+                  <p className="text-xs text-muted-foreground">Henüz iade işlemi yok</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Hasar Dosyaları */}
+          <Card className="border-orange-200 dark:border-orange-900/50">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-lg">
+                    <AlertTriangle className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Hasar Dosyaları</CardTitle>
+                    <CardDescription>Son oluşturulan hasar dosyaları</CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-center px-3 py-1.5 rounded-lg bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900">
+                    <p className="text-xl font-bold text-orange-600">{supportFiles.length}</p>
+                    <p className="text-[10px] text-orange-600/70">Dosya</p>
+                  </div>
+                  <Link to="/dashboard/support-files">
+                    <Button variant="outline" size="sm" className="gap-1 text-xs">
+                      <Eye className="h-3 w-3" /> Tümü
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {supportFiles.length > 0 ? (
+                <div className="space-y-2 max-h-[320px] overflow-y-auto">
+                  {supportFiles.slice(0, 5).map((file) => (
+                    <div key={file.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                        <Phone className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium truncate">{file.insured_name}</p>
+                          <Badge variant="outline" className="font-mono text-[10px] flex-shrink-0">
+                            {file.vehicle_plate}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="truncate">{file.service_type}</span>
+                          <span className="flex items-center gap-0.5 flex-shrink-0">
+                            <MapPin className="h-3 w-3" />
+                            {file.city}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="font-bold text-orange-600 text-sm">
+                          {file.service_amount ? formatCurrency(file.service_amount) : '-'}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {formatDate(file.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center">
+                  <div className="h-12 w-12 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
+                    <CheckCircle className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <p className="text-sm font-medium text-emerald-600">Temiz!</p>
+                  <p className="text-xs text-muted-foreground">Henüz hasar dosyası yok</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ===== İADE BİLGİLERİ - Sadece Agency Admin için (tam genişlik) ===== */}
+      {user?.role === UserRole.AGENCY_ADMIN && (
+        <Card className="border-red-200 dark:border-red-900/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 shadow-lg">
+                  <RotateCcw className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">İade İşlemleri</CardTitle>
+                  <CardDescription>Acentenize ait iade işlemleri</CardDescription>
+                </div>
+              </div>
               <div className="flex items-center gap-4">
                 <div className="text-center px-4 py-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900">
                   <p className="text-2xl font-bold text-red-600">{stats?.totalRefunds || 0}</p>
@@ -933,9 +1078,6 @@ export default function Dashboard() {
                       <th className="text-left p-3 text-xs font-medium text-muted-foreground">Müşteri</th>
                       <th className="text-left p-3 text-xs font-medium text-muted-foreground">Plaka</th>
                       <th className="text-left p-3 text-xs font-medium text-muted-foreground">Paket</th>
-                      {user?.role === UserRole.SUPER_ADMIN && (
-                        <th className="text-left p-3 text-xs font-medium text-muted-foreground">Acente</th>
-                      )}
                       <th className="text-right p-3 text-xs font-medium text-muted-foreground">İade Tutarı</th>
                       <th className="text-left p-3 text-xs font-medium text-muted-foreground">Sebep</th>
                       <th className="text-right p-3 text-xs font-medium text-muted-foreground">Tarih</th>
@@ -967,13 +1109,6 @@ export default function Dashboard() {
                         <td className="p-3">
                           <span className="text-sm">{refund.package?.name || '-'}</span>
                         </td>
-                        {user?.role === UserRole.SUPER_ADMIN && (
-                          <td className="p-3">
-                            <span className="text-sm text-muted-foreground">
-                              {(refund as any).agency?.name || '-'}
-                            </span>
-                          </td>
-                        )}
                         <td className="p-3 text-right">
                           <span className="font-bold text-red-600">
                             {formatCurrency(refund.refund_amount || 0)}

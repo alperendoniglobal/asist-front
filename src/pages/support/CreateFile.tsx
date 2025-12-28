@@ -141,6 +141,43 @@ export default function CreateFile() {
     end_address: ''
   });
 
+  /**
+   * Her hizmet tipi için kullanım durumunu hesaplar
+   * @param serviceType - Hizmet tipi adı (örn: "Çekici Hizmeti Kaza")
+   * @returns Kullanım bilgisi objesi { used, total, remaining, isLimitReached }
+   */
+  const getServiceUsageInfo = (serviceType: string) => {
+    // Mevcut dosyalardan bu hizmet tipi kaç kez kullanılmış?
+    const usedCount = existingFiles.filter(
+      (file: any) => file.service_type === serviceType
+    ).length;
+    
+    // Paket kapsamından bu hizmet tipi için toplam kullanım hakkını bul
+    const cover = packageCovers.find((c: any) => c.title === serviceType);
+    const totalCount = cover?.usage_count || 1; // Bulunamazsa varsayılan 1
+    
+    return {
+      used: usedCount,
+      total: totalCount,
+      remaining: Math.max(0, totalCount - usedCount),
+      isLimitReached: usedCount >= totalCount
+    };
+  };
+
+  /**
+   * Hizmet seçeneği için gösterilecek label'ı oluşturur
+   * Format: "Çekici Hizmeti Kaza (1/2)" veya "Lastik Patlaması (Limit Doldu)"
+   */
+  const getServiceOptionLabel = (serviceType: string) => {
+    const usage = getServiceUsageInfo(serviceType);
+    
+    if (usage.isLimitReached) {
+      return `${serviceType} (❌ Limit Doldu - ${usage.total}/${usage.total})`;
+    }
+    
+    return `${serviceType} (${usage.used}/${usage.total} kullanıldı)`;
+  };
+
   // Plaka sorgusu yap - Backend'e istek at
   const handlePlateSearch = async () => {
     if (!formData.plate || formData.plate.trim() === '') {
@@ -163,12 +200,16 @@ export default function CreateFile() {
         setFoundSale(sale);
         
         // Bu satışa ait hasar dosyalarını çek
+        // files değişkenini dışarıda tanımla ki covers yüklenirken kullanılabilsin
+        let fetchedFiles: any[] = [];
         setLoadingFiles(true);
         try {
           const files = await supportFileService.getBySaleId(sale.id);
-          setExistingFiles(files || []);
+          fetchedFiles = files || [];
+          setExistingFiles(fetchedFiles);
         } catch (error) {
           console.error('Hasar dosyaları çekilirken hata:', error);
+          fetchedFiles = [];
           setExistingFiles([]);
         } finally {
           setLoadingFiles(false);
@@ -224,29 +265,46 @@ export default function CreateFile() {
               // PackageCover title'larını service seçenekleri olarak kullan
               const coverTitles = covers.map((cover: any) => cover.title);
               setServiceOptions(coverTitles);
-              // İlk kapsamı varsayılan olarak seç ve limit_amount'unu ekle
-              if (coverTitles.length > 0) {
-                const firstCover = covers[0];
-                const limitAmount = formatTurkishNumber(firstCover.limit_amount) || '';
-                setFormData(prev => {
-                  // Teyminat set edilirken mevcut işlem tutarını kontrol et
-                  const serviceAmount = parseFloat(prev.service_amount || '0');
-                  const coverageAmount = parseFloat(parseFormattedNumber(limitAmount));
+              
+              // Kullanılabilir ilk hizmeti bul (limit dolmamış olan)
+              // fetchedFiles kullanarak mevcut kullanım sayısını hesapla
+              const findAvailableService = () => {
+                for (const cover of covers) {
+                  // Bu hizmet tipi için kaç kez kullanılmış?
+                  const usedCount = fetchedFiles.filter(
+                    (file: any) => file.service_type === cover.title
+                  ).length;
                   
-                  if (!isNaN(serviceAmount) && !isNaN(coverageAmount) && serviceAmount > coverageAmount) {
-                    setServiceAmountError(`İşlem tutarı teyminattan (${limitAmount} TL) büyük olamaz!`);
-                  } else {
-                    setServiceAmountError('');
+                  // Kullanım hakkı kaldı mı?
+                  if (usedCount < cover.usage_count) {
+                    return cover;
                   }
-                  
-                  return { 
-                    ...prev, 
-                    service_type: coverTitles[0],
-                    // İlk kapsamın limit_amount'unu formatlanmış şekilde Yol Yardım Teyminatı alanına ekle
-                    road_assistance_coverage: limitAmount
-                  };
-                });
-              }
+                }
+                // Tüm limitler dolmuşsa ilk hizmeti döndür (uyarı gösterilecek)
+                return covers[0];
+              };
+              
+              const availableCover = findAvailableService();
+              const limitAmount = formatTurkishNumber(availableCover.limit_amount) || '';
+              
+              setFormData(prev => {
+                // Teyminat set edilirken mevcut işlem tutarını kontrol et
+                const serviceAmount = parseFloat(prev.service_amount || '0');
+                const coverageAmount = parseFloat(parseFormattedNumber(limitAmount));
+                
+                if (!isNaN(serviceAmount) && !isNaN(coverageAmount) && serviceAmount > coverageAmount) {
+                  setServiceAmountError(`İşlem tutarı teyminattan (${limitAmount} TL) büyük olamaz!`);
+                } else {
+                  setServiceAmountError('');
+                }
+                
+                return { 
+                  ...prev, 
+                  service_type: availableCover.title,
+                  // Seçilen kapsamın limit_amount'unu formatlanmış şekilde Yol Yardım Teyminatı alanına ekle
+                  road_assistance_coverage: limitAmount
+                };
+              });
             }
           } catch (error) {
             console.error('Paket kapsamları çekilirken hata:', error);
@@ -300,6 +358,19 @@ export default function CreateFile() {
     if (!foundSale || !foundSale.id) {
       toast.error('Lütfen önce plaka sorgusu yapın ve satış bulun');
       return;
+    }
+
+    // Validasyon: Kullanım limiti kontrolü
+    // Seçilen hizmet için kullanım hakkı kaldı mı?
+    if (formData.service_type) {
+      const usage = getServiceUsageInfo(formData.service_type);
+      if (usage.isLimitReached) {
+        toast.error(
+          `"${formData.service_type}" hizmeti için kullanım limiti dolmuş! ` +
+          `(${usage.total}/${usage.total} kullanım hakkı kullanıldı)`
+        );
+        return;
+      }
     }
 
     // Validasyon: İşlem tutarı teyminattan büyük olamaz
@@ -681,6 +752,13 @@ export default function CreateFile() {
                     <Select
                       value={formData.service_type}
                       onValueChange={(value) => {
+                        // Kullanım limiti kontrolü - limit dolmuşsa seçtirme
+                        const usage = getServiceUsageInfo(value);
+                        if (usage.isLimitReached) {
+                          toast.error(`"${value}" hizmeti için kullanım limiti dolmuş (${usage.total}/${usage.total})`);
+                          return;
+                        }
+                        
                         // Seçilen hizmetin limit_amount'unu bul
                         const selectedCover = packageCovers.find((cover: any) => cover.title === value);
                         // Yol Yardım Teyminatı alanına formatlanmış limit_amount'u ekle
@@ -709,15 +787,32 @@ export default function CreateFile() {
                         <SelectValue placeholder={loadingCovers ? "Yükleniyor..." : "İşlem seçin"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {serviceOptions.map((service) => (
-                          <SelectItem key={service} value={service}>
-                            {service}
-                          </SelectItem>
-                        ))}
+                        {serviceOptions.map((service) => {
+                          const usage = getServiceUsageInfo(service);
+                          return (
+                            <SelectItem 
+                              key={service} 
+                              value={service}
+                              disabled={usage.isLimitReached}
+                              className={usage.isLimitReached ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
+                              {getServiceOptionLabel(service)}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     {loadingCovers && (
                       <p className="text-xs text-muted-foreground">Paket kapsamları yükleniyor...</p>
+                    )}
+                    {/* Seçili hizmet için kalan kullanım hakkı bilgisi */}
+                    {formData.service_type && packageCovers.length > 0 && (
+                      <p className={`text-xs ${getServiceUsageInfo(formData.service_type).isLimitReached ? 'text-red-500' : 'text-muted-foreground'}`}>
+                        {getServiceUsageInfo(formData.service_type).isLimitReached 
+                          ? `⚠️ Bu hizmet için kullanım limiti dolmuş!`
+                          : `Kalan kullanım hakkı: ${getServiceUsageInfo(formData.service_type).remaining}`
+                        }
+                      </p>
                     )}
                   </div>
                 </div>
