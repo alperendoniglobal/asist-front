@@ -35,7 +35,7 @@ export interface DealerApplicationLocal {
 }
 
 // API base URL - public endpoint'ler için
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://cozum.net/api/v1';
 
 // Public API client (authentication gerektirmez)
 const publicClient = axios.create({
