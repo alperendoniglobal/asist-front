@@ -3,7 +3,36 @@ export enum UserRole {
   AGENCY_ADMIN = 'AGENCY_ADMIN',
   BRANCH_ADMIN = 'BRANCH_ADMIN',
   BRANCH_USER = 'BRANCH_USER',
-  SUPPORT = 'SUPPORT' // Destek ekibi - Sadece SUPER_ADMIN oluşturabilir
+  SUPPORT = 'SUPPORT', // Destek ekibi - Sadece SUPER_ADMIN oluşturabilir
+  USER = 'USER' // Son kullanıcı - Public satın alma yapan kullanıcılar
+}
+
+// Bayilik başvuru durumu enum
+export enum DealerApplicationStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
+}
+
+// Bayilik başvurusu
+export interface DealerApplication {
+  id: string;
+  name: string;
+  surname: string;
+  email: string;
+  phone: string;
+  tc_vkn: string;              // T.C. Kimlik veya Vergi No
+  company_name?: string;        // Şirket adı (opsiyonel)
+  city: string;
+  district?: string;
+  address?: string;
+  referral_code?: string;       // Referans kodu
+  status: DealerApplicationStatus;
+  notes?: string;               // Admin notları
+  reviewed_at?: string;
+  reviewed_by?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface User {

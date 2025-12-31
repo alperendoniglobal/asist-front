@@ -2,145 +2,116 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect, useMemo } from 'react';
-import { contentService, type LandingPageContent, type LandingPageBanner, type LandingPageFeature, type LandingPageStat } from '@/services/contentService';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { contentService, type LandingPageContent, type LandingPageStat } from '@/services/contentService';
+import { publicService, type PublicPackage } from '@/services/publicService';
 import * as LucideIcons from 'lucide-react';
 import {
   Users,
   Car,
-  Package,
   ShoppingCart,
-  CreditCard,
-  TrendingUp,
   ArrowRight,
   Shield,
-  Zap,
-  BarChart3,
   CheckCircle2,
   Activity,
-  Clock,
   Star,
   ChevronLeft,
   ChevronRight,
-  Phone
+  Phone,
+  Bike,
+  Truck,
+  Bus,
+  Check,
+  Mail,
+  MapPin,
+  Menu,
+  X,
+  Play,
+  Award,
+  Headphones,
+  Send,
+  Heart
 } from 'lucide-react';
 
+/**
+ * Landing Page - Public Ana Sayfa
+ * Dark mode'dan etkilenmeyen, responsive tasarım
+ * Yerel görseller kullanılır
+ */
 export default function LandingPage() {
   // Backend'den çekilen veriler
   const [landingContent, setLandingContent] = useState<LandingPageContent | null>(null);
-  const [banners, setBanners] = useState<LandingPageBanner[]>([]);
-  const [features, setFeatures] = useState<LandingPageFeature[]>([]);
   const [stats, setStats] = useState<LandingPageStat[]>([]);
   const [activePages, setActivePages] = useState<Array<{slug: string, title: string}>>([]);
   const [, setLoading] = useState(true);
 
-  // Fallback değerler (backend'den veri gelmezse)
+  // Public API'den çekilen veriler
+  const [packages, setPackages] = useState<PublicPackage[]>([]);
+  const [services, setServices] = useState<string[]>([]);
+  const packageCarouselRef = useRef<HTMLDivElement>(null);
+  
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Contact form state
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
+
+  // Fallback istatistikler - yarıya düşürülmüş, deneyim süresi kaldırılmış
   const fallbackStats = [
-    { label: 'Aktif Kullanıcı', value: 1250, icon: Users, color: 'text-blue-600', bg: 'bg-blue-100', borderHover: 'hover:border-blue-300' },
-    { label: 'Toplam Satış', value: 8500, icon: ShoppingCart, color: 'text-emerald-600', bg: 'bg-emerald-100', borderHover: 'hover:border-emerald-300' },
-    { label: 'Müşteri Memnuniyeti', value: 98, suffix: '%', icon: Star, color: 'text-amber-600', bg: 'bg-amber-100', borderHover: 'hover:border-amber-300' },
-    { label: 'Sistem Uptime', value: 99.9, suffix: '%', icon: Activity, color: 'text-cyan-600', bg: 'bg-cyan-100', borderHover: 'hover:border-cyan-300' },
+    { label: 'Mutlu Müşteri', value: 3400, suffix: '+', icon: Users, color: 'text-blue-600' },
+    { label: 'Müşteri Memnuniyeti', value: 100, suffix: '%', icon: Heart, color: 'text-red-500' },
+    { label: 'Aktif Araç', value: 1250, suffix: '+', icon: Car, color: 'text-emerald-600' },
+    { label: 'Günlük Çağrı', value: 150, suffix: '+', icon: Phone, color: 'text-cyan-600' },
   ];
 
-  const fallbackBanners = [
-    {
-      image: '/banner1.jpeg',
-      // Sol taraf içeriği
-      leftContent: {
-        badge: 'Yol Yardım Hizmeti',
-        title: 'Yol Yardım',
-        subtitle: '7/24 Yol Yardım Çekici Hizmeti',
-        description: 'Yol yardım hizmetleri Türkiye genelinde. Yol yardım çekici, tamirci ve acil durum desteği. Yol yardım hizmeti için hemen arayın.',
-        feature: '7/24 Yol Yardım Çekici Hizmeti',
-        featureIcon: TrendingUp
-      },
-      // Sağ taraf içeriği
-      rightContent: {
-        title: 'Yol Yardım ile Güvende Olun',
-        subtitle: '7/24 Yol Yardım Hizmeti',
-        description: 'Yol yardım hizmetleri ile araçlarınız için kapsamlı çözümler ve anında yol yardım desteği'
-      },
-      // Banner'a özel istatistikler
-      bannerStats: [
-        { label: 'Aktif Kullanıcı', value: 1250, icon: Users },
-        { label: 'Toplam Satış', value: 8500, icon: ShoppingCart },
-        { label: 'Müşteri Memnuniyeti', value: 98, suffix: '%', icon: Star },
-        { label: 'Sistem Uptime', value: 99.9, suffix: '%', icon: Activity },
-      ]
+  // Müşteri yorumları - Türkçe isimler
+  const testimonials = [
+    { 
+      name: 'Alperen Y.', 
+      location: 'İstanbul', 
+      text: 'Gece geç saatte aracım arıza yaptı, 25 dakika içinde yardım geldi. Profesyonel ve güler yüzlü ekip için teşekkürler!', 
+      rating: 5 
     },
-    {
-      image: '/banner2.jpeg',
-      // Sol taraf içeriği
-      leftContent: {
-        badge: 'Güvenilir Çözüm',
-        title: 'Profesyonel Hizmet',
-        subtitle: 'Deneyimli Ekip ile Yanınızdayız',
-        description: 'Yılların deneyimi ile sigorta sektöründe güvenilir çözümler sunuyoruz. Müşteri memnuniyeti bizim önceliğimizdir.',
-        feature: 'Gerçek Zamanlı Raporlama',
-        featureIcon: BarChart3
-      },
-      // Sağ taraf içeriği
-      rightContent: {
-        title: 'Hızlı ve Güvenilir Hizmet',
-        subtitle: 'Profesyonel Ekip',
-        description: 'Deneyimli ekibimiz ile her zaman yanınızdayız. 7/24 destek hizmetimiz ile sorunlarınıza anında çözüm buluyoruz.'
-      },
-      // Banner'a özel istatistikler
-      bannerStats: [
-        { label: 'Aktif Kaynak', value: 500, icon: Users },
-        { label: 'Toplam Şube', value: 1200, icon: Package },
-        { label: 'Mutlu Müşteri', value: 50000, icon: Star },
-        { label: 'Başarı Oranı', value: 99.5, suffix: '%', icon: Activity },
-      ]
+    { 
+      name: 'Serkan K.', 
+      location: 'Ankara', 
+      text: 'İkinci kez hizmet aldım, her seferinde aynı kalitede. Fiyatlar makul, hizmet kusursuz.', 
+      rating: 5 
     },
-    {
-      image: '/banner3.png',
-      // Sol taraf içeriği
-      leftContent: {
-        badge: 'Yol Yardım',
-        title: '7/24 Destek',
-        subtitle: 'Her Zaman Yanınızdayız',
-        description: 'Yolda kaldığınızda anında yardım. Profesyonel ekip ve hızlı çözümler ile güvenle yolculuğunuza devam edin.',
-        feature: 'Anında Yol Yardımı',
-        featureIcon: Shield
-      },
-      // Sağ taraf içeriği
-      rightContent: {
-        title: 'Yolda Kaldınız mı?',
-        subtitle: 'Hemen Yardım Alın',
-        description: '7/24 yol yardım hizmetimiz ile her zaman yanınızdayız. Çekici, tamirci ve acil durum desteği.'
-      },
-      // Banner'a özel istatistikler
-      bannerStats: [
-        { label: 'Yardım Çağrısı', value: 15000, icon: Activity },
-        { label: 'Ortalama Süre', value: 25, suffix: ' dk', icon: Clock },
-        { label: 'Müşteri Memnuniyeti', value: 98.5, suffix: '%', icon: Star },
-        { label: 'Aktif Araç', value: 2500, icon: Car },
-      ]
-    }
+    { 
+      name: 'Fatih Ö.', 
+      location: 'İzmir', 
+      text: 'Tatil dönüşü lastik patladı. Çağrı merkezinin ilgisi ve hızlı müdahale için tam not!', 
+      rating: 5 
+    },
   ];
-
-  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   
   // Backend'den veri çek
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [contentData, bannersData, featuresData, statsData, pagesData] = await Promise.all([
+        const [contentData, statsData, pagesData, packagesData, servicesData] = await Promise.all([
           contentService.getLandingPageContent().catch(() => null),
-          contentService.getActiveBanners().catch(() => []),
-          contentService.getActiveFeatures().catch(() => []),
           contentService.getActiveStats().catch(() => []),
           contentService.getAllPages().catch(() => []),
+          publicService.getPackages().catch(() => []),
+          publicService.getServices().catch(() => []),
         ]);
         
         if (contentData) setLandingContent(contentData);
-        if (bannersData.length > 0) setBanners(bannersData);
-        if (featuresData.length > 0) setFeatures(featuresData);
         if (statsData.length > 0) setStats(statsData);
+        if (packagesData.length > 0) setPackages(packagesData);
+        if (servicesData.length > 0) setServices(servicesData);
         
-        // Aktif sayfaları filtrele ve slug-title mapping oluştur
         const active = pagesData
           .filter(page => page.is_active)
           .map(page => ({
@@ -158,1101 +129,938 @@ export default function LandingPage() {
     fetchData();
   }, []);
 
-  // Fallback features
-  const fallbackFeatures = [
-    {
-      icon: Users,
-      title: 'Müşteri Yönetimi',
-      description: 'Müşterilerinizi kolayca kaydedin, düzenleyin ve takip edin. Detaylı müşteri bilgileri ve geçmiş kayıtlarına hızlıca erişin.',
-      gradient: 'from-blue-500 via-blue-600 to-blue-700'
-    },
-    {
-      icon: Car,
-      title: 'Araç Takibi',
-      description: 'Araç bilgilerini sisteme kaydedin, plaka bazlı arama yapın ve araç geçmişini görüntüleyin.',
-      gradient: 'from-emerald-500 via-emerald-600 to-teal-700'
-    },
-    {
-      icon: Package,
-      title: 'Paket Yönetimi',
-      description: 'Sigorta paketlerini oluşturun, fiyatlandırın ve müşterilerinize sunun. Yaş ve kullanım tipine göre otomatik filtreleme.',
-      gradient: 'from-cyan-500 via-cyan-600 to-blue-700'
-    },
-    {
-      icon: ShoppingCart,
-      title: 'Satış Yönetimi',
-      description: 'Satış işlemlerini tek ekrandan yönetin. Müşteri, araç ve paket seçimini kolaylaştıran modern arayüz.',
-      gradient: 'from-amber-500 via-orange-500 to-red-600'
-    },
-    {
-      icon: CreditCard,
-      title: 'Ödeme Entegrasyonu',
-      description: 'Iyzico ile güvenli ödeme alın. Kredi kartı, havale ve bakiye ile ödeme seçenekleri.',
-      gradient: 'from-cyan-500 via-cyan-600 to-blue-700'
-    },
-    {
-      icon: TrendingUp,
-      title: 'Raporlama ve İstatistikler',
-      description: 'Detaylı dashboard ile satış, gelir ve komisyon istatistiklerinizi görüntüleyin. Grafiklerle verilerinizi analiz edin.',
-      gradient: 'from-pink-500 via-rose-600 to-red-700'
-    }
-  ];
-
-  // Kullanılacak veriler (backend'den gelen veya fallback) - useMemo ile memoize edildi
-  const displayBanners = useMemo(() => {
-    return banners.length > 0 ? banners : fallbackBanners;
-  }, [banners]);
-  
+  // İstatistikleri yarıya düşür
   const displayStats = useMemo(() => {
-    return stats.length > 0 ? stats : fallbackStats;
-  }, [stats]);
-  
-  // Backend'den gelen feature'ları icon component'lerine dönüştür - useMemo ile memoize edildi
-  const displayFeatures = useMemo(() => {
-    return features.length > 0 
-      ? features.map((f) => ({
-          icon: (LucideIcons as any)[f.icon_name] || Users,
-          title: f.title,
-          description: f.description,
-          gradient: f.gradient || 'from-blue-500 via-blue-600 to-blue-700'
-        }))
-      : fallbackFeatures;
-  }, [features]);
-
-  // Banner istatistikleri için state - İlk banner'ın stats'ı ile başlat
-  const getInitialBannerStats = () => {
-    if (displayBanners.length === 0) {
-      return displayStats.map((s: any) => ({ ...s, displayValue: 0 }));
+    if (stats.length > 0) {
+      return stats.map(stat => ({
+        ...stat,
+        value: Math.floor(stat.value / 2) // Yarıya düşür
+      }));
     }
-    const firstBanner = displayBanners[0];
-    if (typeof firstBanner === 'object' && 'banner_stats' in firstBanner) {
-      return (firstBanner.banner_stats || []).map((s: any) => ({ ...s, displayValue: 0 }));
-    }
-    return (firstBanner as any)?.bannerStats?.map((s: any) => ({ ...s, displayValue: 0 })) || displayStats.map((s: any) => ({ ...s, displayValue: 0 }));
-  };
-  
-  const [animatedBannerStats, setAnimatedBannerStats] = useState(getInitialBannerStats());
-
-  // Banner slider animasyonu - 12 saniyede bir değişiyor
-  useEffect(() => {
-    if (displayBanners.length === 0) return;
-    const interval = setInterval(() => {
-      setCurrentBannerIndex((prev) => (prev + 1) % displayBanners.length);
-    }, 12000);
-    return () => clearInterval(interval);
-  }, [displayBanners.length]);
-  
-  // Banner değiştiğinde istatistikleri sıfırla ve animasyonu başlat
-  useEffect(() => {
-    if (displayBanners.length === 0) return;
-    
-    const currentBanner = displayBanners[currentBannerIndex];
-    if (!currentBanner) return;
-    
-    // Banner stats'ı al - fallback olarak displayStats kullan
-    const currentBannerStats = (typeof currentBanner === 'object' && 'banner_stats' in currentBanner)
-      ? currentBanner.banner_stats || []
-      : (currentBanner as any)?.bannerStats || displayStats;
-    
-    // İlk değerleri ayarla
-    const initialStats = currentBannerStats.map((s: any) => ({ ...s, displayValue: 0 }));
-    setAnimatedBannerStats(initialStats);
-    
-    const duration = 1500;
-    const steps = 60;
-    const stepDuration = duration / steps;
-    const timers: ReturnType<typeof setInterval>[] = [];
-
-    currentBannerStats.forEach((stat: any, index: number) => {
-      let currentStep = 0;
-      const increment = stat.value / steps;
-
-      const timer = setInterval(() => {
-        currentStep++;
-        const newValue = Math.min(Math.floor(increment * currentStep), stat.value);
-        
-        setAnimatedBannerStats((prev: any) => {
-          const updated = [...prev];
-          if (updated[index]) {
-            updated[index] = { ...updated[index], displayValue: newValue };
-          }
-          return updated;
-        });
-
-        if (currentStep >= steps) {
-          clearInterval(timer);
-        }
-      }, stepDuration);
-      
-      timers.push(timer);
-    });
-
-    return () => {
-      timers.forEach(timer => clearInterval(timer));
-    };
+    return fallbackStats;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentBannerIndex, banners.length, stats.length]);
+  }, [stats]);
 
-  // Avantajlar listesi
-  const benefits = [
-    'Çoklu kullanıcı rolü desteği',
-    'Kaynak ve şube bazlı yönetim',
-    'Otomatik komisyon hesaplama',
-    'İade işlemleri yönetimi',
-    'Destek ticket sistemi',
-    'Güvenli ve hızlı altyapı'
-  ];
-
-  // SEO için structured data (JSON-LD)
+  // SEO Structured Data
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Çözüm Asistan - Yol Yardım Hizmetleri",
-    "alternateName": "Yol Yardım Çözüm Asistan",
+    "name": landingContent?.company_name || "Çözüm Asistan - Yol Yardım Hizmetleri",
     "url": window.location.origin,
     "logo": `${window.location.origin}/cozumasistanlog.svg`,
-    "description": "Yol yardım hizmetleri Türkiye genelinde 7/24. Yol yardım çekici, tamirci ve acil durum desteği. Yol yardım hizmeti için profesyonel çözümler.",
+    "description": "Profesyonel yol yardım hizmetleri. 7/24 çekici, tamirci ve acil durum desteği.",
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+90-850-304-54-40",
+      "telephone": landingContent?.support_phone || "+90-850-304-54-40",
       "contactType": "Müşteri Hizmetleri",
-      "availableLanguage": ["Turkish", "Türkçe"],
+      "availableLanguage": ["Turkish"],
       "areaServed": "TR"
-    },
-    "sameAs": [
-      // Sosyal medya linkleriniz varsa buraya ekleyin
-    ],
-    "address": {
-      "@type": "PostalAddress",
-      "addressCountry": "TR"
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "1250"
-    },
-    "offers": {
-      "@type": "Offer",
-      "description": "Yol yardım hizmetleri ve sigorta yönetim sistemi",
-      "priceCurrency": "TRY"
     }
   };
 
-  const serviceStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "Service",
-    "serviceType": "Yol Yardım Hizmetleri",
-    "name": "Yol Yardım Hizmeti",
-    "provider": {
-      "@type": "Organization",
-      "name": "Çözüm Asistan"
-    },
-    "areaServed": {
-      "@type": "Country",
-      "name": "Türkiye"
-    },
-    "availableChannel": {
-      "@type": "ServiceChannel",
-      "servicePhone": {
-        "@type": "ContactPoint",
-        "telephone": "+90-850-304-54-40",
-        "contactType": "Müşteri Hizmetleri"
-      }
-    },
-    "description": "Yol yardım hizmetleri 7/24: Yol yardım çekici hizmeti, tamirci desteği, lastik patlaması, yakıt bitmesi, arıza durumunda yol yardım. Türkiye genelinde hızlı ve güvenilir yol yardım servisi."
-  };
-
-  // FAQ Schema for SEO
-  const faqStructuredData = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Yol yardım hizmeti nedir?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yol yardım hizmeti, yolda kalan araçlar için 7/24 çekici, tamirci ve acil durum desteği sağlayan profesyonel hizmettir. Yol yardım çekici hizmeti ile aracınız en yakın servise götürülür."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Yol yardım hizmeti nasıl alınır?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Yol yardım hizmeti için ${landingContent?.support_phone || '+90 (850) 304 54 40'} numaralı telefonu arayabilirsiniz. Yol yardım çekici hizmeti Türkiye genelinde 7/24 hizmetinizdedir.`
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Yol yardım çekici hizmeti hangi durumlarda kullanılır?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yol yardım çekici hizmeti kaza, arıza, lastik patlaması, yakıt bitmesi gibi durumlarda kullanılır. Yol yardım hizmeti ile aracınız güvenle en yakın servise götürülür."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Yol yardım hizmeti ücreti ne kadar?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": `Yol yardım hizmeti ücretleri paket içeriğinize göre değişiklik gösterir. Yol yardım çekici hizmeti için detaylı bilgi almak için ${landingContent?.support_phone || '+90 (850) 304 54 40'} numaralı telefonu arayabilirsiniz.`
-        }
-      }
-    ]
-  };
-
-  // LocalBusiness Schema for local SEO
-  const localBusinessSchema = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    "name": "Çözüm Asistan - Yol Yardım Hizmetleri",
-    "image": `${window.location.origin}/cozumasistanlog.svg`,
-    "telephone": "+90-850-304-54-40",
-    "priceRange": "$$",
-    "address": {
-      "@type": "PostalAddress",
-      "addressCountry": "TR"
-    },
-    "geo": {
-      "@type": "GeoCoordinates",
-      "latitude": "39.9334",
-      "longitude": "32.8597"
-    },
-    "openingHoursSpecification": {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday"
-      ],
-      "opens": "00:00",
-      "closes": "23:59"
-    },
-    "areaServed": {
-      "@type": "Country",
-      "name": "Türkiye"
-    },
-    "serviceType": "Yol Yardım Hizmetleri"
+  // İletişim formu gönderimi
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('İletişim formu gönderildi:', contactForm);
+    // TODO: Backend'e gönderim
   };
 
   return (
     <>
-      {/* SEO Meta Tags */}
       <Helmet>
         <html lang="tr" />
-        <title>Yol Yardım | 7/24 Çekici Hizmeti | Çözüm Asistan - Türkiye Geneli</title>
-        <meta name="description" content={`Yol yardım hizmetleri Türkiye genelinde 7/24. Yol yardım çekici, tamirci ve acil durum desteği. Yol yardım hizmeti için hemen arayın: ${landingContent?.support_phone || '+90 (850) 304 54 40'}. Profesyonel yol yardım çözümleri.`} />
-        <meta name="keywords" content="yol yardım, yol yardım hizmeti, yol yardım çekici, yol yardım servisi, 7/24 yol yardım, yol yardım Türkiye, çekici hizmeti, araç kurtarma, lastik patlaması, yakıt bitmesi, arıza yardım, yol asistan, acil yol yardım, yol yardım telefon, yol yardım numarası" />
-        <meta name="author" content="Çözüm Asistan" />
-        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-        <meta name="googlebot" content="index, follow" />
-        <link rel="canonical" href={window.location.href} />
-        
-        {/* Open Graph / Facebook */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={window.location.href} />
-        <meta property="og:title" content="Yol Yardım | 7/24 Çekici Hizmeti | Çözüm Asistan" />
-        <meta property="og:description" content="Yol yardım hizmetleri Türkiye genelinde 7/24. Yol yardım çekici, tamirci ve acil durum desteği. Profesyonel yol yardım çözümleri." />
-        <meta property="og:image" content={`${window.location.origin}/banner1.jpeg`} />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="Çözüm Asistan Yol Yardım Hizmetleri" />
-        <meta property="og:locale" content="tr_TR" />
-        <meta property="og:site_name" content="Çözüm Asistan" />
-        
-        {/* Twitter Card */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content={window.location.href} />
-        <meta name="twitter:title" content="Yol Yardım | 7/24 Çekici Hizmeti | Çözüm Asistan" />
-        <meta name="twitter:description" content="Yol yardım hizmetleri Türkiye genelinde 7/24. Yol yardım çekici ve acil durum desteği." />
-        <meta name="twitter:image" content={`${window.location.origin}/banner1.jpeg`} />
-        
-        {/* Mobile */}
-        <meta name="theme-color" content="#1e40af" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Çözüm Asistan" />
-        
-        {/* Structured Data */}
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
-        <script type="application/ld+json">
-          {JSON.stringify(serviceStructuredData)}
-        </script>
-        <script type="application/ld+json">
-          {JSON.stringify(faqStructuredData)}
-        </script>
-        <script type="application/ld+json">
-          {JSON.stringify(localBusinessSchema)}
-        </script>
+        <title>Yol Yardım | 7/24 Çekici Hizmeti | {landingContent?.company_name || 'Çözüm Asistan'}</title>
+        <meta name="description" content={`Profesyonel yol yardım hizmetleri. 7/24 çekici ve acil durum desteği. ${landingContent?.support_phone || '+90 (850) 304 54 40'}`} />
+        <meta name="keywords" content="yol yardım, çekici hizmeti, 7/24 yol yardım, araç kurtarma" />
+        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-blue-50 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      </div>
-
-      {/* Header - Ana renk (slate-900) */}
-      <header role="banner" className="sticky top-0 z-50 bg-slate-900 backdrop-blur-md border-b border-slate-800 shadow-xl">
-        <div className="container mx-auto px-3 sm:px-4 py-3 md:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="p-1.5 sm:p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-              <img 
-                src="/cozumasistanlog.svg" 
-                alt="Çözüm Asistan - Yol Yardım Hizmetleri Logo" 
-                className="h-6 sm:h-7 md:h-8"
-                width="120"
-                height="40"
-              />
+      {/* Dark mode'dan korumalı wrapper */}
+      <div className="light bg-white text-gray-900" style={{ colorScheme: 'light' }}>
+        
+        {/* ===== TOP BAR ===== */}
+        <div className="bg-[#0066CC] text-white py-2.5 hidden md:block">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center gap-6">
+                <a 
+                  href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '08503045440'}`} 
+                  className="flex items-center gap-2 hover:text-blue-200 transition-colors"
+                >
+                  <Phone className="h-4 w-4" />
+                  <span className="font-medium">{landingContent?.support_phone || '+90 (850) 304 54 40'}</span>
+                </a>
+                <a 
+                  href={`mailto:${landingContent?.support_email || 'info@cozumasistan.com'}`} 
+                  className="flex items-center gap-2 hover:text-blue-200 transition-colors"
+                >
+                  <Mail className="h-4 w-4" />
+                  <span>{landingContent?.support_email || 'info@cozumasistan.com'}</span>
+                </a>
+              </div>
+              <div className="flex items-center gap-4">
+                <Link to="/bayilik-basvurusu" className="hover:text-blue-200 transition-colors font-medium">
+                  Bayilik Başvurusu
+                </Link>
+              </div>
             </div>
           </div>
-          <Link to="/login">
-            <Button size="sm" className="sm:size-default gap-1.5 sm:gap-2 bg-white text-slate-900 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2">
-              <span className="hidden sm:inline">Giriş Yap</span>
-              <span className="sm:hidden">Giriş</span>
-              <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
-          </Link>
-        </div>
-      </header>
+      </div>
 
-      {/* Hero Section - Full Slider */}
-      <main role="main">
-        <section aria-label="Ana banner slider ve hizmet tanıtımı" className="relative min-h-screen md:h-screen overflow-hidden">
-        {/* Banner Slider - Tüm section */}
-        <div className="relative w-full h-full min-h-screen md:min-h-0">
-          {displayBanners.map((banner, index) => {
-            const isActive = index === currentBannerIndex;
-            // Backend'den gelen banner verisi veya fallback
-            // Backend'den gelen banner veya fallback banner
-            const bannerData = typeof banner === 'object' && 'image_path' in banner 
-              ? {
-                  id: banner.id,
-                  image: banner.image_path,
-                  leftContent: {
-                    badge: banner.badge || '',
-                    ...(banner.left_content || {}),
-                    feature_icon: banner.left_content?.feature_icon || 'TrendingUp',
-                  },
-                  rightContent: banner.right_content || { title: '', subtitle: '', description: '' },
-                  bannerStats: banner.banner_stats || [],
-                }
-              : {
-                  id: `fallback-${index}`,
-                  ...banner,
-                };
-            const FeatureIcon = (bannerData.leftContent as any)?.feature_icon 
-              ? (LucideIcons as any)[(bannerData.leftContent as any).feature_icon] || TrendingUp
-              : (bannerData.leftContent as any)?.featureIcon || TrendingUp;
-            
-            return (
-              <div
-                key={(banner as any).id || `banner-${index}`}
-                className={`absolute inset-0 ${
-                  isActive 
-                    ? 'opacity-100 z-10' 
-                    : 'opacity-0 z-0 pointer-events-none'
-                }`}
-                style={{
-                  transform: isActive 
-                    ? 'translateX(0) scale(1)' 
-                    : index < currentBannerIndex 
-                      ? 'translateX(-50%) scale(0.85)' 
-                      : 'translateX(50%) scale(0.85)',
-                  filter: isActive ? 'blur(0px)' : 'blur(4px)',
-                  transition: 'opacity 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                  willChange: 'opacity, transform, filter'
-                }}
-              >
-                {/* Arka plan görseli */}
-                <div className="absolute inset-0">
-                  <img
-                    src={bannerData.image}
-                    alt={`${bannerData.rightContent?.title || ''} - ${bannerData.rightContent?.subtitle || ''} - Çözüm Asistan Yol Yardım Hizmetleri`}
-                    className="w-full h-full object-cover"
-                    loading={index === 0 ? "eager" : "lazy"}
-                  />
-                  {/* Gradient overlay - Mobilde daha koyu */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/85 to-slate-900/70 md:from-slate-900/90 md:via-slate-900/70 md:to-slate-900/50"></div>
+        {/* ===== HEADER - 3 Sütun Düzeni ===== */}
+        <header className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-3 items-center h-16 md:h-20">
+              {/* Sol: Logo */}
+              <Link to="/" className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#0066CC] flex items-center justify-center shadow-lg">
+              <img 
+                src="/cozumasistanlog.svg" 
+                    alt={landingContent?.company_name || "Çözüm Asistan"} 
+                    className="h-6 md:h-8"
+              />
+            </div>
+                <div className="hidden sm:block">
+                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Asistan</h1>
+                  <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
+          </div>
+          </Link>
+
+              {/* Orta: Desktop Navigation */}
+              <nav className="hidden lg:flex items-center justify-center gap-6">
+                <Link to="/" className="text-gray-700 hover:text-[#0066CC] font-medium transition-colors">
+                  Anasayfa
+                </Link>
+                <a href="#about" className="text-gray-700 hover:text-[#0066CC] font-medium transition-colors">
+                  Hakkımızda
+                </a>
+                <Link to="/packages" className="text-gray-700 hover:text-[#0066CC] font-medium transition-colors">
+                  Paketler
+                </Link>
+                <a href="#packages" className="text-gray-700 hover:text-[#0066CC] font-medium transition-colors">
+                  Hizmetlerimiz
+                </a>
+                <a href="#contact" className="text-gray-700 hover:text-[#0066CC] font-medium transition-colors">
+                  İletişim
+                </a>
+              </nav>
+
+              {/* Sağ: CTA Buttons */}
+              <div className="flex items-center justify-end gap-3">
+                <Link to="/login" className="hidden sm:block">
+                  <Button className="bg-[#0066CC] hover:bg-[#0052A3] text-white px-6 rounded-full shadow-lg hover:shadow-xl transition-all">
+                    Giriş Yap
+                  </Button>
+                </Link>
+                
+                {/* Mobile Menu Button */}
+                <button 
+                  className="lg:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  aria-label="Menü"
+                >
+                  {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+              </div>
                 </div>
                 
-                {/* İçerik - Grid layout */}
-                <div className="container mx-auto px-4 py-6 md:py-8 lg:py-12 relative z-20 h-full min-h-screen md:min-h-0 flex items-center">
-                  <div className="max-w-7xl mx-auto w-full">
-                    <div className="grid lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 items-center w-full">
-                      {/* Sol taraf - Metin içeriği */}
-                      <div 
-                        className="space-y-4 md:space-y-6 lg:space-y-8 text-white order-2 lg:order-1"
-                        style={{
-                          opacity: isActive ? 1 : 0,
-                          transform: isActive ? 'translateY(0)' : 'translateY(20px)',
-                          transition: 'opacity 0.9s ease-out 0.2s, transform 0.9s ease-out 0.2s',
-                          willChange: 'opacity, transform'
-                        }}
-                      >
-                        <div className="space-y-3 md:space-y-4">
-                          {(bannerData.leftContent?.badge || (bannerData.leftContent as any)?.badge) && (
-                            <div className="inline-block">
-                              <span className="px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-blue-500/30 backdrop-blur-sm text-blue-200 text-xs md:text-sm font-semibold border border-blue-400/30">
-                                {bannerData.leftContent?.badge || (bannerData.leftContent as any)?.badge}
-                              </span>
+            {/* Mobile Menu - Footer linklerinden eklendi */}
+            {isMobileMenuOpen && (
+              <div className="lg:hidden py-4 border-t border-gray-100 bg-white">
+                <nav className="flex flex-col gap-2">
+                  <Link 
+                    to="/" 
+                    className="text-gray-700 hover:text-[#0066CC] hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Anasayfa
+                  </Link>
+                  <a 
+                    href="#about" 
+                    className="text-gray-700 hover:text-[#0066CC] hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Hakkımızda
+                  </a>
+                  <Link 
+                    to="/packages" 
+                    className="text-gray-700 hover:text-[#0066CC] hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Paketler
+                  </Link>
+                  <a 
+                    href="#packages" 
+                    className="text-gray-700 hover:text-[#0066CC] hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Hizmetlerimiz
+                  </a>
+                  <a 
+                    href="#contact" 
+                    className="text-gray-700 hover:text-[#0066CC] hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    İletişim
+                  </a>
+                  <Link 
+                    to="/bayilik-basvurusu" 
+                    className="text-gray-700 hover:text-[#0066CC] hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Bayilik Başvurusu
+                  </Link>
+                  <Link 
+                    to="/privacy-policy" 
+                    className="text-gray-700 hover:text-[#0066CC] hover:bg-blue-50 font-medium py-3 px-4 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Gizlilik Politikası
+                  </Link>
+                  <div className="pt-2 px-4">
+                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full">
+                        Giriş Yap
+                      </Button>
+                    </Link>
+                  </div>
+                </nav>
                             </div>
                           )}
-                          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight text-white leading-tight">
-                            {bannerData.leftContent?.title || ''}
-                          </h1>
-                          <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white/90">
-                            {bannerData.leftContent?.subtitle || ''}
-                          </p>
-                          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/80 leading-relaxed">
-                            {bannerData.leftContent?.description || ''}
-                          </p>
                         </div>
+        </header>
 
-                        {/* Özellik */}
-                        {bannerData.leftContent?.feature && (
-                          <div 
-                            className="flex items-center gap-2 md:gap-3 p-3 md:p-4 rounded-xl bg-white/10 backdrop-blur-md border border-white/20"
-                            style={{
-                              opacity: isActive ? 1 : 0,
-                              transform: isActive ? 'translateX(0)' : 'translateX(-20px)',
-                              transition: 'opacity 0.9s ease-out 0.3s, transform 0.9s ease-out 0.3s',
-                              willChange: 'opacity, transform'
-                            }}
-                          >
-                            <div className="p-1.5 md:p-2 rounded-lg bg-blue-500/30 flex-shrink-0">
-                              <FeatureIcon className="h-4 w-4 md:h-5 md:w-5 text-blue-200" />
+        {/* ===== HERO SECTION ===== */}
+        <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-gray-50">
+          {/* Decorative shapes */}
+          <div className="absolute top-0 right-0 w-1/2 h-full bg-[#0066CC]/5 rounded-bl-[100px] hidden lg:block" />
+          <div className="absolute top-20 right-20 w-64 h-64 bg-[#0066CC]/10 rounded-full blur-3xl hidden lg:block" />
+          
+          <div className="container mx-auto px-4 py-10 md:py-16 lg:py-20">
+            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Left Content */}
+              <div className="space-y-5 md:space-y-6 relative z-10 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0066CC]/10 text-[#0066CC] text-sm font-medium">
+                  <Shield className="h-4 w-4" />
+                  <span>7/24 Profesyonel Yol Yardım</span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm md:text-base font-medium text-white">
-                                {bannerData.leftContent.feature}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* CTA Butonları */}
-                        <div 
-                          className="flex flex-col sm:flex-row gap-3 md:gap-4"
-                          style={{
-                            opacity: isActive ? 1 : 0,
-                            transform: isActive ? 'translateY(0)' : 'translateY(20px)',
-                            transition: 'opacity 0.9s ease-out 0.4s, transform 0.9s ease-out 0.4s',
-                            willChange: 'opacity, transform'
-                          }}
-                        >
-                          <Link to="/login" className="flex-1 sm:flex-none">
-                            <Button size="lg" className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8 py-4 md:py-6 h-auto gap-2 shadow-xl hover:shadow-2xl bg-white text-slate-900 hover:bg-blue-50 border-0 transition-all transform hover:scale-105 font-bold">
-                              Hemen Başla
-                              <ArrowRight className="h-4 w-4 md:h-5 md:w-5" />
+                
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 leading-tight">
+                  <span className="text-[#0066CC]">Her Yolculukta</span>
+                  <br />
+                  Yanınızdayız
+                </h1>
+                
+                <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg mx-auto lg:mx-0">
+                  Türkiye genelinde profesyonel çekici, ikame araç, konaklama ve acil yol yardım hizmetleri. 
+                  Tek arama ile güvenli ellerde olun.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
+                  <Link to="/login">
+                    <Button size="lg" className="bg-[#0066CC] hover:bg-[#0052A3] text-white px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full gap-2 shadow-lg shadow-blue-500/25 w-full sm:w-auto">
+                      Sisteme Giriş
+                      <ArrowRight className="h-5 w-5" />
                             </Button>
                           </Link>
                           <Button 
                             size="lg" 
                             variant="outline" 
-                            className="w-full sm:w-auto text-base md:text-lg px-6 md:px-8 py-4 md:py-6 h-auto border-2 border-white/30 bg-white/10 backdrop-blur-md text-white hover:bg-white/20 hover:border-white/50 transition-all transform hover:scale-105"
-                            onClick={() => {
-                              const featuresSection = document.getElementById('features');
-                              featuresSection?.scrollIntoView({ behavior: 'smooth' });
-                            }}
-                          >
-                            Özellikleri Keşfet
+                    className="px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full gap-2 border-2 border-[#0066CC] text-[#0066CC] hover:bg-[#0066CC] hover:text-white w-full sm:w-auto"
+                    onClick={() => document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })}
+                  >
+                    <Play className="h-5 w-5" />
+                    Paketleri İncele
                           </Button>
                         </div>
                       </div>
 
-                      {/* Sağ taraf - Banner içerik kartı */}
-                      <div 
-                        className="relative order-1 lg:order-2"
-                        style={{
-                          opacity: isActive ? 1 : 0,
-                          transform: isActive ? 'translateX(0) scale(1)' : 'translateX(30px) scale(0.95)',
-                          transition: 'opacity 0.6s ease-out 0.3s, transform 0.6s ease-out 0.3s',
-                          willChange: 'opacity, transform'
-                        }}
-                      >
-                        <div className="p-4 md:p-6 lg:p-8 rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 shadow-2xl">
-                          {/* Üst kısım */}
-                          <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
-                            {/* Güvenli Altyapı */}
-                            <div className="flex items-center gap-2 md:gap-3 text-white">
-                              <div className="p-1.5 md:p-2 rounded-lg bg-white/20 backdrop-blur-sm flex-shrink-0">
-                                <Shield className="h-4 w-4 md:h-5 md:w-5" />
+              {/* Right Content - Image Collage */}
+              <div className="relative w-full max-w-md lg:max-w-none mx-auto">
+                <div className="relative">
+                  {/* Main Image - Çekici Hizmeti */}
+                  <div className="relative rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl">
+                    <img 
+                      src="/images/pexels-mart-production-7709278.jpg" 
+                      alt="Profesyonel Çekici Hizmeti"
+                      className="w-full h-[250px] sm:h-[300px] lg:h-[350px] object-cover"
+                      loading="eager"
+                    />
                               </div>
-                              <div className="min-w-0">
-                                <p className="font-bold text-xs md:text-sm">Güvenli Altyapı</p>
-                                <p className="text-[10px] md:text-xs text-white/80">SSL şifreleme ile korunuyor</p>
+                  
+                  {/* Floating Image - Canlı Destek Ekibi */}
+                  <div className="absolute -bottom-4 sm:-bottom-8 -left-4 sm:-left-8 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl border-4 border-white hidden sm:block">
+                    <img 
+                      src="/images/pexels-fauxels-3183197.jpg" 
+                      alt="7/24 Canlı Destek Ekibi"
+                      className="w-[140px] sm:w-[180px] h-[100px] sm:h-[130px] object-cover"
+                      loading="lazy"
+                    />
                               </div>
+
+                  {/* Stats Badge */}
+                  <div className="absolute -right-2 sm:-right-4 top-1/2 -translate-y-1/2 bg-white rounded-xl sm:rounded-2xl shadow-xl p-3 sm:p-5 border border-gray-100">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-[#0066CC] flex items-center justify-center">
+                        <Award className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                             </div>
-                            {/* 7/24 Çağrı Destek */}
-                            <div className="flex items-center gap-2 md:gap-3 text-white p-2 md:p-3 rounded-lg bg-blue-500/30 backdrop-blur-sm border border-blue-400/30">
-                              <div className="p-1.5 md:p-2 rounded-lg bg-blue-500/50 backdrop-blur-sm flex-shrink-0">
-                                <Phone className="h-4 w-4 md:h-5 md:w-5" />
+                      <div>
+                        <p className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900">3400+</p>
+                        <p className="text-[10px] sm:text-xs text-gray-500">Mutlu Müşteri</p>
                               </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="font-bold text-xs md:text-sm">7/24 Çağrı Destek</p>
-                                  <a href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '08503045440'}`} className="text-[10px] md:text-xs text-blue-200 hover:text-blue-100 transition-colors font-semibold">
-                                  {landingContent?.support_phone || '+90 (850) 304 54 40'}
-                                </a>
                               </div>
                             </div>
                           </div>
-                          
-                        {/* Banner yazıları */}
-                          <div className="space-y-3 md:space-y-4 text-white mb-6 md:mb-8">
-                          <div>
-                              <p className="text-xs md:text-sm font-semibold text-blue-300 mb-1 md:mb-2">{bannerData.rightContent?.subtitle || ''}</p>
-                              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black mb-2 md:mb-3 leading-tight">{bannerData.rightContent?.title || ''}</h2>
-                              <p className="text-sm md:text-base lg:text-lg text-white/90">{bannerData.rightContent?.description || ''}</p>
                           </div>
                         </div>
-                        
-                        {/* Alt kısım - İstatistikler (Banner'a özel) */}
-                          <div className="grid grid-cols-2 gap-2 md:gap-4">
-                          {animatedBannerStats.map((stat: any, statIndex: number) => {
-                            const Icon = typeof stat.icon === 'string' 
-                              ? (LucideIcons as any)[stat.icon] || Activity
-                              : stat.icon || Activity;
-                              return (
-                                <div 
-                                  key={statIndex}
-                                  className="p-2 md:p-3 lg:p-4 rounded-lg md:rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all group"
-                                >
-                                  <div className="flex items-center gap-2 mb-1 md:mb-2">
-                                    <div className="p-1 md:p-1.5 lg:p-2 rounded-lg bg-white/20 group-hover:scale-110 transition-transform flex-shrink-0">
-                                      <Icon className="h-3 w-3 md:h-4 md:w-4 lg:h-5 lg:w-5 text-white" />
+          </div>
+        </section>
+
+        {/* ===== ABOUT SECTION - Çapraz düzen (resimler solda) ===== */}
+        <section id="about" className="py-12 md:py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Left Content - Images (çapraz düzen için solda) */}
+              <div className="relative order-1 lg:order-1 w-full max-w-md lg:max-w-none mx-auto">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg">
+                      <img 
+                        src="/images/about-office.jpg" 
+                        alt="Ofis Ortamı"
+                        className="w-full h-[140px] sm:h-[200px] object-cover"
+                        loading="lazy"
+                      />
                                     </div>
+                    <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg">
+                      <img 
+                        src="/images/about-team.jpg" 
+                        alt="Takım Çalışması"
+                        className="w-full h-[110px] sm:h-[160px] object-cover"
+                        loading="lazy"
+                      />
                                   </div>
-                                  <p className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-black text-white mb-0.5 md:mb-1 leading-none">
-                                    {stat.suffix === '%' || stat.suffix === ' dk'
-                                      ? stat.displayValue.toFixed(stat.suffix === '%' ? 1 : 0)
-                                      : stat.displayValue.toLocaleString()}
-                                    {stat.suffix && <span className="text-sm md:text-base lg:text-xl">{stat.suffix}</span>}
-                                  </p>
-                                  <p className="text-[10px] md:text-xs font-medium text-white/80 leading-tight">
-                                    {stat.label}
-                                  </p>
                                 </div>
-                              );
-                            })}
+                  <div className="pt-6 sm:pt-8">
+                    <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg">
+                      <img 
+                        src="/images/about-collab.jpg" 
+                        alt="Profesyonel Ekip"
+                        className="w-full h-[260px] sm:h-[350px] object-cover"
+                        loading="lazy"
+                      />
                           </div>
                         </div>
                       </div>
+                    </div>
+                        
+              {/* Right Content - Text (çapraz düzen için sağda) */}
+              <div className="space-y-5 sm:space-y-6 text-center lg:text-left order-2 lg:order-2">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium">
+                  <Star className="h-4 w-4 text-amber-500" />
+                  <span>Neden Biz?</span>
+                  </div>
+                
+                <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 leading-tight">
+                  <span className="text-[#0066CC]">Güvenilir</span>
+                  <br />
+                  Yol Arkadaşınız
+                </h2>
+                
+                <div className="space-y-4 text-left">
+                  <div className="flex items-start gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Check className="h-4 w-4 text-white" />
+                </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Profesyonel Hizmet</h3>
+                      <p className="text-sm sm:text-base text-gray-600">
+                        Deneyimli ekibimiz ve modern araç filomuzla, aracınız ne zaman arıza yapsa yanınızdayız. 
+                        Hızlı müdahale garantisi sunuyoruz.
+                      </p>
+              </div>
+        </div>
+        
+                  <div className="flex items-start gap-4">
+                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-1">
+                      <Check className="h-4 w-4 text-white" />
+        </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-gray-900">Türkiye Geneli Kapsama</h3>
+                      <p className="text-sm sm:text-base text-gray-600">
+                        81 ilde yaygın hizmet ağımızla, nerede olursanız olun profesyonel yol yardım hizmeti alabilirsiniz.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-        
-        {/* Slider kontrolleri - Mobilde daha görünür */}
-        <div className="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 backdrop-blur-md">
-          {displayBanners.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentBannerIndex(index)}
-              className={`h-2 md:h-2.5 rounded-full transition-all ${
-                index === currentBannerIndex 
-                  ? 'w-8 md:w-10 bg-white' 
-                  : 'w-2 md:w-2.5 bg-white/50 hover:bg-white/70'
-              }`}
-              aria-label={`Banner ${index + 1}`}
-            />
-          ))}
-        </div>
-        
-        {/* Önceki/Sonraki butonları - Mobilde daha küçük */}
-        <button
-          onClick={() => setCurrentBannerIndex((prev) => (prev - 1 + banners.length) % banners.length)}
-          className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all text-white shadow-lg active:scale-95"
-          aria-label="Önceki banner"
-        >
-          <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
-        </button>
-        <button
-          onClick={() => setCurrentBannerIndex((prev) => (prev + 1) % banners.length)}
-          className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-30 p-2 md:p-3 rounded-full bg-white/20 backdrop-blur-md hover:bg-white/30 transition-all text-white shadow-lg active:scale-95"
-          aria-label="Sonraki banner"
-        >
-          <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
-        </button>
+            </div>
+          </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="container mx-auto px-4 py-24 relative bg-slate-50">
-        <div className="relative z-10">
-          <div className="text-center mb-20">
-            <div className="inline-block mb-4">
-              <span className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold">
-                Özellikler
-              </span>
+        {/* ===== PACKAGES SECTION ===== */}
+        <section id="packages" className="py-12 md:py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8 sm:mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0066CC]/10 text-[#0066CC] text-sm font-medium mb-4">
+                <ShoppingCart className="h-4 w-4" />
+                <span>Hizmetlerimiz</span>
             </div>
-            <h2 className="text-5xl md:text-6xl font-black mb-6 text-slate-900">
-              Güçlü Özellikler
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900">
+                Size Özel Paketler
             </h2>
-            <p className="text-xl md:text-2xl text-slate-700 max-w-3xl mx-auto leading-relaxed">
-              İşinizi kolaylaştıran, verimliliğinizi artıran özellikler
+              <p className="text-gray-600 mt-3 sm:mt-4 max-w-2xl mx-auto text-sm sm:text-base">
+                İhtiyacınıza en uygun yol yardım paketini seçin, güvende kalın
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {displayFeatures.map((feature, index) => {
-              const Icon = feature.icon;
-              // Her kart için farklı renk tonu - Header/banner ile uyumlu (slate-900 ana renk)
-              const colorClasses = [
-                { icon: 'bg-slate-900 text-white', border: 'border-slate-300', hover: 'hover:border-slate-900' },
-                { icon: 'bg-slate-800 text-white', border: 'border-slate-300', hover: 'hover:border-slate-800' },
-                { icon: 'bg-slate-700 text-white', border: 'border-slate-300', hover: 'hover:border-slate-700' },
-                { icon: 'bg-slate-900 text-white', border: 'border-slate-300', hover: 'hover:border-slate-900' },
-                { icon: 'bg-slate-800 text-white', border: 'border-slate-300', hover: 'hover:border-slate-800' },
-                { icon: 'bg-slate-700 text-white', border: 'border-slate-300', hover: 'hover:border-slate-700' },
-              ];
-              const colors = colorClasses[index % colorClasses.length];
+            {/* Package Cards Carousel */}
+            <div className="relative">
+              <div 
+                ref={packageCarouselRef}
+                className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 px-1"
+                style={{ scrollBehavior: 'smooth' }}
+              >
+                {packages.length > 0 ? packages.map((pkg, index) => {
+                  const vehicleIcons: Record<string, any> = {
+                    'Otomobil': Car,
+                    'Motosiklet': Bike,
+                    'Kamyonet': Truck,
+                    'Minibüs': Bus,
+                  };
+                  const VehicleIcon = vehicleIcons[pkg.vehicle_type] || Car;
+                  
+                  const colors = [
+                    { bg: 'bg-[#0066CC]', light: 'bg-blue-50', text: 'text-[#0066CC]' },
+                    { bg: 'bg-emerald-500', light: 'bg-emerald-50', text: 'text-emerald-600' },
+                    { bg: 'bg-purple-500', light: 'bg-purple-50', text: 'text-purple-600' },
+                    { bg: 'bg-orange-500', light: 'bg-orange-50', text: 'text-orange-600' },
+                  ];
+                  const color = colors[index % colors.length];
               
               return (
-                <Card 
-                  key={index}
-                  className={`relative overflow-hidden bg-white border-2 ${colors.border} ${colors.hover} shadow-lg hover:shadow-2xl transition-all duration-300 group cursor-pointer transform hover:-translate-y-1`}
-                >
-                  <CardContent className="p-8 min-h-[280px] flex flex-col">
-                    {/* Icon Container */}
-                    <div className="mb-6">
-                      <div className={`p-4 rounded-xl ${colors.icon} w-fit group-hover:scale-110 transition-transform duration-300 shadow-sm`}>
-                        <Icon className="h-7 w-7" />
+                    <div
+                      key={pkg.id}
+                      className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[320px] snap-center"
+                    >
+                      <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 group overflow-hidden bg-white flex flex-col">
+                        {/* Package Header - Kurumsal tasarım */}
+                        <div className={`${color.light} p-4 sm:p-6 border-b border-gray-100`}>
+                          <div className="flex items-center justify-between mb-3 sm:mb-4">
+                            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl ${color.bg} flex items-center justify-center shadow-md`}>
+                              <VehicleIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                       </div>
+                            <span className={`px-3 sm:px-4 py-1.5 rounded-lg ${color.bg} text-white text-xs font-semibold uppercase tracking-wide`}>
+                              {pkg.vehicle_type}
+                            </span>
+                          </div>
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900">{pkg.name}</h3>
+                          {pkg.description && (
+                            <p className="text-xs sm:text-sm text-gray-600 mt-2 line-clamp-2">{pkg.description}</p>
+                          )}
                     </div>
                     
-                    {/* Title */}
-                    <h3 className="text-2xl font-bold mb-4 text-slate-800 group-hover:text-slate-900 transition-colors">
-                      {feature.title}
-                    </h3>
+                        {/* Package Features - Sabit yükseklik ile hizalı */}
+                        <CardContent className="p-4 sm:p-6 flex flex-col flex-grow">
+                          <ul className="space-y-2.5 sm:space-y-3 min-h-[160px] sm:min-h-[180px]">
+                            {pkg.covers.slice(0, 5).map((cover) => (
+                              <li key={cover.id} className="flex items-center gap-2.5 sm:gap-3">
+                                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md ${color.bg} flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                                  <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
+                                </div>
+                                <span className="text-sm text-gray-700 font-medium">{cover.title}</span>
+                              </li>
+                            ))}
+                            {pkg.covers.length > 5 && (
+                              <li className="text-xs sm:text-sm text-gray-500 pl-8 sm:pl-9 italic">
+                                +{pkg.covers.length - 5} daha fazla teminat
+                              </li>
+                            )}
+                          </ul>
+
+                          {/* Button - Her zaman en altta */}
+                          <Link to={`/packages`} className="block mt-auto pt-4">
+                            <Button className={`w-full ${color.bg} hover:opacity-90 text-white rounded-lg text-sm sm:text-base font-semibold h-11 sm:h-12 shadow-md hover:shadow-lg transition-all`}>
+                              Detaylı Bilgi
+                              <ArrowRight className="h-4 w-4 ml-2" />
+                            </Button>
+                          </Link>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  );
+                }) : (
+                  // Fallback packages
+                  [
+                    { name: 'Hususi Oto Ekstra', type: 'Otomobil', features: ['Çekici Hizmeti Kaza', 'Çekici Hizmeti Arıza', 'Lastik Patlaması', 'Yakıt Bitmesi', 'Çilingir Hizmeti'] },
+                    { name: 'Minibüs Paketi', type: 'Minibüs', features: ['Çekici Hizmeti Kaza', 'Çekici Hizmeti Arıza', 'Lastik Patlaması'] },
+                    { name: 'Motosiklet Paketi', type: 'Motosiklet', features: ['Çekici Hizmeti Kaza', 'Çekici Hizmeti Arıza'] },
+                    { name: 'Ticari Araç Paketi', type: 'Kamyonet', features: ['Çekici Hizmeti Kaza', 'Çekici Hizmeti Arıza', 'Lastik Patlaması', 'Yakıt Bitmesi', 'Kurtarma'] },
+                  ].map((pkg, index) => {
+                    const vehicleIcons: Record<string, any> = {
+                      'Otomobil': Car,
+                      'Motosiklet': Bike,
+                      'Minibüs': Bus,
+                      'Kamyonet': Truck,
+                    };
+                    const VehicleIcon = vehicleIcons[pkg.type] || Car;
                     
-                    {/* Description */}
-                    <p className="text-base text-slate-600 leading-relaxed flex-grow mb-4">
-                      {feature.description}
-                    </p>
-                    
-                    {/* Subtle background decoration */}
-                    <div className={`absolute -bottom-10 -right-10 w-32 h-32 ${colors.icon} rounded-full opacity-10 blur-2xl group-hover:opacity-20 transition-opacity`}></div>
+                    const colors = [
+                      { bg: 'bg-[#0066CC]', light: 'bg-blue-50' },
+                      { bg: 'bg-emerald-500', light: 'bg-emerald-50' },
+                      { bg: 'bg-purple-500', light: 'bg-purple-50' },
+                      { bg: 'bg-orange-500', light: 'bg-orange-50' },
+                    ];
+                    const color = colors[index % colors.length];
+
+                    return (
+                      <div key={index} className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[320px] snap-center">
+                        <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 bg-white flex flex-col">
+                          {/* Fallback Header - Kurumsal tasarım */}
+                          <div className={`${color.light} p-4 sm:p-6 border-b border-gray-100`}>
+                            <div className="flex items-center justify-between mb-3 sm:mb-4">
+                              <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl ${color.bg} flex items-center justify-center shadow-md`}>
+                                <VehicleIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+                              </div>
+                              <span className={`px-3 sm:px-4 py-1.5 rounded-lg ${color.bg} text-white text-xs font-semibold uppercase tracking-wide`}>
+                                {pkg.type}
+                              </span>
+                            </div>
+                            <h3 className="text-lg sm:text-xl font-bold text-gray-900">{pkg.name}</h3>
+                          </div>
+                          {/* Fallback Features - Sabit yükseklik */}
+                          <CardContent className="p-4 sm:p-6 flex flex-col flex-grow">
+                            <ul className="space-y-2.5 sm:space-y-3 min-h-[160px] sm:min-h-[180px]">
+                              {pkg.features.map((feature, idx) => (
+                                <li key={idx} className="flex items-center gap-2.5 sm:gap-3">
+                                  <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md ${color.bg} flex items-center justify-center shadow-sm`}>
+                                    <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
+                                  </div>
+                                  <span className="text-sm text-gray-700 font-medium">{feature}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            {/* Button - Her zaman en altta */}
+                            <Link to="/packages" className="block mt-auto pt-4">
+                              <Button className={`w-full ${color.bg} hover:opacity-90 text-white rounded-lg text-sm sm:text-base font-semibold h-11 sm:h-12 shadow-md hover:shadow-lg transition-all`}>
+                                Detaylı Bilgi
+                                <ArrowRight className="h-4 w-4 ml-2" />
+                              </Button>
+                            </Link>
                   </CardContent>
                 </Card>
+                      </div>
               );
-            })}
+                  })
+                )}
           </div>
+
+              {/* Carousel Navigation - Desktop only */}
+              <button
+                onClick={() => packageCarouselRef.current?.scrollBy({ left: -340, behavior: 'smooth' })}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 sm:-translate-x-4 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center text-gray-700 hover:text-[#0066CC] transition-all hidden md:flex"
+                aria-label="Önceki"
+              >
+                <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
+              <button
+                onClick={() => packageCarouselRef.current?.scrollBy({ left: 340, behavior: 'smooth' })}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 sm:translate-x-4 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow-lg hover:shadow-xl items-center justify-center text-gray-700 hover:text-[#0066CC] transition-all hidden md:flex"
+                aria-label="Sonraki"
+              >
+                <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
         </div>
-      </section>
 
-      {/* How It Works Section */}
-      <section className="container mx-auto px-4 py-24 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <div className="inline-block mb-4">
-              <span className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold">
-                Süreç
-              </span>
+            {/* View All Link */}
+            <div className="text-center mt-8 sm:mt-10">
+              <Link to="/packages">
+                <Button variant="outline" size="lg" className="rounded-full px-6 sm:px-8 border-2 border-[#0066CC] text-[#0066CC] hover:bg-[#0066CC] hover:text-white text-sm sm:text-base">
+                  Tüm Paketleri Görüntüle
+                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                </Button>
+              </Link>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black mb-4 text-slate-900">
-              Nasıl Çalışır?
-            </h2>
-            <p className="text-xl text-slate-700 max-w-2xl mx-auto">
-              Basit 3 adımda başlayın ve işinizi dijitalleştirin
-            </p>
+          </div>
+        </section>
+
+        {/* ===== STATS SECTION ===== */}
+        <section className="py-12 md:py-20 bg-[#0066CC] relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+            }} />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                step: '01',
-                title: 'Hesap Oluştur',
-                description: 'Hemen kayıt olun ve kaynağınızı sisteme ekleyin. Kurulum sadece birkaç dakika sürer.',
-                icon: Users,
-                color: 'blue'
-              },
-              {
-                step: '02',
-                title: 'Paketlerinizi Ekleyin',
-                description: 'Sigorta paketlerinizi oluşturun, fiyatlandırın ve müşterilerinize sunmaya başlayın.',
-                icon: Package,
-                color: 'emerald'
-              },
-              {
-                step: '03',
-                title: 'Satış Yapmaya Başlayın',
-                description: 'Müşterilerinizi ekleyin, satış yapın ve tüm işlemlerinizi tek yerden yönetin.',
-                icon: ShoppingCart,
-                color: 'cyan'
-              }
-            ].map((item, index) => {
-              const Icon = item.icon;
-              const colorClasses = {
-                blue: { bg: 'bg-slate-900', text: 'text-white', border: 'border-slate-300' },
-                emerald: { bg: 'bg-slate-800', text: 'text-white', border: 'border-slate-300' },
-                cyan: { bg: 'bg-slate-700', text: 'text-white', border: 'border-slate-300' },
-              };
-              const colors = colorClasses[item.color as keyof typeof colorClasses];
-              
-              return (
-                <div key={index} className="relative">
-                  {/* Connecting line */}
-                  {index < 2 && (
-                    <div className="hidden md:block absolute top-20 left-full w-full h-0.5 bg-gradient-to-r from-slate-300 to-slate-200 z-0" style={{ width: 'calc(100% - 4rem)', marginLeft: '2rem' }}></div>
-                  )}
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+              {/* Left - Image - Canlı Destek Ekibi - Hidden on mobile */}
+              <div className="relative hidden lg:block">
+                <div className="relative">
+                  <img 
+                    src="/images/pexels-fauxels-3183197.jpg" 
+                    alt="7/24 Canlı Destek Ekibi"
+                    className="rounded-3xl shadow-2xl max-h-[500px] object-cover"
+                    loading="lazy"
+                  />
                   
-                  <Card className={`border-2 ${colors.border} bg-white hover:shadow-xl transition-all group cursor-pointer h-full`}>
-                    <CardContent className="p-8 text-center">
-                      <div className="mb-6">
-                        <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${colors.bg} ${colors.text} text-2xl font-black mb-4 group-hover:scale-110 transition-transform`}>
-                          {item.step}
+                  {/* Floating Badge */}
+                  <div className="absolute -right-6 top-1/4 bg-white rounded-2xl shadow-xl p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center">
+                        <Headphones className="h-6 w-6 text-white" />
                         </div>
-                        <div className={`inline-flex p-4 rounded-xl ${colors.bg} group-hover:scale-110 transition-transform`}>
-                          <Icon className={`h-8 w-8 ${colors.text}`} />
+                      <div>
+                        <p className="text-2xl font-black text-gray-900">7/24</p>
+                        <p className="text-xs text-gray-500">Çağrı Merkezi</p>
                         </div>
                       </div>
-                      <h3 className="text-2xl font-bold text-slate-800 mb-3">{item.title}</h3>
-                      <p className="text-slate-600 leading-relaxed">{item.description}</p>
-                    </CardContent>
-                  </Card>
                 </div>
-              );
-            })}
           </div>
         </div>
-      </section>
 
-      {/* Stats Showcase Section */}
-      <section className="container mx-auto px-4 py-24 bg-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
-        
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <div className="inline-block mb-4">
-              <span className="px-4 py-2 rounded-full bg-slate-700/50 text-white text-sm font-semibold border border-slate-600">
-                İstatistikler
-              </span>
+              {/* Right - Stats */}
+              <div className="text-white space-y-6 sm:space-y-8">
+                <div className="space-y-3 sm:space-y-4 text-center lg:text-left">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium">
+                    <Activity className="h-4 w-4" />
+                    <span>Hizmet Kalitesi</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black mb-4 text-white">
-              Rakamlarla Yol Asistan
+                  <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black leading-tight">
+                    Müşterilerimizin
+                    <br />
+                    Güveni
             </h2>
-            <p className="text-xl text-slate-200 max-w-2xl mx-auto">
-              Binlerce kaynak ve şube tarafından güvenle kullanılıyor
+                  <p className="text-base sm:text-lg text-blue-100 max-w-lg mx-auto lg:mx-0">
+                    Binlerce müşterimize kesintisiz hizmet sunarak güvenlerini kazandık. Siz de ailemize katılın.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-6">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
             {displayStats.slice(0, 4).map((stat: any, index: number) => {
               const Icon = stat.icon_name 
                 ? (LucideIcons as any)[stat.icon_name] || Activity
                 : stat.icon || Activity;
-              const number = stat.suffix 
-                ? `${stat.value}${stat.suffix}`
-                : stat.value.toString();
+                    
               return (
-                <Card key={index} className="border-0 bg-slate-800/50 backdrop-blur-md hover:bg-slate-800/70 transition-all group cursor-pointer border border-slate-700">
-                  <CardContent className="p-8 text-center">
-                    <div className="mb-4">
-                      <div className="inline-flex p-3 rounded-xl bg-slate-700/50 group-hover:scale-110 transition-transform">
-                        <Icon className="h-6 w-6 text-slate-300" />
+                      <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4">
+                          <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                            <Icon className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
                       </div>
+                          <div className="text-center sm:text-left">
+                            <p className="text-2xl sm:text-3xl md:text-4xl font-black">
+                              {stat.value.toLocaleString()}{stat.suffix || ''}
+                            </p>
+                            <p className="text-xs sm:text-sm text-blue-100">{stat.label}</p>
                     </div>
-                    <p className="text-4xl md:text-5xl font-black mb-2 text-white">{number}</p>
-                    <p className="text-sm text-slate-200 font-medium">{stat.label}</p>
-                  </CardContent>
-                </Card>
+                        </div>
+                      </div>
               );
             })}
+                </div>
+
+                <div className="text-center lg:text-left">
+                  <Link to="/packages">
+                    <Button size="lg" className="bg-white text-[#0066CC] hover:bg-gray-100 rounded-full px-6 sm:px-8 shadow-lg text-sm sm:text-base">
+                      Hemen Başvur
+                      <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="container mx-auto px-4 py-24 relative bg-slate-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Sol taraf - Benefits */}
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <div className="inline-block">
-                  <span className="px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-semibold">
-                    Avantajlar
-                  </span>
-                </div>
-                <h2 className="text-4xl md:text-5xl font-black text-slate-900">
-                  Neden Yol Asistan?
-                </h2>
-                <p className="text-xl text-slate-700 leading-relaxed">
-                  Sigorta kaynaklarınız için özel olarak tasarlanmış, modern ve güvenilir bir platform. 
-                  İş süreçlerinizi dijitalleştirin ve verimliliğinizi artırın.
-                </p>
+        {/* ===== TESTIMONIALS SECTION ===== */}
+        <section className="py-12 md:py-20 bg-white relative overflow-hidden">
+          {/* Background Image - Müşteri Görseli */}
+          <div className="absolute inset-0 opacity-5">
+            <img 
+              src="/images/pexels-jonathan-reynaga-861774-17429097.jpg"
+              alt=""
+              className="w-full h-full object-cover"
+            />
               </div>
               
-              <div className="space-y-4">
-                {benefits.map((benefit, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center gap-4 p-4 rounded-xl bg-white/80 backdrop-blur-sm hover:bg-white hover:shadow-lg transition-all group cursor-pointer"
-                  >
-                    <div className="p-2 rounded-lg bg-slate-900 group-hover:bg-slate-800 transition-colors">
-                      <CheckCircle2 className="h-6 w-6 text-white" />
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="text-center mb-8 sm:mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 text-amber-700 text-sm font-medium mb-4">
+                <Star className="h-4 w-4" />
+                <span>Müşteri Deneyimleri</span>
                     </div>
-                    <span className="text-lg font-medium text-slate-800 group-hover:text-slate-900">{benefit}</span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900">
+                Müşterilerimiz Ne Diyor?
+              </h2>
                   </div>
-                ))}
-              </div>
+
+            {/* Testimonials Grid - Hizalanmış kartlar */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {testimonials.map((testimonial, index) => (
+                <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow bg-white h-full">
+                  <CardContent className="p-5 sm:p-6 flex flex-col h-full">
+                    {/* Yıldızlar */}
+                    <div className="flex gap-1 mb-3 sm:mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-amber-400 text-amber-400" />
+                      ))}
             </div>
 
-            {/* Sağ taraf - Araba görseli ve özellik kartları */}
-            <div className="space-y-6">
-              {/* Araba görseli - Benefits section'da (internetten) */}
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl group">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-emerald-500/20 blur-xl group-hover:blur-2xl transition-all"></div>
-                <img 
-                  src="https://images.unsplash.com/photo-1502877338535-766e1452684a?w=800&h=500&fit=crop&q=80" 
-                  alt="Modern araç ve yol yardım hizmetleri - Çözüm Asistan" 
-                  className="w-full h-64 object-cover relative z-10 group-hover:scale-110 transition-transform duration-700"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent z-20"></div>
+                    {/* Yorum - min-height ile hizalama */}
+                    <p className="text-sm sm:text-base text-gray-600 italic flex-grow min-h-[80px]">
+                      "{testimonial.text}"
+                    </p>
+                    
+                    {/* Kişi bilgisi - her zaman altta */}
+                    <div className="flex items-center gap-3 mt-5 sm:mt-6 pt-4 border-t border-gray-100">
+                      {/* Profil ikonu - kullanıcı avatarı */}
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#0066CC] to-blue-600 flex items-center justify-center text-white font-bold text-sm sm:text-base">
+                        {testimonial.name.charAt(0)}
+                    </div>
+                      <div>
+                        <p className="font-bold text-gray-900 text-sm sm:text-base">{testimonial.name}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">{testimonial.location}</p>
+                    </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+                    </div>
               </div>
-              
-              {/* Özellik kartları - Header/banner ile uyumlu renkler */}
-              <div className="grid grid-cols-2 gap-4">
-                <Card className="bg-slate-900 text-white border-0 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 cursor-pointer group">
-                  <CardContent className="p-6 text-center">
-                    <div className="p-3 rounded-xl bg-white/20 w-fit mx-auto mb-3 group-hover:scale-110 transition-transform">
-                      <Zap className="h-8 w-8" />
-                    </div>
-                    <p className="text-2xl font-bold mb-1">Hızlı</p>
-                    <p className="text-sm text-slate-300">Yüksek performans</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-800 text-white border-0 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 cursor-pointer group">
-                  <CardContent className="p-6 text-center">
-                    <div className="p-3 rounded-xl bg-white/20 w-fit mx-auto mb-3 group-hover:scale-110 transition-transform">
-                      <Shield className="h-8 w-8" />
-                    </div>
-                    <p className="text-2xl font-bold mb-1">Güvenli</p>
-                    <p className="text-sm text-slate-300">Veri koruması</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-700 text-white border-0 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 cursor-pointer group">
-                  <CardContent className="p-6 text-center">
-                    <div className="p-3 rounded-xl bg-white/20 w-fit mx-auto mb-3 group-hover:scale-110 transition-transform">
-                      <BarChart3 className="h-8 w-8" />
-                    </div>
-                    <p className="text-2xl font-bold mb-1">Akıllı</p>
-                    <p className="text-sm text-slate-300">Detaylı analiz</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-slate-900 text-white border-0 shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 cursor-pointer group">
-                  <CardContent className="p-6 text-center">
-                    <div className="p-3 rounded-xl bg-white/20 w-fit mx-auto mb-3 group-hover:scale-110 transition-transform">
-                      <Users className="h-8 w-8" />
-                    </div>
-                    <p className="text-2xl font-bold mb-1">Kolay</p>
-                    <p className="text-sm text-slate-300">Kullanıcı dostu</p>
-                  </CardContent>
-                </Card>
-              </div>
+        </section>
+
+        {/* ===== CONTACT SECTION ===== */}
+        <section id="contact" className="py-12 md:py-20 bg-[#0066CC]">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-8 sm:mb-12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-4">
+                <Phone className="h-4 w-4" />
+                <span>İletişime Geçin</span>
             </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white">
+                Bize Ulaşın
+              </h2>
+          </div>
+              
+            {/* Contact Info Cards */}
+            <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-8 sm:mb-12">
+              <a 
+                href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '4446250'}`}
+                className="flex items-center gap-3 bg-white rounded-full px-5 sm:px-6 py-3 shadow-lg hover:shadow-xl transition-shadow"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#0066CC] flex items-center justify-center flex-shrink-0">
+                  <Phone className="h-5 w-5 text-white" />
+        </div>
+                <div>
+                  <p className="text-xs text-gray-500">Telefon</p>
+                  <p className="font-bold text-gray-900 text-sm sm:text-base">{landingContent?.support_phone || '+90 (850) 304 54 40'}</p>
+                    </div>
+              </a>
+              
+              <a 
+                href={`mailto:${landingContent?.support_email || 'info@cozumasistan.com'}`}
+                className="flex items-center gap-3 bg-white rounded-full px-5 sm:px-6 py-3 shadow-lg hover:shadow-xl transition-shadow"
+              >
+                <div className="w-10 h-10 rounded-full bg-[#0066CC] flex items-center justify-center flex-shrink-0">
+                  <Mail className="h-5 w-5 text-white" />
+              </div>
+                <div>
+                  <p className="text-xs text-gray-500">E-Posta</p>
+                  <p className="font-bold text-gray-900 text-sm sm:text-base">{landingContent?.support_email || 'info@cozumasistan.com'}</p>
+        </div>
+              </a>
+              </div>
+
+            {/* Contact Form + Map */}
+            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden">
+              <div className="grid lg:grid-cols-2">
+                {/* Form */}
+                <div className="p-6 sm:p-8 md:p-12">
+                  <form onSubmit={handleContactSubmit} className="space-y-4 sm:space-y-6">
+                    <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div>
+                        <Input
+                          placeholder="İsminiz"
+                          value={contactForm.name}
+                          onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                          className="rounded-xl border-gray-200 focus:border-[#0066CC] h-11 sm:h-12 bg-white text-gray-900"
+                        />
+            </div>
+                      <div>
+                        <Input
+                          placeholder="Telefon"
+                          value={contactForm.phone}
+                          onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
+                          className="rounded-xl border-gray-200 focus:border-[#0066CC] h-11 sm:h-12 bg-white text-gray-900"
+                        />
           </div>
         </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="container mx-auto px-4 py-24 relative">
-        <div className="relative rounded-3xl overflow-hidden">
-          {/* Background - Ana renk (slate-900) */}
-          <div className="absolute inset-0 bg-slate-900"></div>
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}></div>
-          
-          <Card className="border-0 shadow-2xl bg-transparent relative z-10">
-            <CardContent className="p-12 md:p-20 text-center relative">
-              {/* Decorative circles */}
-              <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-0 right-0 w-96 h-96 bg-slate-800/30 rounded-full blur-3xl"></div>
-              
-              <div className="relative z-10">
-                <h2 className="text-5xl md:text-6xl font-black mb-6 text-white">
-                  Hemen Başlayın
-                </h2>
-                <p className="text-2xl text-slate-300 mb-10 max-w-3xl mx-auto leading-relaxed">
-                  Yol Asistan ile sigorta yönetim süreçlerinizi dijitalleştirin ve işinizi büyütün.
-                </p>
-                <Link to="/login">
-                  <Button 
-                    size="lg" 
-                    variant="secondary" 
-                    className="text-xl px-12 py-8 h-auto gap-3 shadow-2xl hover:shadow-white/50 bg-white text-slate-900 hover:bg-blue-50 border-0 transition-all transform hover:scale-110 font-bold"
-                  >
-                    Giriş Yap ve Başla
-                    <ArrowRight className="h-6 w-6" />
-                  </Button>
-                </Link>
+                    <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div>
+                        <Input
+                          placeholder="E-posta adresiniz"
+                          type="email"
+                          value={contactForm.email}
+                          onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                          className="rounded-xl border-gray-200 focus:border-[#0066CC] h-11 sm:h-12 bg-white text-gray-900"
+                        />
               </div>
-            </CardContent>
-          </Card>
+                      <div>
+                        <Input
+                          placeholder="Konu"
+                          value={contactForm.subject}
+                          onChange={(e) => setContactForm({...contactForm, subject: e.target.value})}
+                          className="rounded-xl border-gray-200 focus:border-[#0066CC] h-11 sm:h-12 bg-white text-gray-900"
+                        />
         </div>
-      </section>
+                    </div>
+                    <div>
+                      <Textarea
+                        placeholder="Mesajınız"
+                        value={contactForm.message}
+                        onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                        className="rounded-xl border-gray-200 focus:border-[#0066CC] min-h-[100px] sm:min-h-[120px] bg-white text-gray-900"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full h-11 sm:h-12 text-base sm:text-lg">
+                      <Send className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                      Gönder
+                    </Button>
+                  </form>
+                </div>
 
-      {/* Footer - Ana renk (slate-900) */}
-      <footer role="contentinfo" className="border-t border-slate-800 bg-slate-900 backdrop-blur-sm relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-        }}></div>
-        
-        <div className="container mx-auto px-4 py-12 relative z-10">
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
-            {/* Logo ve Açıklama */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                  <img 
-                    src="/cozumasistanlog.svg" 
-                    alt="Çözüm Asistan - Yol Yardım Hizmetleri Logo" 
-                    className="h-8"
-                    width="120"
-                    height="40"
+                {/* Map */}
+                <div className="h-[300px] sm:h-[350px] lg:h-auto bg-gray-200">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3011.4414742151985!2d28.697512176735415!3d40.993709471352524!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14caa05f02ae5423%3A0x68cda2954db79f64!2zxLBHw5wgVGVrbWVyLCBDaWhhbmdpciwgUGV0cm9sIE9maXNpIENkLiBObzo1IEQ6MSwgMzQzMTAgQXZjxLFsYXIvxLBzdGFuYnVs!5e0!3m2!1str!2str!4v1767171043710!5m2!1str!2str"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, minHeight: '300px' }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Konum Haritası"
                   />
                 </div>
               </div>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Türkiye genelinde 7/24 yol yardım hizmetleri. Profesyonel çözümler ve güvenilir hizmet.
-              </p>
-              {landingContent?.support_phone && (
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Phone className="h-4 w-4" />
-                  <a href={`tel:${landingContent.support_phone.replace(/\s/g, '')}`} className="text-sm hover:text-white transition-colors">
-                    {landingContent.support_phone}
-                  </a>
                 </div>
-              )}
             </div>
+        </section>
 
-            {/* Hızlı Linkler */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-white">Hızlı Linkler</h3>
-              <ul className="space-y-2">
-                {activePages.map((page) => {
-                  const slugToPath: Record<string, string> = {
-                    'about': '/about',
-                    'distance-sales-contract': '/distance-sales-contract',
-                    'privacy-policy': '/privacy-policy',
-                    'kvkk': '/kvkk',
-                    'delivery-return': '/delivery-return'
-                  };
-                  const path = slugToPath[page.slug] || `/${page.slug}`;
-                  return (
-                    <li key={page.slug}>
-                      <Link 
-                        to={path}
-                        className="text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
-                      >
-                        {page.title}
-                      </Link>
+        {/* ===== FOOTER ===== */}
+        <footer className="bg-gray-900 text-white">
+          <div className="container mx-auto px-4 py-10 sm:py-12 md:py-16">
+            {/* Footer Grid - 3 sütun */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 lg:gap-16 mb-8">
+              {/* İletişim */}
+              <div className="space-y-4">
+                <h3 className="text-base sm:text-lg font-bold">İletişim</h3>
+                <ul className="space-y-2 sm:space-y-3">
+                  <li className="flex items-start gap-2 sm:gap-3 text-gray-400 text-sm">
+                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 mt-0.5" />
+                    <span>{landingContent?.company_address || 'İstanbul, Türkiye'}</span>
+                  </li>
+                  <li>
+                    <a href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '4446250'}`} className="flex items-center gap-2 sm:gap-3 text-gray-400 hover:text-white transition-colors text-sm">
+                      <Phone className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                      <span>{landingContent?.support_phone || '+90 (850) 304 54 40'}</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href={`mailto:${landingContent?.support_email || 'info@cozumasistan.com'}`} className="flex items-center gap-2 sm:gap-3 text-gray-400 hover:text-white transition-colors text-sm">
+                      <Mail className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                      <span className="truncate">{landingContent?.support_email || 'info@cozumasistan.com'}</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Politikalar */}
+              <div className="space-y-4">
+                <h3 className="text-base sm:text-lg font-bold">Politikalar</h3>
+                <ul className="space-y-2">
+                  {activePages
+                    .filter(page => ['privacy-policy', 'distance-sales-contract', 'kvkk', 'delivery-return'].includes(page.slug))
+                    .map((page) => {
+                      const slugToPath: Record<string, string> = {
+                        'distance-sales-contract': '/distance-sales-contract',
+                        'privacy-policy': '/privacy-policy',
+                        'kvkk': '/kvkk',
+                        'delivery-return': '/delivery-return'
+                      };
+                      const path = slugToPath[page.slug] || `/${page.slug}`;
+                      return (
+                        <li key={page.slug}>
+                          <Link to={path} className="text-gray-400 hover:text-white transition-colors text-sm">
+                            {page.title}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                </ul>
+              </div>
+
+              {/* Hizmetler */}
+              <div className="space-y-4">
+                <h3 className="text-base sm:text-lg font-bold">Hizmetler</h3>
+                <ul className="space-y-2">
+                  {services.slice(0, 5).map((service, index) => (
+                    <li key={index} className="text-gray-400 flex items-center gap-2 text-sm">
+                      <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-[#0066CC] flex-shrink-0" />
+                      <span className="truncate">{service}</span>
                     </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            {/* İletişim */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold text-white">İletişim</h3>
-              <div className="space-y-2 text-sm text-slate-400">
-                {landingContent?.support_email && (
-                  <p>
-                    <span className="text-slate-500">E-posta:</span>{' '}
-                    <a href={`mailto:${landingContent.support_email}`} className="hover:text-white transition-colors">
-                      {landingContent.support_email}
-                    </a>
-                  </p>
-                )}
-                {landingContent?.support_phone && (
-                  <p>
-                    <span className="text-slate-500">Telefon:</span>{' '}
-                    <a href={`tel:${landingContent.support_phone.replace(/\s/g, '')}`} className="hover:text-white transition-colors">
-                      {landingContent.support_phone}
-                    </a>
-                  </p>
-                )}
-                {landingContent?.company_address && (
-                  <p>
-                    <span className="text-slate-500">Adres:</span>{' '}
-                    <span className="text-slate-300">{landingContent.company_address}</span>
-                  </p>
-                )}
+                  ))}
+                  {services.length === 0 && (
+                    <>
+                      <li className="text-gray-400 flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-[#0066CC]" />
+                        <span>Çekici Hizmeti</span>
+                      </li>
+                      <li className="text-gray-400 flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-[#0066CC]" />
+                        <span>Lastik Değişimi</span>
+                      </li>
+                      <li className="text-gray-400 flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-[#0066CC]" />
+                        <span>İkame Araç</span>
+                      </li>
+                    </>
+                  )}
+                </ul>
               </div>
             </div>
-          </div>
 
-          {/* Alt Kısım */}
-          <div className="border-t border-slate-800 pt-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <p className="text-sm text-slate-400">
-                © 2023 {landingContent?.company_name || 'Yol Asistan'}. Tüm hakları saklıdır.
-              </p>
-              <div className="flex items-center gap-6">
-                {activePages
-                  .filter(page => ['privacy-policy', 'distance-sales-contract'].includes(page.slug))
-                  .map((page) => {
-                    const slugToPath: Record<string, string> = {
-                      'distance-sales-contract': '/distance-sales-contract',
-                      'privacy-policy': '/privacy-policy'
-                    };
-                    const path = slugToPath[page.slug] || `/${page.slug}`;
-                    return (
-                      <Link 
-                        key={page.slug}
-                        to={path}
-                        className="text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-                      >
-                        {page.slug === 'privacy-policy' ? 'Gizlilik Politikası' : page.slug === 'distance-sales-contract' ? 'Mesafeli Satış' : page.title}
-                      </Link>
-                    );
-                  })}
-              </div>
-            </div>
-            {/* Ödeme Logoları */}
-            <div className="mt-6 pt-6 border-t border-slate-800">
-              <div className="flex flex-col items-center gap-4">
-                <p className="text-xs text-slate-500">Güvenli Ödeme</p>
-                <div className="flex items-center justify-center gap-6 opacity-80 hover:opacity-100 transition-opacity">
-                  <img 
-                    src="/iyzicologo.png" 
-                    alt="Iyzico" 
-                    className="h-8 w-auto object-contain"
-                  />
-                  <img 
-                    src="/visalogo.png" 
-                    alt="Visa" 
-                    className="h-8 w-auto object-contain"
-                  />
-                  <img 
-                    src="/mastercardlogo.png" 
-                    alt="Mastercard" 
-                    className="h-8 w-auto object-contain"
-                  />
+            {/* Bottom Bar */}
+            <div className="border-t border-gray-800 pt-6 sm:pt-8">
+              <div className="flex flex-col gap-4 sm:gap-6">
+                {/* Logo and Copyright */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <img 
+                      src="/cozumasistanlog.svg" 
+                      alt={landingContent?.company_name || "Çözüm Asistan"} 
+                      className="h-7 sm:h-8"
+                    />
+                    <p className="text-gray-400 text-xs sm:text-sm">
+                      © {new Date().getFullYear()} {landingContent?.company_name || 'Çözüm Asistan'}. Tüm hakları saklıdır.
+                    </p>
                 </div>
               </div>
+
+                {/* Payment Logos */}
+                <div className="flex items-center justify-center gap-4 sm:gap-6 pt-4 border-t border-gray-800">
+                  <img src="/iyzicologo.png" alt="Iyzico" className="h-5 sm:h-6 opacity-60 hover:opacity-100 transition-opacity" />
+                  <img src="/visalogo.png" alt="Visa" className="h-5 sm:h-6 opacity-60 hover:opacity-100 transition-opacity" />
+                  <img src="/mastercardlogo.png" alt="Mastercard" className="h-5 sm:h-6 opacity-60 hover:opacity-100 transition-opacity" />
+                </div>
             </div>
           </div>
         </div>
       </footer>
-      </main>
     </div>
     </>
   );
 }
-

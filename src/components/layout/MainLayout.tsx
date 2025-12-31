@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, Users, UserCircle, Car, Package, 
   ShoppingCart, CreditCard, MessageSquare, TrendingUp, GitBranch,
   Menu, X, Plus, Sun, Moon, LogOut, Settings, ChevronDown,
-  MoreHorizontal, FileText, Calculator
+  MoreHorizontal, FileText, Calculator, Store
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,7 @@ import {
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
   { icon: Building2, label: "Acenteler", path: "/dashboard/agencies", roles: [UserRole.SUPER_ADMIN] },
+  { icon: Store, label: "Bayilik Başvuruları", path: "/dashboard/dealer-applications", roles: [UserRole.SUPER_ADMIN] },
   { icon: GitBranch, label: "Subeler", path: "/dashboard/branches", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN] },
   { icon: UserCircle, label: "Kullanicilar", path: "/dashboard/users", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN] },
   { icon: Users, label: "Musteriler", path: "/dashboard/customers", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },

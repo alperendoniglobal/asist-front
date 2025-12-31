@@ -697,8 +697,8 @@ export default function NewSale() {
         // Araç bilgileri
         vehicle: {
           vehicle_type: selectedVehicleType, // Araç tipi: Motosiklet, Otomobil, vs.
-          is_foreign_plate: vehicleForm.is_foreign_plate,
-          plate: vehicleForm.plate.toUpperCase(),
+        is_foreign_plate: vehicleForm.is_foreign_plate,
+        plate: vehicleForm.plate.toUpperCase(),
           registration_serial: vehicleForm.registration_serial.toUpperCase() || undefined,
           registration_number: vehicleForm.registration_number || undefined,
           // Motosiklet için motor_brand_id ve motor_model_id, otomobil için brand_id ve model_id
@@ -706,11 +706,11 @@ export default function NewSale() {
             motor_brand_id: parseInt(vehicleForm.brand_id),
             motor_model_id: parseInt(vehicleForm.model_id),
           } : {
-            brand_id: parseInt(vehicleForm.brand_id),
-            model_id: parseInt(vehicleForm.model_id),
+        brand_id: parseInt(vehicleForm.brand_id),
+        model_id: parseInt(vehicleForm.model_id),
           }),
-          model_year: parseInt(vehicleForm.model_year),
-          usage_type: vehicleForm.usage_type,
+        model_year: parseInt(vehicleForm.model_year),
+        usage_type: vehicleForm.usage_type,
         },
         // Satış bilgileri
         sale: {

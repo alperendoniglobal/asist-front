@@ -1,34 +1,63 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserCustomer } from '@/contexts/UserCustomerContext';
 import { UserRole } from '@/types';
 import { 
   Mail, Lock, LogIn, AlertTriangle, 
-  Car, Users, CreditCard, TrendingUp 
+  Car, Users, CreditCard, TrendingUp,
+  User, Building2, UserPlus
 } from 'lucide-react';
 
+/**
+ * Login Page
+ * Hem yetkili (admin/acente) hem de bireysel kullanıcı girişi için
+ * Tab yapısı ile ayrılmış iki farklı giriş formu
+ */
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login: adminLogin } = useAuth();
+  const { login: userLogin } = useUserCustomer();
+  
+  // State'ler
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [activeTab, setActiveTab] = useState<'user' | 'admin'>('user');
+  
+  // Form verileri
+  const [userFormData, setUserFormData] = useState({ email: '', password: '' });
+  const [adminFormData, setAdminFormData] = useState({ email: '', password: '' });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Kullanıcı girişi
+  const handleUserLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      await login(formData.email, formData.password);
+      await userLogin(userFormData.email, userFormData.password);
+      navigate('/user/dashboard');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Yetkili girişi
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      await adminLogin(adminFormData.email, adminFormData.password);
       // SUPPORT rolü için özel yönlendirme
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       if (storedUser.role === UserRole.SUPPORT) {
@@ -43,7 +72,13 @@ export default function Login() {
     }
   };
 
-  // Özellik kartları
+  // Tab değiştiğinde hata temizle
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'user' | 'admin');
+    setError(null);
+  };
+
+  // Özellik kartları (yetkili girişi için)
   const features = [
     { icon: Users, title: 'Müşteri Yönetimi', description: 'Müşterilerinizi kolayca yönetin' },
     { icon: Car, title: 'Araç Takibi', description: 'Araç kayıtlarını düzenleyin' },
@@ -64,18 +99,20 @@ export default function Login() {
 
         <div className="relative z-10">
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-4">
+          <Link to="/" className="flex items-center gap-3 mb-4">
             <img 
               src="/cozumasistanlog.svg" 
               alt="Çözüm Asistan" 
-              className="h-10 w-auto"
+              className="h-10 w-auto cursor-pointer"
             />
-          </div>
-          <p className="text-slate-400 text-lg">Sigorta Acente Yönetim Sistemi</p>
+          </Link>
+          <p className="text-slate-400 text-lg">Yol Yardım Hizmetleri</p>
         </div>
 
         <div className="relative z-10 space-y-6">
-          <h2 className="text-2xl font-semibold mb-8">Neden Yol Asistan?</h2>
+          <h2 className="text-2xl font-semibold mb-8">
+            {activeTab === 'user' ? 'Üye Avantajları' : 'Neden Yol Asistan?'}
+          </h2>
           <div className="grid grid-cols-2 gap-6">
             {features.map((feature, index) => (
               <div 
@@ -92,7 +129,7 @@ export default function Login() {
 
         <div className="relative z-10">
           <p className="text-slate-500 text-sm">
-            © 2023 Yol Asistan. Tüm hakları saklıdır.
+            © 2023 Çözüm Asistan. Tüm hakları saklıdır.
           </p>
         </div>
       </div>
@@ -100,80 +137,167 @@ export default function Login() {
       {/* Sağ Panel - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-br from-background to-muted/50">
         <Card className="w-full max-w-md shadow-2xl border-0">
-          <CardHeader className="space-y-1 text-center pb-8">
-            {/* Icon Logo - formun üstünde */}
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/60 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primary/25">
-              <img 
-                src="/iconlogo.svg" 
-                alt="Çözüm Asistan" 
-                className="h-10 w-10"
-              />
-            </div>
+          <CardHeader className="space-y-1 text-center pb-4">
+            {/* Icon Logo */}
+            <Link to="/" className="mx-auto block">
+              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/60 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primary/25">
+                <img 
+                  src="/iconlogo.svg" 
+                  alt="Çözüm Asistan" 
+                  className="h-10 w-10"
+                />
+              </div>
+            </Link>
             <CardTitle className="text-2xl font-bold">Hoş Geldiniz</CardTitle>
             <CardDescription>
               Hesabınıza giriş yapın
             </CardDescription>
           </CardHeader>
+          
           <CardContent>
-            {/* Hata mesajı */}
-            {error && (
-              <Alert variant="destructive" className="mb-6">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+            {/* Tab yapısı */}
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="user" className="gap-2">
+                  <User className="h-4 w-4" />
+                  Kullanıcı
+                </TabsTrigger>
+                <TabsTrigger value="admin" className="gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Yetkili
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Giriş formu */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">E-posta</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="ornek@email.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
+              {/* Hata mesajı */}
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Şifre</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Giriş yapılıyor...
+              {/* Kullanıcı Girişi */}
+              <TabsContent value="user">
+                <form onSubmit={handleUserLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="user-email">E-posta</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="user-email"
+                        type="email"
+                        placeholder="ornek@email.com"
+                        value={userFormData.email}
+                        onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />
-                    Giriş Yap
-                  </div>
-                )}
-              </Button>
-            </form>
 
-            {/* Ödeme Logoları - Login formunun altında */}
-            <div className="mt-8 pt-6 border-t">
+                  <div className="space-y-2">
+                    <Label htmlFor="user-password">Şifre</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="user-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={userFormData.password}
+                        onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full h-11" disabled={loading}>
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Giriş yapılıyor...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <LogIn className="h-4 w-4" />
+                        Giriş Yap
+                      </div>
+                    )}
+                  </Button>
+
+                  {/* Kayıt linki */}
+                  <div className="text-center text-sm text-muted-foreground pt-2">
+                    Hesabınız yok mu?{' '}
+                    <Link to="/user-register" className="text-primary hover:underline font-medium inline-flex items-center gap-1">
+                      <UserPlus className="h-3 w-3" />
+                      Üye Ol
+                    </Link>
+                  </div>
+                </form>
+              </TabsContent>
+
+              {/* Yetkili Girişi */}
+              <TabsContent value="admin">
+                <form onSubmit={handleAdminLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-email">E-posta</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="admin-email"
+                        type="email"
+                        placeholder="yetkili@email.com"
+                        value={adminFormData.email}
+                        onChange={(e) => setAdminFormData({ ...adminFormData, email: e.target.value })}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Şifre</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="admin-password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={adminFormData.password}
+                        onChange={(e) => setAdminFormData({ ...adminFormData, password: e.target.value })}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full h-11" disabled={loading}>
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Giriş yapılıyor...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <LogIn className="h-4 w-4" />
+                        Yetkili Girişi
+                      </div>
+                    )}
+                  </Button>
+
+                  {/* Bayilik başvurusu linki */}
+                  <div className="text-center text-sm text-muted-foreground pt-2">
+                    Bayimiz olmak ister misiniz?{' '}
+                    <Link to="/bayilik-basvurusu" className="text-primary hover:underline font-medium">
+                      Başvuru Yap
+                    </Link>
+                  </div>
+                </form>
+              </TabsContent>
+            </Tabs>
+
+            {/* Ödeme Logoları */}
+            <div className="mt-6 pt-4 border-t">
               <div className="flex flex-col items-center gap-3">
                 <p className="text-xs text-muted-foreground">Güvenli Ödeme</p>
                 <div className="flex items-center justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">

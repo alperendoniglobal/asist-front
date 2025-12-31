@@ -776,8 +776,8 @@ export default function CreateFile() {
                           
                           return { 
                             ...prev, 
-                            service_type: value,
-                            road_assistance_coverage: limitAmount
+                          service_type: value,
+                          road_assistance_coverage: limitAmount
                           };
                         });
                       }}
@@ -797,7 +797,7 @@ export default function CreateFile() {
                               className={usage.isLimitReached ? 'opacity-50 cursor-not-allowed' : ''}
                             >
                               {getServiceOptionLabel(service)}
-                            </SelectItem>
+                          </SelectItem>
                           );
                         })}
                       </SelectContent>
