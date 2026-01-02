@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, Users, UserCircle, Car, Package, 
   ShoppingCart, CreditCard, MessageSquare, TrendingUp, GitBranch,
   Menu, X, Plus, Sun, Moon, LogOut, Settings, ChevronDown,
-  MoreHorizontal, FileText, Calculator, Store
+  MoreHorizontal, FileText, Calculator, Store, ScrollText
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -44,6 +44,7 @@ const menuItems = [
   { icon: MessageSquare, label: "Destek", path: "/dashboard/system-support", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
   { icon: FileText, label: "Hasar Dosyaları", path: "/dashboard/support-files", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN] },
   { icon: Settings, label: "İçerik Yönetimi", path: "/dashboard/content", roles: [UserRole.SUPER_ADMIN] },
+  { icon: ScrollText, label: "Sözleşme Yönetimi", path: "/dashboard/contracts", roles: [UserRole.SUPER_ADMIN] },
 ]
 
 export function MainLayout() {

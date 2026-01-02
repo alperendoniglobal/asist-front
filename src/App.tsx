@@ -16,6 +16,8 @@ import AgencyCommissionDistribution from "./pages/agencies/AgencyCommissionDistr
 const DealerApplications = lazy(() => import("./pages/agencies/DealerApplications"))
 const UserRegister = lazy(() => import("./pages/auth/UserRegister"))
 const UserDashboard = lazy(() => import("./pages/user/UserDashboard"))
+const ContractAcceptance = lazy(() => import("./pages/contract/ContractAcceptance"))
+const ContractManagement = lazy(() => import("./pages/admin/ContractManagement"))
 import Branches from "./pages/branches/Branches"
 import BranchDetail from "./pages/branches/BranchDetail"
 import Users from "./pages/users/Users"
@@ -86,6 +88,18 @@ function App() {
               <Route path="/packages" element={<PublicPackages />} />
               <Route path="/purchase/:packageId" element={<Purchase />} />
               <Route path="/bayilik-basvurusu" element={<DealerApplication />} />
+
+              {/* Sözleşme Kabul Sayfası - Auth gerekli ama sözleşme kontrolü yok */}
+              <Route 
+                path="/contract-acceptance" 
+                element={
+                  <ProtectedRoute skipContractCheck={true}>
+                    <Suspense fallback={<div className="flex items-center justify-center h-screen">Yükleniyor...</div>}>
+                      <ContractAcceptance />
+                    </Suspense>
+                  </ProtectedRoute>
+                } 
+              />
 
               {/* Protected Routes - Dashboard and all app routes */}
               <Route
@@ -186,6 +200,16 @@ function App() {
                   element={
                     <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
                       <ContentManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="contracts"
+                  element={
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                      <Suspense fallback={<div className="flex items-center justify-center h-screen">Yükleniyor...</div>}>
+                        <ContractManagement />
+                      </Suspense>
                     </ProtectedRoute>
                   }
                 />
