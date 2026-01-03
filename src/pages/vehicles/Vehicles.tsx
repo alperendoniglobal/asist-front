@@ -846,7 +846,7 @@ export default function Vehicles() {
             <div className="p-4 rounded-lg bg-muted/50">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Building2 className="h-4 w-4" />
-                Acente
+                kaynak
               </div>
               <p className="font-medium">
                 {selectedVehicle?.agency?.name || <span className="text-muted-foreground italic">Sistem</span>}

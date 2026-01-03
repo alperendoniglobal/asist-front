@@ -16,8 +16,8 @@
     /* Popover/dropdown menüler */
     --popover: 0 0% 99%;
     --popover-foreground: 224 30% 18%;
-    /* Primary - canlı mavi ton */
-    --primary: 217 91% 50%;
+    /* Primary - kurumsal yeşil ton (#019242) */
+    --primary: 145 99% 29%;
     --primary-foreground: 0 0% 100%;
     /* Secondary - hafif mavi gri */
     --secondary: 220 14% 92%;
@@ -34,7 +34,7 @@
     /* Border ve input */
     --border: 220 13% 88%;
     --input: 220 13% 88%;
-    --ring: 217 91% 50%;
+    --ring: 145 99% 29%;
     --radius: 0.75rem;
     /* Chart renkleri */
     --chart-1: 12 76% 61%;
@@ -57,9 +57,9 @@
     /* Popover/dropdown menüler */
     --popover: 224 25% 16%;
     --popover-foreground: 220 14% 90%;
-    /* Primary - canlı mavi (dark modda biraz daha parlak) */
-    --primary: 217 91% 58%;
-    --primary-foreground: 224 30% 8%;
+    /* Primary - kurumsal yeşil (dark modda biraz daha parlak) */
+    --primary: 145 99% 35%;
+    --primary-foreground: 0 0% 100%;
     /* Secondary - koyu mavi gri */
     --secondary: 224 25% 20%;
     --secondary-foreground: 220 14% 90%;
@@ -75,7 +75,7 @@
     /* Border ve input */
     --border: 224 20% 22%;
     --input: 224 20% 22%;
-    --ring: 217 91% 58%;
+    --ring: 145 99% 35%;
     /* Chart renkleri */
     --chart-1: 220 70% 55%;
     --chart-2: 160 60% 50%;
@@ -158,6 +158,41 @@
 
   .glow-sm {
     box-shadow: 0 0 10px hsl(var(--primary) / 0.2);
+  }
+
+  /* Public sayfalar için dark mode koruması - her zaman light mode */
+  /* Dark mode'un public sayfalara müdahale etmemesi için */
+  .public-page,
+  .public-page * {
+    color-scheme: light !important;
+  }
+
+  /* Dark mode class'ı olsa bile public sayfalar light mode'da kal */
+  .dark .public-page,
+  .public-page.dark,
+  html.dark .public-page,
+  html.dark .public-page * {
+    color-scheme: light !important;
+    /* Dark mode renklerini override et */
+    background-color: inherit !important;
+    color: inherit !important;
+  }
+
+  /* Public sayfalar için kurumsal yeşil renk (#019242) */
+  .public-page {
+    /* Varsayılan olarak light mode renkleri */
+    --public-primary: #019242;
+    --public-primary-hover: #017A35;
+    --public-primary-dark: #015A28;
+  }
+
+  /* Public route'larda root element'i de light mode'da tut */
+  html:has(.public-page) {
+    color-scheme: light !important;
+  }
+
+  html:has(.public-page).dark {
+    color-scheme: light !important;
   }
 }
 
@@ -314,13 +349,13 @@
   @apply bg-primary/20 text-primary;
 }
 
-/* Logo - Mavi renk filtresi */
+/* Logo - Yeşil renk filtresi */
 .logo-primary {
-  /* Beyaz SVG'yi maviye çevir (#1e40af) */
-  filter: brightness(0) saturate(100%) invert(18%) sepia(89%) saturate(1756%) hue-rotate(213deg) brightness(92%) contrast(95%);
+  /* Beyaz SVG'yi yeşile çevir (#019242) */
+  filter: brightness(0) saturate(100%) invert(30%) sepia(98%) saturate(2000%) hue-rotate(110deg) brightness(95%) contrast(95%);
 }
 
 .dark .logo-primary {
-  /* Dark modda biraz daha açık mavi */
-  filter: brightness(0) saturate(100%) invert(40%) sepia(98%) saturate(1200%) hue-rotate(207deg) brightness(95%) contrast(95%);
+  /* Dark modda biraz daha açık yeşil */
+  filter: brightness(0) saturate(100%) invert(40%) sepia(98%) saturate(2000%) hue-rotate(110deg) brightness(105%) contrast(95%);
 }

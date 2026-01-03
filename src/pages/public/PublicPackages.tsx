@@ -124,12 +124,12 @@ export default function PublicPackages() {
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}
-      <div className="light min-h-screen bg-gray-50 text-gray-900" style={{ colorScheme: 'light' }}>
+      <div className="light public-page min-h-screen bg-gray-50 text-gray-900" style={{ colorScheme: 'light' }}>
         {/* Header */}
         <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
           <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 sm:gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#0066CC] flex items-center justify-center">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#019242] flex items-center justify-center">
                 <img 
                   src="/cozumasistanlog.svg" 
                   alt="Çözüm Asistan Logo" 
@@ -157,7 +157,7 @@ export default function PublicPackages() {
                 </Link>
               ) : (
                 <Link to="/login">
-                  <Button size="sm" className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full">
+                  <Button size="sm" className="bg-[#019242] hover:bg-[#017A35] text-white rounded-full">
                     Giriş Yap
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
@@ -203,7 +203,7 @@ export default function PublicPackages() {
                   </Link>
                 ) : (
                   <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full mt-2">
+                    <Button className="w-full bg-[#019242] hover:bg-[#017A35] text-white rounded-full mt-2">
                       Giriş Yap
                     </Button>
                   </Link>
@@ -214,7 +214,7 @@ export default function PublicPackages() {
         </header>
 
         {/* Hero Section */}
-        <section className="relative overflow-hidden bg-[#0066CC] text-white py-12 sm:py-16 md:py-20">
+        <section className="relative overflow-hidden bg-[#019242] text-white py-12 sm:py-16 md:py-20">
           {/* Background pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" style={{
@@ -272,7 +272,7 @@ export default function PublicPackages() {
                       <TabsTrigger 
                         key={type} 
                         value={type}
-                        className="bg-white hover:bg-gray-50 data-[state=active]:bg-[#0066CC] data-[state=active]:text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full border border-gray-200 data-[state=active]:border-[#0066CC] shadow-sm transition-all text-sm"
+                        className="bg-white hover:bg-gray-50 data-[state=active]:bg-[#019242] data-[state=active]:text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full border border-gray-200 data-[state=active]:border-[#019242] shadow-sm transition-all text-sm"
                       >
                         <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                         <span className="font-medium">{type === 'all' ? 'Tümü' : type}</span>
@@ -290,7 +290,7 @@ export default function PublicPackages() {
             {loading ? (
               <div className="flex items-center justify-center py-20 sm:py-32">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-[#0066CC] mx-auto mb-4" />
+                  <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-[#019242] mx-auto mb-4" />
                   <span className="text-gray-500 text-sm sm:text-base">Paketler yükleniyor...</span>
                 </div>
               </div>
@@ -422,7 +422,7 @@ export default function PublicPackages() {
         </section>
 
         {/* CTA Section */}
-        <section className="bg-[#0066CC] text-white py-12 sm:py-16 md:py-20">
+        <section className="bg-[#019242] text-white py-12 sm:py-16 md:py-20">
           <div className="container mx-auto px-4 text-center">
             <div className="max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 bg-white/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm mb-4 sm:mb-6">
@@ -436,7 +436,7 @@ export default function PublicPackages() {
                 Yol yardım hizmetleri sektöründe yerinizi alın. Hemen başvurun.
               </p>
               <Link to="/bayilik-basvurusu">
-                <Button size="lg" className="bg-white text-[#0066CC] hover:bg-gray-100 font-semibold px-6 sm:px-8 py-4 sm:py-6 rounded-full shadow-xl text-sm sm:text-base">
+                <Button size="lg" className="bg-white text-[#019242] hover:bg-gray-100 font-semibold px-6 sm:px-8 py-4 sm:py-6 rounded-full shadow-xl text-sm sm:text-base">
                   Bayilik Başvurusu Yap
                   <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
                 </Button>

@@ -6,6 +6,7 @@ import { UserCustomerProvider } from "./contexts/UserCustomerContext"
 import ProtectedRoute from "./routes/ProtectedRoute"
 import { MainLayout } from "./components/layout/MainLayout"
 import { SupportLayout } from "./components/layout/SupportLayout"
+import { ThemeRouteListener } from "./components/ThemeRouteListener"
 import Login from "./pages/auth/Login"
 import LandingPage from "./pages/landing/LandingPage"
 import Dashboard from "./pages/dashboard/Dashboard"
@@ -54,6 +55,7 @@ function App() {
       <AuthProvider>
         <UserCustomerProvider>
           <Router>
+            <ThemeRouteListener />
             <Routes>
               {/* Landing Page - Public */}
               <Route path="/" element={<LandingPage />} />

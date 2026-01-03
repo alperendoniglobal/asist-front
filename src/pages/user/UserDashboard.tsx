@@ -527,7 +527,7 @@ export default function UserDashboard() {
                             </div>
                             <div className="flex items-center gap-4">
                               <div className="text-right">
-                                <p className="text-sm text-gray-500">Poliçe No</p>
+                                <p className="text-sm text-gray-500">sözleşme No</p>
                                 <p className="font-medium">{purchase.policy_number}</p>
                               </div>
                               <div className="text-right">

@@ -19,7 +19,7 @@ export default function PaymentFail() {
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}
-      <div className="light min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-white flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
+      <div className="light public-page min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-white flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
         <Card className="max-w-lg w-full border-red-200 bg-white shadow-xl">
           <CardContent className="p-6 sm:p-8 text-center">
             {/* Hata ikonu */}
@@ -65,7 +65,7 @@ export default function PaymentFail() {
             {/* Butonlar */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link to="/" className="flex-1">
-                <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full">
+                <Button className="w-full bg-[#019242] hover:bg-[#017A35] text-white rounded-full">
                   <Home className="h-4 w-4 mr-2" />
                   Ana Sayfaya Dön
                 </Button>

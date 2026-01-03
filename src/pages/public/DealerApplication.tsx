@@ -128,7 +128,7 @@ export default function DealerApplication() {
           <title>Başvurunuz Alındı | Çözüm Asistan</title>
         </Helmet>
 
-        <div className="light min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-white flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
+        <div className="light public-page min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-white flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
           <Card className="max-w-lg w-full border-emerald-200 bg-white">
             <CardContent className="p-6 sm:p-8 text-center">
               <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -165,12 +165,12 @@ export default function DealerApplication() {
 
               <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">
                 Başvurunuz hakkında sorularınız için{' '}
-                <a href="tel:08503053094" className="text-[#0066CC] hover:underline">+90 (850) 305 30 94</a>
+                <a href="tel:08503053094" className="text-[#019242] hover:underline">+90 (850) 305 30 94</a>
                 {' '}numaralı telefondan bize ulaşabilirsiniz.
               </p>
 
               <Link to="/">
-                <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full">
+                <Button className="w-full bg-[#019242] hover:bg-[#017A35] text-white rounded-full">
                   Ana Sayfaya Dön
                 </Button>
               </Link>
@@ -189,10 +189,10 @@ export default function DealerApplication() {
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}
-      <div className="light min-h-screen bg-white text-gray-900" style={{ colorScheme: 'light' }}>
+      <div className="light public-page min-h-screen bg-white text-gray-900" style={{ colorScheme: 'light' }}>
         
         {/* Mobile Header - Sadece mobilde görünür */}
-        <header className="lg:hidden sticky top-0 z-50 bg-[#0066CC] text-white shadow-lg">
+        <header className="lg:hidden sticky top-0 z-50 bg-[#019242] text-white shadow-lg">
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
@@ -212,7 +212,7 @@ export default function DealerApplication() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="bg-[#0052A3] px-4 py-4">
+            <div className="bg-[#017A35] px-4 py-4">
               <nav className="flex flex-col gap-2">
                 <Link 
                   to="/" 
@@ -229,7 +229,7 @@ export default function DealerApplication() {
                   Paketler
                 </Link>
                 <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button className="w-full bg-white text-[#0066CC] hover:bg-gray-100 rounded-full mt-2">
+                  <Button className="w-full bg-white text-[#019242] hover:bg-gray-100 rounded-full mt-2">
                     Giriş Yap
                   </Button>
                 </Link>
@@ -242,7 +242,7 @@ export default function DealerApplication() {
         <div className="flex flex-col lg:flex-row min-h-screen lg:min-h-screen">
           
           {/* Sol Panel - Bilgi Bölümü (Sabit, scroll yok) */}
-          <div className="lg:w-1/2 xl:w-[45%] bg-[#0066CC] text-white relative overflow-hidden lg:fixed lg:left-0 lg:top-0 lg:h-screen">
+          <div className="lg:w-1/2 xl:w-[45%] bg-[#019242] text-white relative overflow-hidden lg:fixed lg:left-0 lg:top-0 lg:h-screen">
             {/* Çapraz Kesim - Sadece büyük ekranlarda */}
             <div className="hidden lg:block absolute top-0 right-0 w-24 h-full bg-gray-50 -mr-1" 
                  style={{ 
@@ -271,7 +271,7 @@ export default function DealerApplication() {
                     Paketler
                   </Link>
                   <Link to="/login">
-                    <Button size="sm" className="bg-white text-[#0066CC] hover:bg-gray-100 rounded-full">
+                    <Button size="sm" className="bg-white text-[#019242] hover:bg-gray-100 rounded-full">
                       Giriş Yap
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
@@ -369,7 +369,7 @@ export default function DealerApplication() {
                   {/* Kişisel Bilgiler */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
-                      <User className="h-4 w-4 text-[#0066CC]" />
+                      <User className="h-4 w-4 text-[#019242]" />
                       <span>Kişisel Bilgiler</span>
                     </div>
 
@@ -453,7 +453,7 @@ export default function DealerApplication() {
                   {/* Adres Bilgileri */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
-                      <MapPin className="h-4 w-4 text-[#0066CC]" />
+                      <MapPin className="h-4 w-4 text-[#019242]" />
                       <span>Adres Bilgileri</span>
                     </div>
 
@@ -496,7 +496,7 @@ export default function DealerApplication() {
                   {/* Şifre Bilgileri */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-gray-700 font-medium text-sm">
-                      <Lock className="h-4 w-4 text-[#0066CC]" />
+                      <Lock className="h-4 w-4 text-[#019242]" />
                       <span>Hesap Şifresi</span>
                     </div>
 
@@ -550,11 +550,11 @@ export default function DealerApplication() {
                       className="mt-0.5"
                     />
                     <Label htmlFor="terms" className="text-xs cursor-pointer leading-relaxed text-gray-600">
-                      <Link to="/distance-sales-contract" target="_blank" className="text-[#0066CC] hover:underline font-medium">
+                      <Link to="/distance-sales-contract" target="_blank" className="text-[#019242] hover:underline font-medium">
                         Kullanım Koşulları
                       </Link>
                       'nı ve{' '}
-                      <Link to="/privacy-policy" target="_blank" className="text-[#0066CC] hover:underline font-medium">
+                      <Link to="/privacy-policy" target="_blank" className="text-[#019242] hover:underline font-medium">
                         Gizlilik Politikası
                       </Link>
                       'nı okudum ve kabul ediyorum. *
@@ -564,7 +564,7 @@ export default function DealerApplication() {
                   {/* Submit Button */}
                   <Button 
                     type="submit" 
-                    className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all" 
+                    className="w-full bg-[#019242] hover:bg-[#017A35] text-white rounded-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all" 
                     disabled={loading}
                   >
                     {loading ? (
@@ -584,7 +584,7 @@ export default function DealerApplication() {
                   <div className="text-center pt-2">
                     <p className="text-xs text-gray-400">
                       Yardıma mı ihtiyacınız var?{' '}
-                      <a href="tel:08503045440" className="text-[#0066CC] hover:underline">
+                      <a href="tel:08503045440" className="text-[#019242] hover:underline">
                         Bizi arayın
                       </a>
                     </p>

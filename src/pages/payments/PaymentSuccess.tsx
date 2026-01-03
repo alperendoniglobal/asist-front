@@ -76,7 +76,7 @@ export default function PaymentSuccess() {
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}
-      <div className="light min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-white flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
+      <div className="light public-page min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-white flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
         <Card className="max-w-lg w-full border-emerald-200 bg-white shadow-xl">
           <CardContent className="p-6 sm:p-8 text-center">
             {loading ? (
@@ -102,7 +102,7 @@ export default function PaymentSuccess() {
                   <div className="bg-gray-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-left space-y-2 sm:space-y-3">
                     {sale.policy_number && (
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Poliçe No:</span>
+                        <span className="text-gray-500">sözleşme No:</span>
                         <span className="font-semibold text-gray-900">{sale.policy_number}</span>
                       </div>
                     )}
@@ -142,7 +142,7 @@ export default function PaymentSuccess() {
                 {/* Bilgilendirme */}
                 <p className="text-xs sm:text-sm text-gray-500 mb-2">
                   {sale?.policy_number 
-                    ? 'Poliçe detaylarınız e-posta adresinize gönderilecektir.'
+                    ? 'sözleşme detaylarınız e-posta adresinize gönderilecektir.'
                     : 'Ödeme işleminiz tamamlandı. Detaylar için e-posta adresinizi kontrol ediniz.'}
                 </p>
                 {/* Otomatik yönlendirme bilgisi (sadece acente/branch kullanıcıları için) */}
@@ -155,7 +155,7 @@ export default function PaymentSuccess() {
                 {/* Butonlar */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
-                    className="flex-1 bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full"
+                    className="flex-1 bg-[#019242] hover:bg-[#017A35] text-white rounded-full"
                     onClick={() => {
                       navigate(getRedirectPath());
                     }}

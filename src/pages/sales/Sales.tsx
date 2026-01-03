@@ -665,7 +665,7 @@ export default function Sales() {
                               <span className="font-semibold text-blue-600">{formatCurrency(formData.branch_commission)}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span>Acente Komisyonu:</span>
+                              <span>kaynak Komisyonu:</span>
                               <span className="font-semibold text-purple-600">{formatCurrency(formData.agency_commission || 0)}</span>
                             </div>
                             <div className="flex justify-between border-t pt-1">
@@ -790,7 +790,7 @@ export default function Sales() {
             <TabsContent value="BALANCE" className="mt-4">
               <div className="p-6 text-center rounded-lg bg-muted/50">
                 <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Ödeme acente bakiyesinden düşülecektir</p>
+                <p className="text-muted-foreground">Ödeme kaynak bakiyesinden düşülecektir</p>
                 <p className="font-semibold text-lg mt-2">{formatCurrency(selectedSale?.price || 0)}</p>
               </div>
             </TabsContent>
@@ -906,7 +906,7 @@ export default function Sales() {
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <ShoppingCart className="h-4 w-4" />
-                    <span className="font-medium">Acente / Şube</span>
+                    <span className="font-medium">kaynak / Şube</span>
                   </div>
                   <p className="font-semibold">{selectedSale?.agency?.name || '-'}</p>
                   {selectedSale?.branch?.name && (
@@ -959,7 +959,7 @@ export default function Sales() {
                               Şube: {formatCurrency(selectedSale.branch_commission)}
                             </div>
                             <div className="text-xs text-purple-600 dark:text-purple-400">
-                              Acente: {formatCurrency(selectedSale.agency_commission || 0)}
+                              kaynak: {formatCurrency(selectedSale.agency_commission || 0)}
                             </div>
                             <div className="text-xs font-bold text-emerald-600 border-t pt-1 mt-1">
                               Toplam: {formatCurrency(selectedSale.commission || 0)}
@@ -977,12 +977,12 @@ export default function Sales() {
                   )}
                 </div>
 
-                {/* Poliçe Numarası ve Oluşturulma Tarihi */}
+                {/* sözleşme Numarası ve Oluşturulma Tarihi */}
                 {(selectedSale?.policy_number || selectedSale?.created_at) && (
                   <div className="grid grid-cols-2 gap-3">
                     {selectedSale?.policy_number && (
                       <div className="p-3 rounded-lg bg-muted/50">
-                        <div className="text-muted-foreground mb-1 text-xs">Poliçe No</div>
+                        <div className="text-muted-foreground mb-1 text-xs">sözleşme No</div>
                         <p className="font-medium text-sm">{selectedSale.policy_number}</p>
                       </div>
                     )}

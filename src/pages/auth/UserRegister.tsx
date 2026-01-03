@@ -116,9 +116,9 @@ export default function UserRegister() {
   ];
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex public-page light" style={{ colorScheme: 'light' }}>
       {/* Sol Panel - Bilgi */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0066CC] via-[#0052A3] to-[#003D7A] text-white p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#019242] via-[#017A35] to-[#015A28] text-white p-12 flex-col justify-between relative overflow-hidden">
         {/* Dekoratif arka plan */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-40"></div>
         
@@ -183,7 +183,7 @@ export default function UserRegister() {
             </div>
             
             {/* Icon */}
-            <div className="mx-auto w-14 h-14 bg-gradient-to-br from-[#0066CC] to-[#0052A3] rounded-xl flex items-center justify-center mb-2 shadow-lg">
+            <div className="mx-auto w-14 h-14 bg-gradient-to-br from-[#019242] to-[#017A35] rounded-xl flex items-center justify-center mb-2 shadow-lg">
               <UserPlus className="h-7 w-7 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold">Üye Ol</CardTitle>
@@ -346,7 +346,7 @@ export default function UserRegister() {
               {/* Submit Button */}
               <Button 
                 type="submit" 
-                className="w-full h-11 bg-[#0066CC] hover:bg-[#0052A3]" 
+                className="w-full h-11 bg-[#019242] hover:bg-[#017A35]" 
                 disabled={loading}
               >
                 {loading ? (
@@ -365,7 +365,7 @@ export default function UserRegister() {
               {/* Login link */}
               <p className="text-center text-sm text-gray-600">
                 Zaten hesabınız var mı?{' '}
-                <Link to="/login" className="text-[#0066CC] hover:underline font-medium">
+                <Link to="/login" className="text-[#019242] hover:underline font-medium">
                   Giriş Yap
                 </Link>
               </p>

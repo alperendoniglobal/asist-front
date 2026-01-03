@@ -1,31 +1,26 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link, useNavigate } from 'react-router-dom';
-import { contentService, type PageContent, type LandingPageContent } from '@/services/contentService';
+import { Link } from 'react-router-dom';
+import { contentService, type PageContent } from '@/services/contentService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowRight, Phone, Shield } from 'lucide-react';
+import { Loader2, Shield } from 'lucide-react';
+import { PublicFooter } from '@/components/layout/PublicFooter';
 
 /**
  * Privacy Policy Page
  * Gizlilik ve Güvenlik Politikası sayfası - Backend'den içerik çeker
  */
 export default function PrivacyPolicyPage() {
-  const navigate = useNavigate();
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
-  const [landingContent, setLandingContent] = useState<LandingPageContent | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchContent = async () => {
       try {
         setLoading(true);
-        const [content, landing] = await Promise.all([
-          contentService.getPageBySlug('privacy-policy').catch(() => null),
-          contentService.getLandingPageContent().catch(() => null),
-        ]);
+        const content = await contentService.getPageBySlug('privacy-policy').catch(() => null);
         if (content) setPageContent(content);
-        if (landing) setLandingContent(landing);
         
         if (!content) {
           setPageContent({
@@ -87,74 +82,66 @@ export default function PrivacyPolicyPage() {
         </script>
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-blue-50 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        </div>
-
-        {/* Header */}
-        <header role="banner" className="sticky top-0 z-50 bg-slate-900 backdrop-blur-md border-b border-slate-800 shadow-xl">
-          <div className="container mx-auto px-3 sm:px-4 py-3 md:py-4 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                <img 
-                  src="/cozumasistanlog.svg" 
-                  alt="Çözüm Asistan - Yol Yardım Hizmetleri Logo" 
-                  className="h-6 sm:h-7 md:h-8"
-                  width="120"
-                  height="40"
-                />
-              </div>
-            </Link>
-            <Link to="/login">
-              <Button size="sm" className="sm:size-default gap-1.5 sm:gap-2 bg-white text-slate-900 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2">
-                <span className="hidden sm:inline">Giriş Yap</span>
-                <span className="sm:hidden">Giriş</span>
-                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
-              </Button>
-            </Link>
+      {/* Dark mode'dan korumalı wrapper */}
+      <div className="light public-page bg-white text-gray-900" style={{ colorScheme: 'light' }}>
+        {/* Header - Landing ile uyumlu */}
+        <header className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-16 md:h-20">
+              <Link to="/" className="flex items-center gap-3">
+                <div className="w-16 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-3">
+                  <img 
+                    src="/cozumasistanlog.svg" 
+                    alt="Çözüm Asistan" 
+                    className="h-8 w-auto"
+                  />
+                </div>
+                <div className="hidden sm:block">
+                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Asistan</h1>
+                  <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
+                </div>
+              </Link>
+              <Link to="/login">
+                <Button className="bg-[#019242] hover:bg-[#017A35] text-white px-6 rounded-full shadow-lg hover:shadow-xl transition-all">
+                  Giriş Yap
+                </Button>
+              </Link>
+            </div>
           </div>
         </header>
 
         {/* Hero Section */}
-        <section className="relative py-12 md:py-20 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"></div>
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}></div>
-          
-          <div className="container mx-auto px-4 relative z-10">
+        <section className="py-12 md:py-20 bg-gradient-to-br from-[#019242] to-[#017A35]">
+          <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
-              <div className="inline-flex items-center justify-center p-3 rounded-full bg-white/10 backdrop-blur-sm mb-6">
+              <div className="inline-flex items-center justify-center p-3 rounded-full bg-white/20 backdrop-blur-sm mb-6">
                 <Shield className="h-8 w-8 text-white" />
               </div>
-              <h1 className="text-5xl md:text-7xl font-black mb-6 text-white leading-tight">
+              <h1 className="text-4xl md:text-6xl font-black mb-6 text-white leading-tight">
                 {pageContent?.title || 'Gizlilik ve Güvenlik Politikası'}
               </h1>
-              <p className="text-xl md:text-2xl text-slate-300 leading-relaxed max-w-2xl mx-auto">
+              <p className="text-xl md:text-2xl text-white/90 leading-relaxed max-w-2xl mx-auto">
                 Kişisel verilerinizin korunması ve güvenliği bizim için önceliktir.
               </p>
             </div>
           </div>
         </section>
 
-        <main role="main" className="container mx-auto px-4 py-8 md:py-12 relative z-10">
+        <main role="main" className="container mx-auto px-4 py-8 md:py-12">
           <article className="max-w-5xl mx-auto">
-            <Card className="shadow-2xl border-0 bg-white dark:bg-slate-800 backdrop-blur-sm">
+            <Card className="shadow-2xl border-0 bg-white">
               <CardContent className="p-6 md:p-8">
                 <div
-                  className="prose prose-lg prose-slate dark:prose-invert max-w-none 
-                    prose-headings:text-slate-900 dark:prose-headings:text-slate-100 prose-headings:font-black
+                  className="prose prose-lg prose-slate max-w-none 
+                    prose-headings:text-gray-900 prose-headings:font-black
                     prose-h1:text-4xl prose-h1:mb-6
                     prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4
                     prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3
-                    prose-p:text-slate-700 dark:prose-p:text-slate-300 prose-p:leading-relaxed prose-p:text-base md:prose-p:text-lg
-                    prose-strong:text-slate-900 dark:prose-strong:text-slate-100 prose-strong:font-bold
-                    prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
-                    prose-ul:text-slate-700 dark:prose-ul:text-slate-300 prose-ul:text-base md:prose-ul:text-lg
-                    prose-ol:text-slate-700 dark:prose-ol:text-slate-300 prose-ol:text-base md:prose-ol:text-lg
+                    prose-p:text-gray-700 prose-p:leading-relaxed prose-p:text-base md:prose-p:text-lg
+                    prose-strong:text-gray-900 prose-strong:font-bold
+                    prose-a:text-[#019242] prose-a:no-underline hover:prose-a:underline
+                    prose-ul:text-gray-700 prose-ul:text-base md:prose-ul:text-lg
+                    prose-ol:text-gray-700 prose-ol:text-base md:prose-ol:text-lg
                     prose-li:my-2"
                   dangerouslySetInnerHTML={{ __html: pageContent?.content || '' }}
                 />
@@ -163,140 +150,8 @@ export default function PrivacyPolicyPage() {
           </article>
         </main>
 
-        {/* Footer */}
-        <footer role="contentinfo" className="border-t border-slate-800 bg-slate-900 backdrop-blur-sm relative overflow-hidden mt-12 md:mt-16">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}></div>
-          
-          <div className="container mx-auto px-4 py-12 relative z-10">
-            <div className="grid md:grid-cols-3 gap-8 mb-8">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-                    <img 
-                      src="/cozumasistanlog.svg" 
-                      alt="Çözüm Asistan - Yol Yardım Hizmetleri Logo" 
-                      className="h-8"
-                      width="120"
-                      height="40"
-                    />
-                  </div>
-                </div>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  Türkiye genelinde 7/24 yol yardım hizmetleri. Profesyonel çözümler ve güvenilir hizmet.
-                </p>
-                {landingContent?.support_phone && (
-                  <div className="flex items-center gap-2 text-slate-300">
-                    <Phone className="h-4 w-4" />
-                    <a href={`tel:${landingContent.support_phone.replace(/\s/g, '')}`} className="text-sm hover:text-white transition-colors">
-                      {landingContent.support_phone}
-                    </a>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">Hızlı Linkler</h3>
-              <ul className="space-y-2">
-                <li>
-                  <button 
-                    onClick={() => navigate('/about')} 
-                    className="text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    Hakkımızda
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate('/distance-sales-contract')} 
-                    className="text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    Mesafeli Satış Sözleşmesi
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate('/privacy-policy')} 
-                    className="text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    Gizlilik ve Güvenlik Politikası
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate('/kvkk')} 
-                    className="text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    KVKK Aydınlatma Metni
-                  </button>
-                </li>
-                <li>
-                  <button 
-                    onClick={() => navigate('/delivery-return')} 
-                    className="text-sm text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    Teslimat ve İade
-                  </button>
-                </li>
-              </ul>
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">İletişim</h3>
-                <div className="space-y-2 text-sm text-slate-400">
-                  {landingContent?.support_email && (
-                    <p>
-                      <span className="text-slate-500">E-posta:</span>{' '}
-                      <a href={`mailto:${landingContent.support_email}`} className="hover:text-white transition-colors">
-                        {landingContent.support_email}
-                      </a>
-                    </p>
-                  )}
-                  {landingContent?.support_phone && (
-                    <p>
-                      <span className="text-slate-500">Telefon:</span>{' '}
-                      <a href={`tel:${landingContent.support_phone.replace(/\s/g, '')}`} className="hover:text-white transition-colors">
-                        {landingContent.support_phone}
-                      </a>
-                    </p>
-                  )}
-                  {landingContent?.company_address && (
-                    <p>
-                      <span className="text-slate-500">Adres:</span>{' '}
-                      <span className="text-slate-300">{landingContent.company_address}</span>
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="border-t border-slate-800 pt-8">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <p className="text-sm text-slate-400">
-                  © 2023 {landingContent?.company_name || 'Yol Asistan'}. Tüm hakları saklıdır.
-                </p>
-                <div className="flex items-center gap-6">
-                  <button 
-                    onClick={() => navigate('/privacy-policy')} 
-                    className="text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-                  >
-                    Gizlilik Politikası
-                  </button>
-                  <button 
-                    onClick={() => navigate('/kvkk')} 
-                    className="text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-                  >
-                    KVKK
-                  </button>
-                  <button 
-                    onClick={() => navigate('/distance-sales-contract')} 
-                    className="text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-                  >
-                    Mesafeli Satış
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </footer>
+        {/* Footer - Ortak Component */}
+        <PublicFooter />
       </div>
     </>
   );

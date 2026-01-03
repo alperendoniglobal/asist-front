@@ -230,7 +230,7 @@ export default function Purchase() {
     return (
       <div className="light min-h-screen bg-gray-50 flex items-center justify-center" style={{ colorScheme: 'light' }}>
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0066CC] mx-auto mb-4" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#019242] mx-auto mb-4" />
           <span className="text-gray-500">Yükleniyor...</span>
         </div>
       </div>
@@ -249,7 +249,7 @@ export default function Purchase() {
           <Card className="max-w-lg w-full border-gray-200 bg-white shadow-xl">
             <CardContent className="p-6 sm:p-8 text-center">
               <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-full bg-blue-100 flex items-center justify-center">
-                <User className="h-8 w-8 sm:h-10 sm:w-10 text-[#0066CC]" />
+                <User className="h-8 w-8 sm:h-10 sm:w-10 text-[#019242]" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Giriş Yapın</h1>
               <p className="text-gray-600 mb-6 text-sm sm:text-base">
@@ -262,7 +262,7 @@ export default function Purchase() {
                   <h3 className="font-semibold text-gray-900 mb-2">{pkg.name}</h3>
                   <p className="text-sm text-gray-500 mb-2">{pkg.description}</p>
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-[#0066CC] text-white">{pkg.vehicle_type}</Badge>
+                    <Badge className="bg-[#019242] text-white">{pkg.vehicle_type}</Badge>
                     <span className="text-xs text-gray-500">Maks. Araç Yaşı: {pkg.max_vehicle_age} yıl</span>
                   </div>
                 </div>
@@ -270,7 +270,7 @@ export default function Purchase() {
 
               <div className="space-y-3">
                 <Link to="/login">
-                  <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full h-12">
+                  <Button className="w-full bg-[#019242] hover:bg-[#017A35] text-white rounded-full h-12">
                     <LogIn className="h-4 w-4 mr-2" />
                     Giriş Yap
                   </Button>
@@ -287,7 +287,7 @@ export default function Purchase() {
                 Hesabınız yoksa üye olarak satın alma işleminize devam edebilirsiniz.
               </p>
 
-              <Link to="/packages" className="inline-flex items-center gap-2 text-sm text-[#0066CC] hover:underline mt-4">
+              <Link to="/packages" className="inline-flex items-center gap-2 text-sm text-[#019242] hover:underline mt-4">
                 <ArrowLeft className="h-4 w-4" />
                 Paketlere Dön
               </Link>
@@ -313,9 +313,9 @@ export default function Purchase() {
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}
-      <div className="light min-h-screen bg-gray-50 text-gray-900" style={{ colorScheme: 'light' }}>
+      <div className="light public-page min-h-screen bg-gray-50 text-gray-900" style={{ colorScheme: 'light' }}>
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-[#0066CC] text-white shadow-lg">
+        <header className="sticky top-0 z-50 bg-[#019242] text-white shadow-lg">
           <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 sm:gap-3">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/10 flex items-center justify-center">
@@ -353,7 +353,7 @@ export default function Purchase() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden bg-[#0052A3] px-4 py-4">
+            <div className="md:hidden bg-[#017A35] px-4 py-4">
               <nav className="flex flex-col gap-2">
                 <Link 
                   to="/" 
@@ -417,7 +417,7 @@ export default function Purchase() {
                         step > s.num 
                           ? 'bg-emerald-500 text-white' 
                           : step === s.num 
-                            ? 'bg-[#0066CC] text-white' 
+                            ? 'bg-[#019242] text-white' 
                             : 'bg-gray-200 text-gray-500'
                       }`}>
                         {step > s.num ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : <s.icon className="h-4 w-4 sm:h-5 sm:w-5" />}
@@ -549,7 +549,7 @@ export default function Purchase() {
                           onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
                         />
                         <Label htmlFor="terms" className="text-xs sm:text-sm cursor-pointer leading-relaxed text-gray-700">
-                          <Link to="/distance-sales-contract" target="_blank" className="text-[#0066CC] hover:underline">
+                          <Link to="/distance-sales-contract" target="_blank" className="text-[#019242] hover:underline">
                             Mesafeli Satış Sözleşmesi
                           </Link>
                           'ni okudum ve kabul ediyorum. *
@@ -561,7 +561,7 @@ export default function Purchase() {
                       <Button 
                         onClick={handleNext} 
                         disabled={submitting || iframeLoading}
-                        className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full px-6 text-sm sm:text-base"
+                        className="bg-[#019242] hover:bg-[#017A35] text-white rounded-full px-6 text-sm sm:text-base"
                       >
                         {submitting || iframeLoading ? (
                           <>
@@ -624,7 +624,7 @@ export default function Purchase() {
             {/* Sağ: Paket Özeti */}
             <div className="order-first lg:order-last">
               <Card className="sticky top-20 lg:top-24 border-gray-200 bg-white">
-                <CardHeader className="bg-[#0066CC] text-white rounded-t-lg p-4 sm:p-6">
+                <CardHeader className="bg-[#019242] text-white rounded-t-lg p-4 sm:p-6">
                   <CardTitle className="text-base sm:text-lg">Sipariş Özeti</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 sm:p-6">
@@ -655,7 +655,7 @@ export default function Purchase() {
                         <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4 pb-3 sm:pb-4">
                           <div className="flex items-center justify-between">
                             <span className="text-xs sm:text-sm text-gray-600">Toplam Tutar</span>
-                            <span className="text-xl sm:text-2xl font-bold text-[#0066CC]">
+                            <span className="text-xl sm:text-2xl font-bold text-[#019242]">
                               {new Intl.NumberFormat('tr-TR', {
                                 style: 'currency',
                                 currency: 'TRY',

@@ -236,7 +236,7 @@ export default function UserDetail() {
       case UserRole.SUPER_ADMIN:
         return 'Super Admin';
       case UserRole.AGENCY_ADMIN:
-        return 'Acente Yoneticisi';
+        return 'kaynak Yoneticisi';
       case UserRole.BRANCH_ADMIN:
         return 'Sube Yoneticisi';
       case UserRole.BRANCH_USER:
@@ -462,16 +462,16 @@ export default function UserDetail() {
                   {/* SUPPORT rolü global bir rol olduğu için acente ve şube seçimi gerekmez */}
                   {isSuperAdmin && formData.role !== UserRole.SUPPORT && (
                     <div className="space-y-2">
-                      <Label>Acente</Label>
+                      <Label>kaynak</Label>
                       <Select
                         value={formData.agency_id || "none"}
                         onValueChange={(value) => setFormData({ ...formData, agency_id: value === "none" ? "" : value, branch_id: '' })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Acente secin" />
+                          <SelectValue placeholder="kaynak secin" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Acente yok</SelectItem>
+                          <SelectItem value="none"> kaynak yok</SelectItem>
                           {agencies.map((agency) => (
                             <SelectItem key={agency.id} value={agency.id}>
                               {agency.name}
@@ -509,7 +509,7 @@ export default function UserDetail() {
                   {formData.role === UserRole.SUPPORT && (
                     <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
                       <p className="font-medium">Destek Ekibi Rolü</p>
-                      <p className="text-xs mt-1">Bu rol global bir roldür ve acente/şube ataması gerektirmez. Tüm sistem verilerine erişim sağlar.</p>
+                      <p className="text-xs mt-1">Bu rol global bir roldür ve kaynak/şube ataması gerektirmez. Tüm sistem verilerine erişim sağlar.</p>
                     </div>
                   )}
                 </>
@@ -542,7 +542,7 @@ export default function UserDetail() {
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <Building2 className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Acente</p>
+                      <p className="text-sm text-muted-foreground">kaynak</p>
                       <p className="font-medium">{(user as any).agency?.name || 'Sistem'}</p>
                     </div>
                   </div>

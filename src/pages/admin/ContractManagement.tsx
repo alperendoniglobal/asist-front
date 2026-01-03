@@ -88,7 +88,7 @@ export default function ContractManagement() {
   const handleNewVersion = () => {
     setFormData({
       version: '',
-      title: 'Acente Hizmet Sözleşmesi',
+      title: 'kaynak Hizmet sözleşmesi',
       content: '',
       summary: '',
       change_notes: '',
@@ -133,7 +133,7 @@ export default function ContractManagement() {
     try {
       setSubmitting(true);
       await contractService.activateVersion(selectedVersion.id);
-      toast.success('Sözleşme versiyonu aktifleştirildi. Tüm acenteler yeniden onay verecek.');
+      toast.success('sözleşme versiyonu aktifleştirildi. Tüm kaynaklar yeniden onay verecek.');
       setShowActivateDialog(false);
       fetchData();
     } catch (error: any) {
@@ -175,7 +175,7 @@ export default function ContractManagement() {
   const handleExportReport = () => {
     if (!report) return;
 
-    const headers = ['Acente', 'Kullanıcı', 'E-posta', 'Versiyon', 'IP Adresi', 'Onay Tarihi'];
+    const headers = ['kaynak', 'Kullanıcı', 'E-posta', 'Versiyon', 'IP Adresi', 'Onay Tarihi'];
     const rows = report.acceptances.map(acc => [
       acc.agency?.name || '-',
       acc.user ? `${acc.user.name} ${acc.user.surname}` : '-',
@@ -217,7 +217,7 @@ export default function ContractManagement() {
             Sözleşme Yönetimi
           </h1>
           <p className="text-muted-foreground">
-            Acente hizmet sözleşmelerini yönetin ve onay raporlarını görüntüleyin
+            kaynak hizmet sözleşmelerini yönetin ve onay raporlarını görüntüleyin
           </p>
         </div>
         <Button onClick={handleNewVersion}>
@@ -246,7 +246,7 @@ export default function ContractManagement() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Toplam Acente</p>
+                <p className="text-sm text-muted-foreground">Toplam kaynak</p>
                 <p className="text-2xl font-bold">{report?.total || 0}</p>
               </div>
               <div className="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -382,7 +382,7 @@ export default function ContractManagement() {
               <div>
                 <CardTitle>Onay Raporu</CardTitle>
                 <CardDescription>
-                  Acentelerin sözleşme onay kayıtları
+                  kaynakların sözleşme onay kayıtları
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -400,7 +400,7 @@ export default function ContractManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Acente</TableHead>
+                    <TableHead>kaynak</TableHead>
                     <TableHead>Kullanıcı</TableHead>
                     <TableHead>Versiyon</TableHead>
                     <TableHead>IP Adresi</TableHead>
@@ -503,7 +503,7 @@ export default function ContractManagement() {
                 <Label htmlFor="title">Başlık *</Label>
                 <Input
                   id="title"
-                  placeholder="Acente Hizmet Sözleşmesi"
+                  placeholder="kaynak Hizmet sözleşmesi"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
@@ -606,7 +606,7 @@ export default function ContractManagement() {
               <strong>v{selectedVersion?.version}</strong> versiyonunu aktifleştirmek istediğinizden emin misiniz?
               <br /><br />
               <span className="text-orange-600 font-medium">
-                Bu işlem, tüm acentelerin sözleşme kabulünü sıfırlayacak ve yeniden onay vermelerini gerektirecektir.
+                Bu işlem, tüm kaynakların sözleşme kabulünü sıfırlayacak ve yeniden onay vermelerini gerektirecektir.
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>

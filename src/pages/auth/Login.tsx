@@ -87,7 +87,7 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex public-page light" style={{ colorScheme: 'light' }}>
       {/* Sol Panel - Özellikler */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-12 flex-col justify-between relative overflow-hidden">
         {/* Dekoratif arka plan deseni */}

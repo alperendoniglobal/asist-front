@@ -159,7 +159,7 @@ export default function Users() {
       case UserRole.SUPER_ADMIN:
         return 'Super Admin';
       case UserRole.AGENCY_ADMIN:
-        return 'Acente Yoneticisi';
+        return 'kaynak Yoneticisi';
       case UserRole.BRANCH_ADMIN:
         return 'Sube Yoneticisi';
       case UserRole.BRANCH_USER:
@@ -486,13 +486,13 @@ export default function Users() {
             {/* SUPPORT rolü global bir rol olduğu için acente ve şube seçimi gerekmez */}
             {isSuperAdmin && formData.role !== UserRole.SUPPORT && (
               <div className="space-y-2">
-                <Label>Acente</Label>
+                <Label>kaynak</Label>
                 <Select
                   value={formData.agency_id}
                   onValueChange={(value) => setFormData({ ...formData, agency_id: value, branch_id: '' })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Acente secin" />
+                    <SelectValue placeholder="kaynak secin" />
                   </SelectTrigger>
                   <SelectContent>
                     {agencies.map((agency) => (
@@ -529,7 +529,7 @@ export default function Users() {
             {formData.role === UserRole.SUPPORT && (
               <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
                 <p className="font-medium">Destek Ekibi Rolü</p>
-                <p className="text-xs mt-1">Bu rol global bir roldür ve acente/şube ataması gerektirmez. Tüm sistem verilerine erişim sağlar.</p>
+                <p className="text-xs mt-1">Bu rol global bir roldür ve kaynak/şube ataması gerektirmez. Tüm sistem verilerine erişim sağlar.</p>
               </div>
             )}
 
