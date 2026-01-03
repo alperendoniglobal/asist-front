@@ -30,7 +30,6 @@ import {
   Check,
   Shield,
   Loader2,
-  CheckCircle,
   Phone,
   Menu,
   X,
@@ -53,8 +52,6 @@ export default function Purchase() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [purchaseResult, setPurchaseResult] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Paket bilgisi
@@ -301,61 +298,8 @@ export default function Purchase() {
     );
   }
 
-  // Success
-  if (success && purchaseResult) {
-    return (
-      <>
-        <Helmet>
-          <title>Satın Alma Başarılı | Çözüm Asistan</title>
-        </Helmet>
-
-        <div className="light min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-white flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
-          <Card className="max-w-lg w-full border-emerald-200 bg-white">
-            <CardContent className="p-6 sm:p-8 text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-full bg-emerald-100 flex items-center justify-center">
-                <CheckCircle className="h-8 w-8 sm:h-10 sm:w-10 text-emerald-600" />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Tebrikler!</h1>
-              <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">Satın alma işleminiz başarıyla tamamlandı.</p>
-
-              <div className="bg-gray-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-left space-y-2 sm:space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Poliçe No:</span>
-                  <span className="font-semibold text-gray-900">{purchaseResult.policy_number}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Paket:</span>
-                  <span className="font-semibold text-gray-900">{purchaseResult.package_name}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Müşteri:</span>
-                  <span className="font-semibold text-gray-900">{purchaseResult.customer_name}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-500">Plaka:</span>
-                  <Badge variant="outline" className="text-gray-900">{purchaseResult.vehicle_plate}</Badge>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Geçerlilik:</span>
-                  <span className="font-semibold text-emerald-600">1 Yıl</span>
-                </div>
-              </div>
-
-              <p className="text-xs sm:text-sm text-gray-500 mb-4 sm:mb-6">
-                Poliçe detaylarınız e-posta adresinize gönderilecektir.
-              </p>
-
-              <Link to="/">
-                <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full">
-                  Ana Sayfaya Dön
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </>
-    );
-  }
+  // Not: PayTR iFrame kullanıldığı için ödeme sonrası merchant_ok_url'e yönlendiriliyor
+  // Success ekranı ayrı bir route'da (/payment/success) gösteriliyor
 
   // Marka/Model listesi (araç türüne göre)
   const isMotorcycle = pkg?.vehicle_type === 'Motosiklet';

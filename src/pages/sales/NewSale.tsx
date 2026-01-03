@@ -156,14 +156,8 @@ export default function NewSale() {
     commission: 0,
   });
 
-  // Kart Bilgileri
-  const [cardForm, setCardForm] = useState({
-    card_holder: '',
-    card_number: '',
-    expire_month: '',
-    expire_year: '',
-    cvv: '',
-  });
+  // Kart Bilgileri - PayTR iFrame kullanıldığı için artık gerekli değil
+  // PayTR ödeme formu iframe içinde gösteriliyor
 
   useEffect(() => {
     fetchInitialData();

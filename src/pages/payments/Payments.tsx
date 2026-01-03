@@ -142,7 +142,7 @@ export default function Payments() {
 
   const getTypeBadge = (type: PaymentType) => {
     switch (type) {
-      case PaymentType.IYZICO:
+      case PaymentType.PAYTR:
         return <Badge variant="info" className="gap-1"><CreditCard className="h-3 w-3" />Kredi Kartı</Badge>;
       case PaymentType.BALANCE:
         return <Badge variant="secondary" className="gap-1"><Wallet className="h-3 w-3" />Bakiye</Badge>;
@@ -256,7 +256,7 @@ export default function Payments() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tüm Tipler</SelectItem>
-                <SelectItem value={PaymentType.IYZICO}>Kredi Kartı</SelectItem>
+                <SelectItem value={PaymentType.PAYTR}>Kredi Kartı</SelectItem>
                 <SelectItem value={PaymentType.BALANCE}>Bakiye</SelectItem>
               </SelectContent>
             </Select>
