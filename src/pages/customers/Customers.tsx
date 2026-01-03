@@ -23,23 +23,20 @@ import {
   Plus, Search, Edit, Trash2, Eye, Users, Car, ShoppingCart, 
   Phone, Mail, MapPin, FileText, Calendar, RefreshCcw, Building2
 } from 'lucide-react';
+// Şehir ve ilçe verilerini import et
+import cityData from '@/data/city.json';
 
 // Sayfa basina gosterilecek kayit sayisi
 const ITEMS_PER_PAGE = 10;
 
-// Türkiye İlleri
-const CITIES = [
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya',
-  'Artvin', 'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik', 'Bingöl',
-  'Bitlis', 'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli',
-  'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir', 'Gaziantep',
-  'Giresun', 'Gümüşhane', 'Hakkâri', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul', 'İzmir',
-  'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kırıkkale',
-  'Kırklareli', 'Kırşehir', 'Kilis', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa',
-  'Mardin', 'Mersin', 'Muğla', 'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize',
-  'Sakarya', 'Samsun', 'Siirt', 'Sinop', 'Sivas', 'Şanlıurfa', 'Şırnak', 'Tekirdağ',
-  'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van', 'Yalova', 'Yozgat', 'Zonguldak'
-];
+// Türkiye İlleri - city.json'dan al
+const CITIES = cityData.map((city) => city.il);
+
+// Seçilen ile göre ilçeleri getiren fonksiyon
+const getDistrictsByCity = (cityName: string): string[] => {
+  const city = cityData.find((c) => c.il === cityName);
+  return city ? city.ilceleri : [];
+};
 
 export default function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -477,13 +474,22 @@ export default function Customers() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="district">İlçe *</Label>
-                <Input
-                  id="district"
+                <Select
                   value={formData.district}
-                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                  placeholder="İlçe"
+                  onValueChange={(value) => setFormData({ ...formData, district: value })}
                   disabled={!formData.city}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={formData.city ? 'İlçe Seçiniz' : 'Önce İl Seçiniz'} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {formData.city && getDistrictsByCity(formData.city).map((district) => (
+                      <SelectItem key={district} value={district}>
+                        {district}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -628,12 +634,22 @@ export default function Customers() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit_district">İlçe *</Label>
-                <Input
-                  id="edit_district"
+                <Select
                   value={formData.district}
-                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                  onValueChange={(value) => setFormData({ ...formData, district: value })}
                   disabled={!formData.city}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={formData.city ? 'İlçe Seçiniz' : 'Önce İl Seçiniz'} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {formData.city && getDistrictsByCity(formData.city).map((district) => (
+                      <SelectItem key={district} value={district}>
+                        {district}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

@@ -79,39 +79,39 @@ export default function PublicPackages() {
     ? packages
     : packages.filter(p => p.vehicle_type === selectedVehicleType);
 
-  // Paket tier'ına göre stil
+  // Paket tier'ına göre stil - Yeşil tonlarında
   const getPackageTier = (name: string) => {
     const nameLower = name.toLowerCase();
     if (nameLower.includes('ultra') || nameLower.includes('premium') || nameLower.includes('plus')) {
       return {
         tier: 'premium',
-        accent: 'from-violet-600 to-purple-600',
-        accentLight: 'bg-violet-50',
-        accentText: 'text-violet-600',
-        accentBorder: 'border-violet-200',
-        badge: 'bg-gradient-to-r from-violet-600 to-purple-600',
+        accent: 'bg-[#017A35]',
+        accentLight: 'bg-emerald-50',
+        accentText: 'text-[#017A35]',
+        accentBorder: 'border-emerald-200',
+        badge: 'bg-[#017A35]',
         icon: Sparkles
       };
     }
     if (nameLower.includes('standart') || nameLower.includes('standard')) {
       return {
         tier: 'standard',
-        accent: 'from-blue-600 to-cyan-600',
-        accentLight: 'bg-blue-50',
-        accentText: 'text-blue-600',
-        accentBorder: 'border-blue-200',
-        badge: 'bg-gradient-to-r from-blue-600 to-cyan-600',
+        accent: 'bg-[#019242]',
+        accentLight: 'bg-green-50',
+        accentText: 'text-[#019242]',
+        accentBorder: 'border-green-200',
+        badge: 'bg-[#019242]',
         icon: Shield
       };
     }
     // Default - basic
     return {
       tier: 'basic',
-      accent: 'from-slate-600 to-slate-700',
-      accentLight: 'bg-slate-50',
-      accentText: 'text-slate-600',
-      accentBorder: 'border-slate-200',
-      badge: 'bg-gradient-to-r from-slate-600 to-slate-700',
+      accent: 'bg-[#019242]',
+      accentLight: 'bg-green-50',
+      accentText: 'text-[#019242]',
+      accentBorder: 'border-green-200',
+      badge: 'bg-[#019242]',
       icon: Zap
     };
   };
@@ -307,109 +307,101 @@ export default function PublicPackages() {
                 {filteredPackages.map((pkg) => {
                   const VehicleIcon = getVehicleIcon(pkg.vehicle_type);
                   const tier = getPackageTier(pkg.name);
-                  const TierIcon = tier.icon;
 
                   return (
                     <Card 
                       key={pkg.id} 
-                      className="group relative bg-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                      className="group relative bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
                     >
-                      {/* Top accent line */}
-                      <div className={`h-1 bg-gradient-to-r ${tier.accent}`} />
+                      {/* Top accent line - Minimal */}
+                      <div className={`h-1 ${tier.accent}`} />
                       
-                      <CardContent className="p-4 sm:p-6">
-                        {/* Header */}
-                        <div className="flex items-start justify-between mb-4 sm:mb-5">
-                          <div className="flex items-center gap-2 sm:gap-3">
-                            <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl ${tier.accentLight} ${tier.accentBorder} border`}>
-                              <VehicleIcon className={`h-4 w-4 sm:h-5 sm:w-5 ${tier.accentText}`} />
+                      <CardContent className="p-5">
+                        {/* Header - Minimal & Clean */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-12 h-12 rounded-xl ${tier.accent} flex items-center justify-center shadow-md`}>
+                              <VehicleIcon className="h-5 w-5 text-white" />
                             </div>
-                            <Badge className={`${tier.badge} text-white text-xs px-2 sm:px-2.5 py-0.5 sm:py-1`}>
+                            <Badge className={`${tier.badge} text-white text-xs px-3 py-1 font-semibold`}>
                               {pkg.vehicle_type}
                             </Badge>
                           </div>
                           {tier.tier === 'premium' && (
-                            <div className="flex items-center gap-1 text-amber-500">
+                            <div className="flex items-center gap-1 text-[#019242]">
                               <Star className="h-4 w-4 fill-current" />
                             </div>
                           )}
                         </div>
 
                         {/* Title & Description */}
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 group-hover:text-gray-700 transition-colors">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
                           {pkg.name}
                         </h3>
                         {pkg.description && (
-                          <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 line-clamp-2">
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">
                             {pkg.description}
                           </p>
                         )}
                         
-                        {/* Vehicle age info */}
-                        <div className={`inline-flex items-center gap-1.5 sm:gap-2 ${tier.accentLight} ${tier.accentText} text-xs font-medium px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full mb-4 sm:mb-5`}>
-                          <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        {/* Vehicle age info - Minimal */}
+                        <div className={`inline-flex items-center gap-1.5 ${tier.accentLight} ${tier.accentText} text-xs font-medium px-2.5 py-1 rounded-full mb-4`}>
+                          <Clock className="h-3 w-3" />
                           Maks. {pkg.max_vehicle_age} yaş araç
                         </div>
 
                         {/* Divider */}
-                        <div className="border-t border-gray-100 my-4 sm:my-5" />
+                        <div className="border-t border-gray-100 my-4" />
 
-                        {/* Covers */}
-                        <div className="mb-5 sm:mb-6">
-                          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-                            <TierIcon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${tier.accentText}`} />
-                            <span className="text-xs sm:text-sm font-semibold text-gray-700">Paket İçeriği</span>
-                          </div>
-                          <ul className="space-y-2 sm:space-y-2.5">
-                            {pkg.covers.slice(0, 5).map((cover) => (
-                              <li key={cover.id} className="flex items-start gap-2 sm:gap-3">
-                                <div className={`p-0.5 rounded-full bg-gradient-to-r ${tier.accent} flex-shrink-0 mt-0.5 sm:mt-1`}>
-                                  <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
+                        {/* Covers - Clean Design */}
+                        <div className="mb-5">
+                          <ul className="space-y-2.5">
+                            {pkg.covers.slice(0, 6).map((cover) => (
+                              <li key={cover.id} className="flex items-start gap-2.5">
+                                <div className={`w-5 h-5 rounded-md ${tier.accent} flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm`}>
+                                  <Check className="h-3 w-3 text-white" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-1.5 sm:gap-2">
-                                    <span className="text-xs sm:text-sm text-gray-700 truncate">{cover.title}</span>
-                                    {cover.usage_count > 1 && (
-                                      <span className="text-[10px] sm:text-xs text-gray-400 font-medium">
-                                        ({cover.usage_count}x)
-                                      </span>
-                                    )}
-                                  </div>
+                                  <span className="text-sm text-gray-700 leading-relaxed">{cover.title}</span>
+                                  {cover.usage_count > 1 && (
+                                    <span className="text-xs text-gray-400 ml-1">
+                                      ({cover.usage_count}x)
+                                    </span>
+                                  )}
                                 </div>
                               </li>
                             ))}
-                            {pkg.covers.length > 5 && (
-                              <li className="text-[10px] sm:text-xs text-gray-400 pl-5 sm:pl-6">
-                                +{pkg.covers.length - 5} daha fazla hizmet
+                            {pkg.covers.length > 6 && (
+                              <li className="text-xs text-gray-500 pl-8 italic">
+                                +{pkg.covers.length - 6} daha fazla hizmet
                               </li>
                             )}
                           </ul>
                         </div>
 
-                        {/* Fiyat - Giriş yapmış kullanıcılar için göster */}
+                        {/* Fiyat - Professional Style */}
                         {pkg.price && (
-                          <div className="mb-4 sm:mb-5 pb-4 sm:pb-5 border-b border-gray-100">
+                          <div className="mb-5 pb-4 border-b border-gray-100">
                             <div className="flex items-baseline justify-between">
-                              <span className="text-xs sm:text-sm text-gray-500">Fiyat</span>
-                              <span className="text-2xl sm:text-3xl font-bold text-gray-900">
-                                {new Intl.NumberFormat('tr-TR', {
-                                  style: 'currency',
-                                  currency: 'TRY',
-                                  minimumFractionDigits: 2
-                                }).format(Number(pkg.price))}
-                              </span>
+                              <span className="text-sm text-gray-500">Fiyat</span>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-bold text-gray-900">
+                                  {Number(pkg.price).toLocaleString('tr-TR')}
+                                </span>
+                                <span className="text-base text-gray-500">₺</span>
+                              </div>
                             </div>
-                            <p className="text-[10px] sm:text-xs text-gray-400 mt-1">KDV dahil</p>
+                            <p className="text-xs text-gray-400 mt-1">KDV dahil / yıl</p>
                           </div>
                         )}
 
-                        {/* CTA */}
+                        {/* CTA - Professional Button */}
                         <Link to={`/purchase/${pkg.id}`} className="block">
                           <Button 
-                            className={`w-full bg-gradient-to-r ${tier.accent} hover:opacity-90 text-white font-semibold py-4 sm:py-5 rounded-lg sm:rounded-xl shadow-lg transition-all text-sm sm:text-base`}
+                            className={`w-full ${tier.accent} hover:opacity-90 text-white font-semibold h-11 rounded-lg shadow-md hover:shadow-lg transition-all text-sm`}
                           >
-                            Hemen Satın Al
-                            <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                            Detaylı Bilgi
+                            <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
                           </Button>
                         </Link>
                       </CardContent>

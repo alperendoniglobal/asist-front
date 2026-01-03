@@ -30,6 +30,8 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
+// Şehir ve ilçe verilerini import et
+import cityData from '@/data/city.json';
 
 // Kullanım Tarzları
 const USAGE_TYPES = [
@@ -41,19 +43,14 @@ const USAGE_TYPES = [
 // Model Yılları (son 30 yıl)
 const MODEL_YEARS = Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i);
 
-// Türkiye İlleri
-const CITIES = [
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Aksaray', 'Amasya', 'Ankara', 'Antalya',
-  'Artvin', 'Aydın', 'Balıkesir', 'Bartın', 'Batman', 'Bayburt', 'Bilecik', 'Bingöl',
-  'Bitlis', 'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli',
-  'Diyarbakır', 'Düzce', 'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir', 'Gaziantep',
-  'Giresun', 'Gümüşhane', 'Hakkâri', 'Hatay', 'Iğdır', 'Isparta', 'İstanbul', 'İzmir',
-  'Kahramanmaraş', 'Karabük', 'Karaman', 'Kars', 'Kastamonu', 'Kayseri', 'Kırıkkale',
-  'Kırklareli', 'Kırşehir', 'Kilis', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa',
-  'Mardin', 'Mersin', 'Muğla', 'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Osmaniye', 'Rize',
-  'Sakarya', 'Samsun', 'Siirt', 'Sinop', 'Sivas', 'Şanlıurfa', 'Şırnak', 'Tekirdağ',
-  'Tokat', 'Trabzon', 'Tunceli', 'Uşak', 'Van', 'Yalova', 'Yozgat', 'Zonguldak'
-];
+// Türkiye İlleri - city.json'dan al
+const CITIES = cityData.map((city) => city.il);
+
+// Seçilen ile göre ilçeleri getiren fonksiyon
+const getDistrictsByCity = (cityName: string): string[] => {
+  const city = cityData.find((c) => c.il === cityName);
+  return city ? city.ilceleri : [];
+};
 
 export default function NewSale() {
   const navigate = useNavigate();
@@ -976,12 +973,22 @@ export default function NewSale() {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm">İlçe <span className="text-red-500">*</span></Label>
-                <Input
+                <Select
                   value={customerForm.district}
-                  onChange={(e) => setCustomerForm({ ...customerForm, district: e.target.value })}
-                  placeholder={customerForm.city ? 'İlçe' : 'Önce İl Seçiniz'}
+                  onValueChange={(value) => setCustomerForm({ ...customerForm, district: value })}
                   disabled={!customerForm.city}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={customerForm.city ? 'İlçe Seçiniz' : 'Önce İl Seçiniz'} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    {customerForm.city && getDistrictsByCity(customerForm.city).map((district) => (
+                      <SelectItem key={district} value={district}>
+                        {district}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

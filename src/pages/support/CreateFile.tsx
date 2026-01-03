@@ -16,20 +16,11 @@ import { toast } from 'sonner';
 import { saleService, carBrandService, carModelService, motorBrandService, motorModelService, packageService, supportFileService } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Sale } from '@/types';
+// Şehir ve ilçe verilerini import et
+import cityData from '@/data/city.json';
 
-// Türkiye şehirleri listesi
-const CITIES = [
-  'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Amasya', 'Ankara', 'Antalya', 'Artvin',
-  'Aydın', 'Balıkesir', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu', 'Burdur', 'Bursa',
-  'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır', 'Edirne', 'Elazığ', 'Erzincan',
-  'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Isparta',
-  'İçel', 'İstanbul', 'İzmir', 'Kars', 'Kastamonu', 'Kayseri', 'Kırklareli', 'Kırşehir',
-  'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa', 'Kahramanmaraş', 'Mardin', 'Muğla',
-  'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Rize', 'Sakarya', 'Samsun', 'Siirt',
-  'Sinop', 'Sivas', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Şanlıurfa', 'Uşak',
-  'Van', 'Yozgat', 'Zonguldak', 'Aksaray', 'Bayburt', 'Karaman', 'Kırıkkale', 'Batman',
-  'Şırnak', 'Bartın', 'Ardahan', 'Iğdır', 'Yalova', 'Karabük', 'Kilis', 'Osmaniye', 'Düzce'
-];
+// Türkiye İlleri - city.json'dan al
+const CITIES = cityData.map((city) => city.il);
 
 // Yapılacak işlem seçenekleri (paket kapsamlarından gelecek, fallback olarak bu liste kullanılacak)
 const DEFAULT_SERVICE_OPTIONS = [

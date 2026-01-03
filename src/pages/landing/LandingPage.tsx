@@ -51,6 +51,8 @@ export default function LandingPage() {
   // Public API'den çekilen veriler
   const [packages, setPackages] = useState<PublicPackage[]>([]);
   const packageCarouselRef = useRef<HTMLDivElement>(null);
+  const [currentPackageIndex, setCurrentPackageIndex] = useState(0);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -118,6 +120,28 @@ export default function LandingPage() {
     fetchData();
   }, []);
 
+  // Otomatik carousel kaydırma - Optimize edilmiş
+  useEffect(() => {
+    if (!isAutoScrolling || packages.length === 0) return;
+    
+    const interval = setInterval(() => {
+      setCurrentPackageIndex((prev) => {
+        const next = (prev + 1) % packages.length;
+        if (packageCarouselRef.current) {
+          const cardWidth = 340; // Kart genişliği (300px) + gap (24px) + padding
+          const scrollPosition = next * cardWidth;
+          packageCarouselRef.current.scrollTo({
+            left: scrollPosition,
+            behavior: 'smooth'
+          });
+        }
+        return next;
+      });
+    }, 6000); // 6 saniyede bir kaydır - daha rahat UX
+
+    return () => clearInterval(interval);
+  }, [isAutoScrolling, packages.length]);
+
   // İstatistikleri yarıya düşür
   const displayStats = useMemo(() => {
     if (stats.length > 0) {
@@ -165,7 +189,7 @@ export default function LandingPage() {
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}
-      <div className="light public-page bg-white text-gray-900" style={{ colorScheme: 'light' }}>
+      <div className="light public-page bg-white text-gray-900 overflow-x-hidden" style={{ colorScheme: 'light' }}>
         
         {/* ===== TOP BAR ===== */}
         <div className="bg-[#019242] text-white py-2.5 hidden md:block">
@@ -608,28 +632,45 @@ export default function LandingPage() {
           </div>
       </section>
 
-        {/* ===== PACKAGES SECTION ===== */}
-        <section id="packages" className="py-12 md:py-20 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-8 sm:mb-12">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#019242]/10 text-[#019242] text-sm font-medium mb-4">
+        {/* ===== PACKAGES SECTION - Shopping Cart Style ===== */}
+        <section id="packages" className="py-12 md:py-20 bg-gradient-to-br from-gray-50 via-white to-green-50 relative overflow-visible">
+          {/* Decorative Background Elements */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[#019242]/5 rounded-full blur-3xl hidden lg:block" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl hidden lg:block" />
+          
+          <div className="container mx-auto px-4 relative z-10 overflow-visible">
+            <div className="text-center mb-10 sm:mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#019242]/10 text-[#019242] text-sm font-medium mb-4 animate-fadeIn">
                 <ShoppingCart className="h-4 w-4" />
                 <span>Hizmetlerimiz</span>
-            </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900">
-                Size Özel Paketler
-            </h2>
-              <p className="text-gray-600 mt-3 sm:mt-4 max-w-2xl mx-auto text-sm sm:text-base">
+              </div>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 animate-fadeIn">
+                Size Özel <span className="text-[#019242]">Paketler</span>
+              </h2>
+              <p className="text-gray-600 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
                 İhtiyacınıza en uygun yol yardım paketini seçin, güvende kalın
-            </p>
-          </div>
+              </p>
+            </div>
 
-            {/* Package Cards Carousel */}
-            <div className="relative">
+            {/* Package Cards Carousel - Shopping Cart Style */}
+            <div 
+              className="relative py-8 -mx-4 md:-mx-8 lg:-mx-12 overflow-visible"
+              onMouseEnter={() => setIsAutoScrolling(false)}
+              onMouseLeave={() => setIsAutoScrolling(true)}
+            >
               <div 
                 ref={packageCarouselRef}
-                className="flex gap-4 sm:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 px-1"
-                style={{ scrollBehavior: 'smooth' }}
+                className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 px-20 md:px-24 lg:px-28 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                style={{ scrollBehavior: 'smooth', overflowY: 'visible' }}
+                onScroll={(e) => {
+                  // Scroll pozisyonuna göre aktif kartı güncelle
+                  const scrollLeft = e.currentTarget.scrollLeft;
+                  const cardWidth = 340; // Kart genişliği + gap
+                  const newIndex = Math.round(scrollLeft / cardWidth);
+                  if (newIndex !== currentPackageIndex && newIndex >= 0 && newIndex < packages.length) {
+                    setCurrentPackageIndex(newIndex);
+                  }
+                }}
               >
                 {packages.length > 0 ? packages.map((pkg, index) => {
                   const vehicleIcons: Record<string, any> = {
@@ -640,61 +681,85 @@ export default function LandingPage() {
                   };
                   const VehicleIcon = vehicleIcons[pkg.vehicle_type] || Car;
                   
+                  // Yeşil tonlarında renk paleti - tasarıma uyumlu
                   const colors = [
-                    { bg: 'bg-[#019242]', light: 'bg-green-50', text: 'text-[#019242]' },
-                    { bg: 'bg-emerald-500', light: 'bg-emerald-50', text: 'text-emerald-600' },
-                    { bg: 'bg-purple-500', light: 'bg-purple-50', text: 'text-purple-600' },
-                    { bg: 'bg-orange-500', light: 'bg-orange-50', text: 'text-orange-600' },
+                    { bg: 'bg-[#019242]', light: 'bg-green-50', text: 'text-[#019242]', border: 'border-green-200', hover: 'hover:bg-[#017A35]' },
+                    { bg: 'bg-[#017A35]', light: 'bg-emerald-50', text: 'text-[#017A35]', border: 'border-emerald-200', hover: 'hover:bg-[#015A28]' },
+                    { bg: 'bg-[#019242]', light: 'bg-green-50', text: 'text-[#019242]', border: 'border-green-200', hover: 'hover:bg-[#017A35]' },
+                    { bg: 'bg-[#017A35]', light: 'bg-emerald-50', text: 'text-[#017A35]', border: 'border-emerald-200', hover: 'hover:bg-[#015A28]' },
                   ];
                   const color = colors[index % colors.length];
+                  const isActive = index === currentPackageIndex;
               
               return (
                     <div
                       key={pkg.id}
-                      className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[320px] snap-center"
+                      className="flex-shrink-0 w-[300px] sm:w-[320px] md:w-[340px] snap-center py-6 px-2"
                     >
-                      <Card className="h-full border-0 shadow-lg hover:shadow-2xl transition-all duration-300 group overflow-hidden bg-white flex flex-col">
-                        {/* Package Header - Kurumsal tasarım */}
-                        <div className={`${color.light} p-4 sm:p-6 border-b border-gray-100`}>
-                          <div className="flex items-center justify-between mb-3 sm:mb-4">
-                            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl ${color.bg} flex items-center justify-center shadow-md`}>
-                              <VehicleIcon className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                      </div>
-                            <span className={`px-3 sm:px-4 py-1.5 rounded-lg ${color.bg} text-white text-xs font-semibold uppercase tracking-wide`}>
-                              {pkg.vehicle_type}
-                            </span>
+                      <Card className={`h-full border transition-all duration-500 group bg-white flex flex-col ${
+                        isActive 
+                          ? `border-2 ${color.border} shadow-2xl` 
+                          : 'border-gray-200 shadow-lg hover:shadow-xl'
+                      }`}>
+                        {/* Package Header - Minimal & Professional */}
+                        <div className={`${color.light} p-5 border-b ${color.border} relative overflow-hidden`}>
+                          <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className={`w-12 h-12 rounded-xl ${color.bg} flex items-center justify-center shadow-md transition-transform duration-500 ${isActive ? 'scale-105' : ''}`}>
+                                <VehicleIcon className="h-5 w-5 text-white" />
+                              </div>
+                              <span className={`px-3 py-1 rounded-lg ${color.bg} text-white text-xs font-semibold uppercase tracking-wide`}>
+                                {pkg.vehicle_type}
+                              </span>
+                            </div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.name}</h3>
+                            {pkg.description && (
+                              <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{pkg.description}</p>
+                            )}
+                            
+                            {/* Price Badge - Minimal Style */}
+                            {pkg.price && (
+                              <div className="mt-3 flex items-baseline gap-1.5">
+                                <span className="text-2xl font-bold text-gray-900">
+                                  {Number(pkg.price).toLocaleString('tr-TR')}
+                                </span>
+                                <span className="text-base text-gray-500">₺</span>
+                                <span className="text-xs text-gray-400 ml-1">/yıl</span>
+                              </div>
+                            )}
                           </div>
-                          <h3 className="text-lg sm:text-xl font-bold text-gray-900">{pkg.name}</h3>
-                          {pkg.description && (
-                            <p className="text-xs sm:text-sm text-gray-600 mt-2 line-clamp-2">{pkg.description}</p>
-                          )}
-                    </div>
+                        </div>
                     
-                        {/* Package Features - Sabit yükseklik ile hizalı */}
-                        <CardContent className="p-4 sm:p-6 flex flex-col flex-grow">
-                          <ul className="space-y-2.5 sm:space-y-3 min-h-[160px] sm:min-h-[180px]">
-                            {pkg.covers.slice(0, 5).map((cover) => (
-                              <li key={cover.id} className="flex items-center gap-2.5 sm:gap-3">
-                                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-md ${color.bg} flex items-center justify-center flex-shrink-0 shadow-sm`}>
-                                  <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-white" />
+                        {/* Package Features - Clean & Minimal */}
+                        <CardContent className="p-5 flex flex-col flex-grow bg-white">
+                          <ul className="space-y-2.5 min-h-[180px] flex-grow">
+                            {pkg.covers.slice(0, 6).map((cover) => (
+                              <li 
+                                key={cover.id} 
+                                className="flex items-start gap-2.5"
+                              >
+                                <div className={`w-5 h-5 rounded-md ${color.bg} flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm`}>
+                                  <Check className="h-3 w-3 text-white" />
                                 </div>
-                                <span className="text-sm text-gray-700 font-medium">{cover.title}</span>
+                                <span className="text-sm text-gray-700 leading-relaxed">{cover.title}</span>
                               </li>
                             ))}
-                            {pkg.covers.length > 5 && (
-                              <li className="text-xs sm:text-sm text-gray-500 pl-8 sm:pl-9 italic">
-                                +{pkg.covers.length - 5} daha fazla teminat
+                            {pkg.covers.length > 6 && (
+                              <li className="text-xs text-gray-500 pl-8 italic pt-1">
+                                +{pkg.covers.length - 6} daha fazla teminat
                               </li>
                             )}
                           </ul>
 
-                          {/* Button - Her zaman en altta */}
-                          <Link to={`/packages`} className="block mt-auto pt-4">
-                            <Button className={`w-full ${color.bg} hover:opacity-90 text-white rounded-lg text-sm sm:text-base font-semibold h-11 sm:h-12 shadow-md hover:shadow-lg transition-all`}>
+                          {/* CTA Button - Professional Style */}
+                          <Link to={`/packages`} className="block mt-5">
+                            <Button className={`w-full ${color.bg} ${color.hover} text-white rounded-lg text-sm font-semibold h-11 shadow-md hover:shadow-lg transition-all duration-300 group/btn`}>
+                              <ShoppingCart className="h-4 w-4 mr-2" />
                               Detaylı Bilgi
-                              <ArrowRight className="h-4 w-4 ml-2" />
+                              <ArrowRight className="h-4 w-4 ml-2 group-hover/btn:translate-x-0.5 transition-transform" />
                             </Button>
                           </Link>
+                          
                         </CardContent>
                       </Card>
                     </div>
@@ -715,11 +780,12 @@ export default function LandingPage() {
                     };
                     const VehicleIcon = vehicleIcons[pkg.type] || Car;
                     
+                    // Yeşil tonlarında renk paleti - tasarıma uyumlu
                     const colors = [
-                      { bg: 'bg-[#019242]', light: 'bg-green-50' },
-                      { bg: 'bg-emerald-500', light: 'bg-emerald-50' },
-                      { bg: 'bg-purple-500', light: 'bg-purple-50' },
-                      { bg: 'bg-orange-500', light: 'bg-orange-50' },
+                      { bg: 'bg-[#019242]', light: 'bg-green-50', border: 'border-green-200', hover: 'hover:bg-[#017A35]' },
+                      { bg: 'bg-[#017A35]', light: 'bg-emerald-50', border: 'border-emerald-200', hover: 'hover:bg-[#015A28]' },
+                      { bg: 'bg-[#019242]', light: 'bg-green-50', border: 'border-green-200', hover: 'hover:bg-[#017A35]' },
+                      { bg: 'bg-[#017A35]', light: 'bg-emerald-50', border: 'border-emerald-200', hover: 'hover:bg-[#015A28]' },
                     ];
                     const color = colors[index % colors.length];
 

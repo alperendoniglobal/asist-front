@@ -6,8 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { publicService, type DealerApplicationRequest } from '@/services/publicService';
+// Şehir ve ilçe verilerini import et
+import cityData from '@/data/city.json';
 import { 
   ArrowRight, 
   Store,
@@ -26,6 +31,15 @@ import {
   Check,
   Building2
 } from 'lucide-react';
+
+// Türkiye İlleri - city.json'dan al
+const CITIES = cityData.map((city) => city.il);
+
+// Seçilen ile göre ilçeleri getiren fonksiyon
+const getDistrictsByCity = (cityName: string): string[] => {
+  const city = cityData.find((c) => c.il === cityName);
+  return city ? city.ilceleri : [];
+};
 
 /**
  * Bayilik Başvuru Sayfası
@@ -460,24 +474,40 @@ export default function DealerApplication() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="city" className="text-gray-600 text-xs font-medium">İl *</Label>
-                        <Input
-                          id="city"
+                        <Select
                           value={formData.city}
-                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                          placeholder="İstanbul"
-                          required
-                          className="bg-white border-gray-200 text-gray-900 h-11"
-                        />
+                          onValueChange={(value) => setFormData({ ...formData, city: value, district: '' })}
+                        >
+                          <SelectTrigger className="bg-white border-gray-200 text-gray-900 h-11">
+                            <SelectValue placeholder="İl Seçiniz" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {CITIES.map((city) => (
+                              <SelectItem key={city} value={city}>
+                                {city}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="district" className="text-gray-600 text-xs font-medium">İlçe</Label>
-                        <Input
-                          id="district"
+                        <Select
                           value={formData.district}
-                          onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                          placeholder="Kadıköy"
-                          className="bg-white border-gray-200 text-gray-900 h-11"
-                        />
+                          onValueChange={(value) => setFormData({ ...formData, district: value })}
+                          disabled={!formData.city}
+                        >
+                          <SelectTrigger className="bg-white border-gray-200 text-gray-900 h-11">
+                            <SelectValue placeholder={formData.city ? 'İlçe Seçiniz' : 'Önce İl Seçiniz'} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {formData.city && getDistrictsByCity(formData.city).map((district) => (
+                              <SelectItem key={district} value={district}>
+                                {district}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
