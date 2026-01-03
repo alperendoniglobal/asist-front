@@ -43,6 +43,8 @@ import DeliveryReturnPage from "./pages/legal/DeliveryReturnPage"
 import PublicPackages from "./pages/public/PublicPackages"
 import Purchase from "./pages/public/Purchase"
 import DealerApplication from "./pages/public/DealerApplication"
+import PaymentSuccess from "./pages/payments/PaymentSuccess"
+import PaymentFail from "./pages/payments/PaymentFail"
 import { UserRole } from "./types" // Force rebuild
 import { Toaster } from "./components/ui/sonner"
 
@@ -88,6 +90,10 @@ function App() {
               <Route path="/packages" element={<PublicPackages />} />
               <Route path="/purchase/:packageId" element={<Purchase />} />
               <Route path="/bayilik-basvurusu" element={<DealerApplication />} />
+              
+              {/* Payment Result Pages - PayTR yönlendirmeleri için */}
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/fail" element={<PaymentFail />} />
 
               {/* Sözleşme Kabul Sayfası - Auth gerekli ama sözleşme kontrolü yok */}
               <Route 
