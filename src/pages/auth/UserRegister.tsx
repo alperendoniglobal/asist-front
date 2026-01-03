@@ -111,7 +111,7 @@ export default function UserRegister() {
   // Özellik listesi
   const features = [
     { icon: Package, title: 'Paket Satın Al', description: 'Dilediğiniz yol yardım paketini seçin' },
-    { icon: Shield, title: 'Güvenli Ödeme', description: 'Iyzico ile güvenli ödeme yapın' },
+    { icon: Shield, title: 'Güvenli Ödeme', description: 'PayTR ile güvenli ödeme yapın' },
     { icon: CheckCircle, title: '7/24 Destek', description: 'Her an yanınızdayız' },
   ];
 

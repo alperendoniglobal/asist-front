@@ -308,7 +308,7 @@ export default function Sales() {
       agency_commission: null
     });
     setPaymentData({
-      payment_type: 'IYZICO' as PaymentType,
+      payment_type: 'PAYTR' as PaymentType,
       card_number: '',
       card_holder: '',
       expire_month: '',

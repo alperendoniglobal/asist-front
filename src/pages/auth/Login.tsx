@@ -82,7 +82,7 @@ export default function Login() {
   const features = [
     { icon: Users, title: 'Müşteri Yönetimi', description: 'Müşterilerinizi kolayca yönetin' },
     { icon: Car, title: 'Araç Takibi', description: 'Araç kayıtlarını düzenleyin' },
-    { icon: CreditCard, title: 'Ödeme Entegrasyonu', description: 'Iyzico ile güvenli ödeme' },
+    { icon: CreditCard, title: 'Ödeme Entegrasyonu', description: 'PayTR ile güvenli ödeme' },
     { icon: TrendingUp, title: 'Raporlama', description: 'Detaylı istatistikler' },
   ];
 
@@ -302,8 +302,8 @@ export default function Login() {
                 <p className="text-xs text-muted-foreground">Güvenli Ödeme</p>
                 <div className="flex items-center justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
                   <img 
-                    src="/iyzicologo.png" 
-                    alt="Iyzico" 
+                    src="/PayTR---2025-New-Logo-Color.png" 
+                    alt="PayTR" 
                     className="h-7 w-auto object-contain"
                   />
                   <img 

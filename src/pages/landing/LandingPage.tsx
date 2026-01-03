@@ -1052,7 +1052,7 @@ export default function LandingPage() {
 
                 {/* Payment Logos */}
                 <div className="flex items-center justify-center gap-4 sm:gap-6 pt-4 border-t border-gray-800">
-                  <img src="/iyzicologo.png" alt="Iyzico" className="h-5 sm:h-6 opacity-60 hover:opacity-100 transition-opacity" />
+                  <img src="/PayTR---2025-New-Logo-White.png" alt="PayTR" className="h-5 sm:h-6 opacity-60 hover:opacity-100 transition-opacity" />
                   <img src="/visalogo.png" alt="Visa" className="h-5 sm:h-6 opacity-60 hover:opacity-100 transition-opacity" />
                   <img src="/mastercardlogo.png" alt="Mastercard" className="h-5 sm:h-6 opacity-60 hover:opacity-100 transition-opacity" />
                 </div>
