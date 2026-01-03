@@ -18,6 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataPagination } from '@/components/ui/pagination';
 import { saleService, customerService, vehicleService, packageService, paymentService, pdfService } from '@/services/apiService';
+import PaytrIframe from '@/components/payment/PaytrIframe';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Sale, Customer, Vehicle, Package, RefundCalculation } from '@/types';
 import { PaymentType, UserRole } from '@/types';
@@ -58,8 +59,10 @@ export default function Sales() {
     branch_commission: null as number | null,
     agency_commission: null as number | null
   });
+  const [paytrToken, setPaytrToken] = useState<string | null>(null);
+  const [isPaytrModalOpen, setIsPaytrModalOpen] = useState(false);
   const [paymentData, setPaymentData] = useState({
-    payment_type: 'IYZICO' as PaymentType,
+    payment_type: 'PAYTR' as PaymentType,
     card_number: '',
     card_holder: '',
     expire_month: '',
@@ -181,21 +184,24 @@ export default function Sales() {
     if (!selectedSale) return;
     setPaymentLoading(true);
     try {
-      if (paymentData.payment_type === 'IYZICO') {
-        await paymentService.processIyzico(selectedSale.id, {
-          card_number: paymentData.card_number,
-          card_holder: paymentData.card_holder,
-          expire_month: paymentData.expire_month,
-          expire_year: paymentData.expire_year,
-          cvv: paymentData.cvv
+      if (paymentData.payment_type === 'PAYTR') {
+        // PayTR token al ve iframe göster
+        const tokenResult = await paymentService.getPaytrToken(selectedSale.id, {
+          merchant_ok_url: `${window.location.origin}/payment/success`,
+          merchant_fail_url: `${window.location.origin}/payment/fail`,
         });
+        
+        // Token'ı state'e kaydet ve iframe modal'ını aç
+        setPaytrToken(tokenResult.token);
+        setIsPaymentOpen(false);
+        setIsPaytrModalOpen(true);
       } else {
         await paymentService.processBalance(selectedSale.id);
+        setIsPaymentOpen(false);
+        resetForm();
+        fetchData();
+        alert('Ödeme başarıyla tamamlandı!');
       }
-      setIsPaymentOpen(false);
-      resetForm();
-      fetchData();
-      alert('Ödeme başarıyla tamamlandı!');
     } catch (error) {
       console.error('Ödeme işlenirken hata:', error);
       alert('Ödeme işlemi başarısız oldu!');
@@ -763,11 +769,11 @@ export default function Sales() {
             <DialogDescription>Ödeme yöntemini seçin ve bilgileri girin</DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="iyzico" onValueChange={(v) => setPaymentData({ ...paymentData, payment_type: v as PaymentType })}>
+          <Tabs defaultValue="paytr" onValueChange={(v) => setPaymentData({ ...paymentData, payment_type: v as PaymentType })}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="IYZICO" className="gap-2">
+              <TabsTrigger value="PAYTR" className="gap-2">
                 <CreditCard className="h-4 w-4" />
-                Kredi Kartı
+                Kredi Kartı (PayTR)
               </TabsTrigger>
               <TabsTrigger value="BALANCE" className="gap-2">
                 <Wallet className="h-4 w-4" />
@@ -775,58 +781,9 @@ export default function Sales() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="IYZICO" className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="card_holder">Kart Sahibi</Label>
-                <Input
-                  id="card_holder"
-                  value={paymentData.card_holder}
-                  onChange={(e) => setPaymentData({ ...paymentData, card_holder: e.target.value })}
-                  placeholder="Ad Soyad"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="card_number">Kart Numarası</Label>
-                <Input
-                  id="card_number"
-                  value={paymentData.card_number}
-                  onChange={(e) => setPaymentData({ ...paymentData, card_number: e.target.value })}
-                  placeholder="1234 5678 9012 3456"
-                  maxLength={19}
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="expire_month">Ay</Label>
-                  <Input
-                    id="expire_month"
-                    value={paymentData.expire_month}
-                    onChange={(e) => setPaymentData({ ...paymentData, expire_month: e.target.value })}
-                    placeholder="MM"
-                    maxLength={2}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expire_year">Yıl</Label>
-                  <Input
-                    id="expire_year"
-                    value={paymentData.expire_year}
-                    onChange={(e) => setPaymentData({ ...paymentData, expire_year: e.target.value })}
-                    placeholder="YY"
-                    maxLength={2}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input
-                    id="cvv"
-                    type="password"
-                    value={paymentData.cvv}
-                    onChange={(e) => setPaymentData({ ...paymentData, cvv: e.target.value })}
-                    placeholder="***"
-                    maxLength={3}
-                  />
-                </div>
+            <TabsContent value="PAYTR" className="space-y-4 mt-4">
+              <div className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-lg">
+                PayTR güvenli ödeme sayfasına yönlendirileceksiniz. Ödeme işlemi PayTR iframe üzerinden gerçekleştirilecektir.
               </div>
             </TabsContent>
 
@@ -1231,6 +1188,44 @@ export default function Sales() {
               </div>
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* PayTR Iframe Modal */}
+      <Dialog open={isPaytrModalOpen} onOpenChange={setIsPaytrModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              PayTR Güvenli Ödeme
+            </DialogTitle>
+            <DialogDescription>
+              Kart bilgilerinizi PayTR güvenli ödeme sayfasında girin
+            </DialogDescription>
+          </DialogHeader>
+          
+          {paytrToken && (
+            <PaytrIframe
+              token={paytrToken}
+              containerId="paytr-iframe-container-sales"
+              onError={(error) => {
+                alert(error.message || 'Ödeme formu yüklenirken bir hata oluştu');
+              }}
+              onLoad={() => {
+                console.log('PayTR iframe yüklendi');
+              }}
+            />
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsPaytrModalOpen(false);
+              setPaytrToken(null);
+              fetchData();
+            }}>
+              Kapat
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

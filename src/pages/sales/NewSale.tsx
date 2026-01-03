@@ -20,13 +20,15 @@ import { validateTCKN, validateVKN } from '@/utils/validators';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Customer, Package, CarBrand, CarModel, MotorBrand, MotorModel, Sale, Agency } from '@/types';
 import { PaymentType, UserRole } from '@/types';
+import PaytrIframe from '@/components/payment/PaytrIframe';
+import { paymentService } from '@/services/apiService';
 import { 
   User, Car, CreditCard, Wallet, Package as PackageIcon,
   Search, CheckCircle, AlertCircle, History, Shield, Building2, Globe,
   Download, ExternalLink, ArrowRight, Upload, Image as ImageIcon, X, Loader2
 } from 'lucide-react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 
 // Kullanım Tarzları
@@ -68,7 +70,9 @@ export default function NewSale() {
   const [motorModels, setMotorModels] = useState<MotorModel[]>([]);
   const [modelSearchQuery, setModelSearchQuery] = useState(''); // Model arama sorgusu
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentType>(PaymentType.IYZICO);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentType>(PaymentType.PAYTR);
+  const [paytrToken, setPaytrToken] = useState<string | null>(null);
+  const [isPaytrModalOpen, setIsPaytrModalOpen] = useState(false);
   const [agreements, setAgreements] = useState({ kvkk: false, contract: false });
   const [currentAgency, setCurrentAgency] = useState<Agency | null>(null);
   
@@ -723,15 +727,25 @@ export default function NewSale() {
         // Ödeme bilgileri
         payment: {
           type: paymentMethod,
-          cardDetails: paymentMethod === PaymentType.IYZICO ? {
-          cardHolderName: cardForm.card_holder,
-          cardNumber: cardForm.card_number,
-          expireMonth: cardForm.expire_month,
-          expireYear: cardForm.expire_year,
-          cvc: cardForm.cvv,
-          } : undefined,
+          // PayTR için cardDetails gerekmez, iframe'de ödeme yapılacak
+          cardDetails: undefined,
         },
         });
+
+      // PayTR ödeme yöntemi seçildiyse token al ve iframe göster
+      if (paymentMethod === PaymentType.PAYTR) {
+        try {
+          const tokenResult = await paymentService.getPaytrToken(sale.id, {
+            merchant_ok_url: `${window.location.origin}/payment/success`,
+            merchant_fail_url: `${window.location.origin}/payment/fail`,
+          });
+          setPaytrToken(tokenResult.token);
+          setIsPaytrModalOpen(true);
+        } catch (error: any) {
+          console.error('PayTR token alma hatası:', error);
+          toast.error('PayTR token alınamadı. Satış oluşturuldu ancak ödeme başlatılamadı.');
+        }
+      }
 
       // Başarı modalini aç
       setSuccessModal({ open: true, saleId: sale.id });
@@ -1345,20 +1359,20 @@ export default function NewSale() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod(PaymentType.IYZICO)}
+                  onClick={() => setPaymentMethod(PaymentType.PAYTR)}
                   className={`p-4 rounded-lg border-2 transition-all ${
-                    paymentMethod === PaymentType.IYZICO
+                    paymentMethod === PaymentType.PAYTR
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <CreditCard className="h-6 w-6" />
-                    {paymentMethod === PaymentType.IYZICO && (
+                    {paymentMethod === PaymentType.PAYTR && (
                       <CheckCircle className="h-5 w-5 text-primary" />
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground text-left">Kredi Kartı</p>
+                  <p className="text-xs text-muted-foreground text-left">Kredi Kartı (PayTR)</p>
                 </button>
                 <button
                   type="button"
@@ -1380,55 +1394,11 @@ export default function NewSale() {
               </div>
             </div>
 
-            {/* Kart Bilgileri */}
-            {paymentMethod === PaymentType.IYZICO && (
+            {/* PayTR Bilgilendirme */}
+            {paymentMethod === PaymentType.PAYTR && (
               <div className="space-y-3 p-3 bg-muted/50 rounded-lg">
-                <div className="space-y-2">
-                  <Label className="text-sm">Kart Sahibi</Label>
-                  <Input
-                    value={cardForm.card_holder}
-                    onChange={(e) => setCardForm({ ...cardForm, card_holder: e.target.value })}
-                    placeholder="Ad Soyad"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Kart Numarası</Label>
-                  <Input
-                    value={cardForm.card_number}
-                    onChange={(e) => setCardForm({ ...cardForm, card_number: e.target.value })}
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-2">
-                    <Label className="text-sm">Ay</Label>
-                    <Input
-                      value={cardForm.expire_month}
-                      onChange={(e) => setCardForm({ ...cardForm, expire_month: e.target.value })}
-                      placeholder="MM"
-                      maxLength={2}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm">Yıl</Label>
-                    <Input
-                      value={cardForm.expire_year}
-                      onChange={(e) => setCardForm({ ...cardForm, expire_year: e.target.value })}
-                      placeholder="YY"
-                      maxLength={2}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm">CVV</Label>
-                    <Input
-                      type="password"
-                      value={cardForm.cvv}
-                      onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value })}
-                      placeholder="***"
-                      maxLength={3}
-                    />
-                  </div>
+                <div className="text-sm text-muted-foreground">
+                  PayTR güvenli ödeme sayfası üzerinden ödeme yapılacaktır. Satış oluşturulduktan sonra ödeme formu açılacaktır.
                 </div>
               </div>
             )}
@@ -1699,6 +1669,44 @@ export default function NewSale() {
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* PayTR Iframe Modal */}
+      <Dialog open={isPaytrModalOpen} onOpenChange={setIsPaytrModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              PayTR Güvenli Ödeme
+            </DialogTitle>
+            <DialogDescription>
+              Kart bilgilerinizi PayTR güvenli ödeme sayfasında girin
+            </DialogDescription>
+          </DialogHeader>
+          
+          {paytrToken && (
+            <PaytrIframe
+              token={paytrToken}
+              containerId="paytr-iframe-container-newsale"
+              onError={(error) => {
+                toast.error(error.message || 'Ödeme formu yüklenirken bir hata oluştu');
+              }}
+              onLoad={() => {
+                console.log('PayTR iframe yüklendi');
+              }}
+            />
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsPaytrModalOpen(false);
+              setPaytrToken(null);
+              navigate('/dashboard/sales');
+            }}>
+              Kapat
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

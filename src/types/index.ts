@@ -271,7 +271,7 @@ export interface RefundCalculation {
 }
 
 export enum PaymentType {
-  IYZICO = 'IYZICO',
+  PAYTR = 'PAYTR',
   BALANCE = 'BALANCE'
 }
 

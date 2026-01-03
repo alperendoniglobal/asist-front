@@ -233,7 +233,7 @@ export const userCustomerService = {
   },
 
   /**
-   * Paket satın al
+   * Paket satın alma başlat (PayTR token al)
    */
   async purchase(data: {
     package_id: string;
@@ -248,16 +248,14 @@ export const userCustomerService = {
       vehicle_type: string;
       is_foreign_plate?: boolean;
     };
-    card: {
-      cardHolderName: string;
-      cardNumber: string;
-      expireMonth: string;
-      expireYear: string;
-      cvc: string;
-    };
     terms_accepted: boolean;
+    merchant_ok_url?: string;
+    merchant_fail_url?: string;
   }): Promise<{
     success: boolean;
+    sale_id: string;
+    token: string;
+    iframe_url: string;
     policy_number: string;
     package_name: string;
     customer_name: string;

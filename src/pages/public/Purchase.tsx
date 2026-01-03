@@ -19,6 +19,7 @@ import {
 } from '@/services/publicService';
 import { useUserCustomer } from '@/contexts/UserCustomerContext';
 import { userCustomerService } from '@/services/userCustomerService';
+import PaytrIframe from '@/components/payment/PaytrIframe';
 import { 
   ArrowRight, 
   ArrowLeft,
@@ -74,15 +75,9 @@ export default function Purchase() {
     is_foreign_plate: false,
   });
 
-  const [card, setCard] = useState({
-    cardHolderName: '',
-    cardNumber: '',
-    expireMonth: '',
-    expireYear: '',
-    cvc: '',
-  });
-
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [paytrToken, setPaytrToken] = useState<string | null>(null);
+  const [iframeLoading, setIframeLoading] = useState(false);
 
   // Paket ve marka/model bilgilerini yükle
   useEffect(() => {
@@ -154,12 +149,8 @@ export default function Purchase() {
       return true;
     }
 
-    // Adım 2: Ödeme Bilgileri
+    // Adım 2: Ödeme Bilgileri (PayTR iframe gösterilecek)
     if (currentStep === 2) {
-      if (!card.cardHolderName || !card.cardNumber || !card.expireMonth || !card.expireYear || !card.cvc) {
-        toast.error('Lütfen tüm kart bilgilerini doldurun');
-        return false;
-      }
       if (!termsAccepted) {
         toast.error('Mesafeli satış sözleşmesini onaylamanız gerekmektedir');
         return false;
@@ -170,9 +161,12 @@ export default function Purchase() {
     return true;
   };
 
-  // İleri git
-  const handleNext = () => {
-    if (validateStep(step)) {
+  // İleri git - Step 1'den Step 2'ye geçerken ödeme başlat
+  const handleNext = async () => {
+    if (step === 1 && validateStep(step)) {
+      // Step 2'ye geçmeden önce PayTR token al
+      await handleInitiatePayment();
+    } else if (validateStep(step)) {
       setStep(step + 1);
     }
   };
@@ -182,16 +176,17 @@ export default function Purchase() {
     setStep(step - 1);
   };
 
-  // Satın alma işlemi - UserCustomer servisi üzerinden
-  const handleSubmit = async () => {
-    if (!validateStep(2) || !pkg || !userCustomer) return;
+  // PayTR token alma ve iframe gösterme
+  const handleInitiatePayment = async () => {
+    if (!validateStep(1) || !pkg || !userCustomer) return;
 
     setSubmitting(true);
+    setIframeLoading(true);
 
     try {
       const isMotorcycle = pkg.vehicle_type === 'Motosiklet';
 
-      // UserCustomer için satın alma verisi
+      // UserCustomer için satın alma verisi (PayTR token almak için)
       const purchaseData = {
         package_id: pkg.id,
         vehicle: {
@@ -205,26 +200,27 @@ export default function Purchase() {
           vehicle_type: pkg.vehicle_type,
           is_foreign_plate: vehicle.is_foreign_plate,
         },
-        card: {
-          cardHolderName: card.cardHolderName,
-          cardNumber: card.cardNumber.replace(/\s/g, ''),
-          expireMonth: card.expireMonth,
-          expireYear: card.expireYear,
-          cvc: card.cvc,
-        },
         terms_accepted: termsAccepted,
+        merchant_ok_url: `${window.location.origin}/payment/success`,
+        merchant_fail_url: `${window.location.origin}/payment/fail`,
       };
 
-      // UserCustomer servisi üzerinden satın alma
+      // UserCustomer servisi üzerinden PayTR token al
       const result = await userCustomerService.purchase(purchaseData);
-      setPurchaseResult(result);
-      setSuccess(true);
-      toast.success('Satın alma işlemi başarıyla tamamlandı!');
+      
+      if (result.token) {
+        setPaytrToken(result.token);
+        setStep(2); // Ödeme adımına geç
+        toast.success('Ödeme formu hazırlanıyor...');
+      } else {
+        throw new Error('PayTR token alınamadı');
+      }
     } catch (error: any) {
-      console.error('Satın alma hatası:', error);
-      toast.error(error.response?.data?.message || 'Satın alma işlemi başarısız oldu');
+      console.error('Token alma hatası:', error);
+      toast.error(error.response?.data?.message || 'Ödeme başlatılamadı');
     } finally {
       setSubmitting(false);
+      setIframeLoading(false);
     }
   };
 
@@ -589,95 +585,6 @@ export default function Purchase() {
                       </Label>
                     </div>
 
-                    <div className="flex justify-end pt-3 sm:pt-4">
-                      <Button onClick={handleNext} className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full px-6 text-sm sm:text-base">
-                        Devam Et
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Step 2: Ödeme */}
-              {step === 2 && (
-                <Card className="bg-white border-gray-200">
-                  <CardHeader className="p-4 sm:p-6">
-                    <CardTitle className="flex items-center gap-2 text-gray-900 text-base sm:text-lg">
-                      <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
-                      Ödeme Bilgileri
-                    </CardTitle>
-                    <CardDescription className="text-gray-500 text-sm">Kart bilgilerinizi güvenle girin</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 sm:p-6 pt-0 space-y-3 sm:space-y-4">
-                    <div className="space-y-1.5 sm:space-y-2">
-                      <Label htmlFor="cardHolderName" className="text-gray-700 text-sm">Kart Üzerindeki İsim *</Label>
-                      <Input
-                        id="cardHolderName"
-                        value={card.cardHolderName}
-                        onChange={(e) => setCard({ ...card, cardHolderName: e.target.value.toUpperCase() })}
-                        placeholder="AD SOYAD"
-                        className="bg-white border-gray-200 text-gray-900 h-10 sm:h-11"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5 sm:space-y-2">
-                      <Label htmlFor="cardNumber" className="text-gray-700 text-sm">Kart Numarası *</Label>
-                      <Input
-                        id="cardNumber"
-                        value={card.cardNumber}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, '').slice(0, 16);
-                          const formatted = value.replace(/(\d{4})/g, '$1 ').trim();
-                          setCard({ ...card, cardNumber: formatted });
-                        }}
-                        placeholder="1234 5678 9012 3456"
-                        maxLength={19}
-                        className="bg-white border-gray-200 text-gray-900 h-10 sm:h-11"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                      <div className="space-y-1.5 sm:space-y-2">
-                        <Label className="text-gray-700 text-sm">Ay *</Label>
-                        <Select value={card.expireMonth} onValueChange={(val) => setCard({ ...card, expireMonth: val })}>
-                          <SelectTrigger className="bg-white border-gray-200 text-gray-900 h-10 sm:h-11">
-                            <SelectValue placeholder="AA" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white">
-                            {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0')).map((month) => (
-                              <SelectItem key={month} value={month}>{month}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5 sm:space-y-2">
-                        <Label className="text-gray-700 text-sm">Yıl *</Label>
-                        <Select value={card.expireYear} onValueChange={(val) => setCard({ ...card, expireYear: val })}>
-                          <SelectTrigger className="bg-white border-gray-200 text-gray-900 h-10 sm:h-11">
-                            <SelectValue placeholder="YY" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white">
-                            {Array.from({ length: 10 }, (_, i) => (currentYear + i).toString().slice(-2)).map((year) => (
-                              <SelectItem key={year} value={year}>{year}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1.5 sm:space-y-2">
-                        <Label htmlFor="cvc" className="text-gray-700 text-sm">CVV *</Label>
-                        <Input
-                          id="cvc"
-                          type="password"
-                          value={card.cvc}
-                          onChange={(e) => setCard({ ...card, cvc: e.target.value.replace(/\D/g, '').slice(0, 4) })}
-                          placeholder="***"
-                          maxLength={4}
-                          className="bg-white border-gray-200 text-gray-900 h-10 sm:h-11"
-                        />
-                      </div>
-                    </div>
-
                     {/* Sözleşme onayı */}
                     <div className="border rounded-lg p-3 sm:p-4 bg-gray-50 mt-4 sm:mt-6">
                       <div className="flex items-start gap-3">
@@ -695,33 +602,63 @@ export default function Purchase() {
                       </div>
                     </div>
 
-                    {/* Güvenlik bildirimi */}
-                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
-                      <Shield className="h-4 w-4 text-emerald-600" />
-                      <span>Ödeme bilgileriniz 256-bit SSL ile şifrelenmektedir.</span>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row justify-between gap-3 pt-3 sm:pt-4">
-                      <Button variant="outline" onClick={handleBack} className="border-gray-200 text-gray-700 hover:bg-gray-50 rounded-full text-sm sm:text-base order-2 sm:order-1">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Geri
-                      </Button>
+                    <div className="flex justify-end pt-3 sm:pt-4">
                       <Button 
-                        onClick={handleSubmit} 
-                        disabled={submitting}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-6 text-sm sm:text-base order-1 sm:order-2"
+                        onClick={handleNext} 
+                        disabled={submitting || iframeLoading}
+                        className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full px-6 text-sm sm:text-base"
                       >
-                        {submitting ? (
+                        {submitting || iframeLoading ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            İşleniyor...
+                            Hazırlanıyor...
                           </>
                         ) : (
                           <>
-                            Ödemeyi Tamamla
-                            <Check className="h-4 w-4 ml-2" />
+                            Devam Et
+                            <ArrowRight className="h-4 w-4 ml-2" />
                           </>
                         )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Step 2: Ödeme (PayTR iframe) */}
+              {step === 2 && paytrToken && (
+                <Card className="bg-white border-gray-200">
+                  <CardHeader className="p-4 sm:p-6">
+                    <CardTitle className="flex items-center gap-2 text-gray-900 text-base sm:text-lg">
+                      <CreditCard className="h-4 w-4 sm:h-5 sm:w-5" />
+                      Güvenli Ödeme
+                    </CardTitle>
+                    <CardDescription className="text-gray-500 text-sm">Kart bilgilerinizi PayTR güvenli ödeme sayfasında girin</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-6 pt-0 space-y-4">
+                    {/* PayTR iframe */}
+                    <PaytrIframe
+                      token={paytrToken}
+                      containerId="paytr-iframe-container"
+                      onLoading={setIframeLoading}
+                      onError={(error) => {
+                        toast.error(error.message || 'Ödeme formu yüklenirken bir hata oluştu');
+                      }}
+                      onLoad={() => {
+                        toast.success('Ödeme formu hazır');
+                      }}
+                    />
+
+                    {/* Güvenlik bildirimi */}
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                      <Shield className="h-4 w-4 text-emerald-600" />
+                      <span>Ödeme bilgileriniz PayTR tarafından 256-bit SSL ile şifrelenmektedir.</span>
+                    </div>
+
+                    <div className="flex justify-start pt-3 sm:pt-4">
+                      <Button variant="outline" onClick={handleBack} className="border-gray-200 text-gray-700 hover:bg-gray-50 rounded-full text-sm sm:text-base">
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Geri
                       </Button>
                     </div>
                   </CardContent>

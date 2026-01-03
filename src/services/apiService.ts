@@ -320,10 +320,21 @@ export const saleService = {
 export const paymentService = {
   ...createCRUDService<Payment>('/payments'),
 
-  async processIyzico(saleId: string, cardDetails: any): Promise<Payment> {
-    const response = await apiClient.post<ApiResponse<Payment>>('/payments/iyzico', {
-      sale_id: saleId,  // Backend sale_id bekliyor
-      ...cardDetails
+  /**
+   * PayTR token alma (iFrame için)
+   * @param saleId - Satış ID
+   * @param options - PayTR token alma seçenekleri
+   * @returns PayTR token ve iframe URL
+   */
+  async getPaytrToken(saleId: string, options?: {
+    merchant_ok_url?: string;
+    merchant_fail_url?: string;
+    no_installment?: number;
+    max_installment?: number;
+  }): Promise<{ token: string; iframe_url: string }> {
+    const response = await apiClient.post<ApiResponse<{ token: string; iframe_url: string }>>('/payments/paytr/token', {
+      sale_id: saleId,
+      ...options
     });
     return response.data.data;
   },
