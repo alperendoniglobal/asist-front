@@ -24,6 +24,8 @@ import {
   Plus, Search, Eye, Users as UsersIcon, 
   Shield, RefreshCcw, Power, UserCheck
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { validatePassword } from '@/utils/validators';
 
 // Sayfa basina gosterilecek kayit sayisi
 const ITEMS_PER_PAGE = 10;
@@ -103,6 +105,15 @@ export default function Users() {
 
   // Kullanici olustur
   const handleCreate = async () => {
+    // Şifre validasyonu
+    if (formData.password) {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        toast.error(passwordValidation.errors.join(', '));
+        return;
+      }
+    }
+    
     try {
       // SUPPORT rolü global bir rol olduğu için agency_id ve branch_id boş olmalı
       const createData = {
@@ -449,13 +460,34 @@ export default function Users() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Sifre *</Label>
+              <Label htmlFor="password">Şifre *</Label>
               <Input
                 id="password"
                 type="password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className={formData.password ? (validatePassword(formData.password).isValid ? '' : 'border-red-500') : ''}
               />
+              {formData.password && (
+                <div className="bg-gray-50 rounded-lg p-2 space-y-1 text-xs">
+                  <p className="font-semibold text-gray-700 mb-1">Şifre Gereksinimleri:</p>
+                  <div className={`flex items-center gap-1.5 ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                    {formData.password.length >= 8 ? '✓' : '✗'} En az 8 karakter
+                  </div>
+                  <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                    {/[A-Z]/.test(formData.password) ? '✓' : '✗'} Büyük harf (A-Z)
+                  </div>
+                  <div className={`flex items-center gap-1.5 ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                    {/[a-z]/.test(formData.password) ? '✓' : '✗'} Küçük harf (a-z)
+                  </div>
+                  <div className={`flex items-center gap-1.5 ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                    {/[0-9]/.test(formData.password) ? '✓' : '✗'} Rakam (0-9)
+                  </div>
+                  <div className={`flex items-center gap-1.5 ${/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                    {/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(formData.password) ? '✓' : '✗'} Özel karakter
+                  </div>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Rol *</Label>
@@ -536,7 +568,12 @@ export default function Users() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Iptal</Button>
-            <Button onClick={handleCreate}>Kaydet</Button>
+            <Button 
+              onClick={handleCreate}
+              disabled={!formData.password || !validatePassword(formData.password).isValid}
+            >
+              Kaydet
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

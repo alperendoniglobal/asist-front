@@ -184,3 +184,92 @@ export function validateVKN(vkn: string | number): boolean {
   return true;
 }
 
+/**
+ * Şifre gücü kontrolü sonuçları
+ */
+export interface PasswordValidationResult {
+  isValid: boolean;
+  errors: string[];
+  strength: 'weak' | 'medium' | 'strong';
+}
+
+/**
+ * Güçlü şifre validasyonu
+ * Şifre kuralları:
+ * - En az 8 karakter
+ * - En az bir büyük harf (A-Z)
+ * - En az bir küçük harf (a-z)
+ * - En az bir rakam (0-9)
+ * - En az bir özel karakter (!@#$%^&*()_+-=[]{}|;:,.<>?)
+ * 
+ * @param password - Kontrol edilecek şifre
+ * @returns Şifre validasyon sonucu
+ */
+export function validatePassword(password: string): PasswordValidationResult {
+  const errors: string[] = [];
+  
+  if (!password || password.length === 0) {
+    return {
+      isValid: false,
+      errors: ['Şifre boş olamaz'],
+      strength: 'weak'
+    };
+  }
+
+  // En az 8 karakter
+  if (password.length < 8) {
+    errors.push('Şifre en az 8 karakter olmalıdır');
+  }
+
+  // En az bir büyük harf
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Şifre en az bir büyük harf içermelidir (A-Z)');
+  }
+
+  // En az bir küçük harf
+  if (!/[a-z]/.test(password)) {
+    errors.push('Şifre en az bir küçük harf içermelidir (a-z)');
+  }
+
+  // En az bir rakam
+  if (!/[0-9]/.test(password)) {
+    errors.push('Şifre en az bir rakam içermelidir (0-9)');
+  }
+
+  // En az bir özel karakter
+  if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) {
+    errors.push('Şifre en az bir özel karakter içermelidir (!@#$%^&*()_+-=[]{}|;:,.<>?)');
+  }
+
+  // Şifre gücü hesaplama
+  let strength: 'weak' | 'medium' | 'strong' = 'weak';
+  if (errors.length === 0) {
+    // Tüm kurallar sağlanıyorsa gücü hesapla
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password);
+    const length = password.length;
+    
+    let score = 0;
+    if (hasUpper) score++;
+    if (hasLower) score++;
+    if (hasNumber) score++;
+    if (hasSpecial) score++;
+    if (length >= 12) score++;
+    if (length >= 16) score++;
+    
+    if (score >= 5) {
+      strength = 'strong';
+    } else if (score >= 3) {
+      strength = 'medium';
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    strength
+  };
+}
+

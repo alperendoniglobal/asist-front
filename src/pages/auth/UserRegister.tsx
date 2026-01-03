@@ -9,9 +9,10 @@ import { useUserCustomer } from '@/contexts/UserCustomerContext';
 import { 
   Mail, Lock, User, Phone, MapPin, FileText,
   AlertTriangle, UserPlus, ArrowLeft, Shield,
-  CheckCircle, Package
+  CheckCircle, Package, XCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { validatePassword } from '@/utils/validators';
 
 /**
  * UserRegister Page
@@ -34,6 +35,7 @@ export default function UserRegister() {
     district: '',
     address: '',
   });
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   // TC Kimlik No validasyonu
   const validateTcNumber = (tc: string): boolean => {
@@ -68,13 +70,17 @@ export default function UserRegister() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Şifre en az 6 karakter olmalıdır');
+    // Şifre validasyonu
+    const passwordValidation = validatePassword(formData.password);
+    if (!passwordValidation.isValid) {
+      setPasswordErrors(passwordValidation.errors);
+      setError(passwordValidation.errors.join(', '));
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Şifreler eşleşmiyor');
+      setPasswordErrors(['Şifreler eşleşmiyor']);
       return;
     }
 
@@ -106,6 +112,17 @@ export default function UserRegister() {
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (error) setError(null);
+    
+    // Şifre değiştiğinde validasyon yap
+    if (field === 'password') {
+      const validation = validatePassword(value);
+      setPasswordErrors(validation.errors);
+    } else if (field === 'confirmPassword') {
+      // Şifre tekrarı değiştiğinde hataları temizle
+      if (value === formData.password) {
+        setPasswordErrors([]);
+      }
+    }
   };
 
   // Özellik listesi
@@ -286,33 +303,93 @@ export default function UserRegister() {
               </div>
 
               {/* Şifre */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="password">Şifre *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Şifre *</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={(e) => handleChange('password', e.target.value)}
+                        className={`pl-10 ${passwordErrors.length > 0 ? 'border-red-500' : ''}`}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Şifre Tekrar *</Label>
                     <Input
-                      id="password"
+                      id="confirmPassword"
                       type="password"
                       placeholder="••••••••"
-                      value={formData.password}
-                      onChange={(e) => handleChange('password', e.target.value)}
-                      className="pl-10"
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                      className={formData.password !== formData.confirmPassword && formData.confirmPassword ? 'border-red-500' : ''}
                       required
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Şifre Tekrar *</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                    required
-                  />
-                </div>
+                
+                {/* Şifre gereksinimleri */}
+                {formData.password && (
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-1.5">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">Şifre Gereksinimleri:</p>
+                    <div className="space-y-1">
+                      <div className={`flex items-center gap-2 text-xs ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                        {formData.password.length >= 8 ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : (
+                          <XCircle className="h-3 w-3" />
+                        )}
+                        <span>En az 8 karakter</span>
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[A-Z]/.test(formData.password) ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : (
+                          <XCircle className="h-3 w-3" />
+                        )}
+                        <span>En az bir büyük harf (A-Z)</span>
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[a-z]/.test(formData.password) ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : (
+                          <XCircle className="h-3 w-3" />
+                        )}
+                        <span>En az bir küçük harf (a-z)</span>
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs ${/[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[0-9]/.test(formData.password) ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : (
+                          <XCircle className="h-3 w-3" />
+                        )}
+                        <span>En az bir rakam (0-9)</span>
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs ${/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(formData.password) ? (
+                          <CheckCircle className="h-3 w-3" />
+                        ) : (
+                          <XCircle className="h-3 w-3" />
+                        )}
+                        <span>En az bir özel karakter (!@#$%^&*...)</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Şifre eşleşme kontrolü */}
+                {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertTriangle className="h-3 w-3" />
+                    <AlertDescription className="text-xs">Şifreler eşleşmiyor</AlertDescription>
+                  </Alert>
+                )}
               </div>
 
               {/* İl/İlçe - Opsiyonel */}
@@ -347,7 +424,7 @@ export default function UserRegister() {
               <Button 
                 type="submit" 
                 className="w-full h-11 bg-[#019242] hover:bg-[#017A35]" 
-                disabled={loading}
+                disabled={loading || !validatePassword(formData.password).isValid || formData.password !== formData.confirmPassword}
               >
                 {loading ? (
                   <div className="flex items-center gap-2">

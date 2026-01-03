@@ -29,6 +29,7 @@ import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 // Şehir ve ilçe verilerini import et
 import cityData from '@/data/city.json';
+import { validatePassword } from '@/utils/validators';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
@@ -77,6 +78,7 @@ export default function UserDashboard() {
     confirmPassword: '',
   });
   const [changingPassword, setChangingPassword] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
   // Auth kontrolü
   useEffect(() => {
@@ -147,13 +149,17 @@ export default function UserDashboard() {
 
   // Şifre değiştir
   const handleChangePassword = async () => {
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('Yeni şifreler eşleşmiyor');
+    // Şifre validasyonu
+    const passwordValidation = validatePassword(passwordForm.newPassword);
+    if (!passwordValidation.isValid) {
+      setPasswordErrors(passwordValidation.errors);
+      toast.error(passwordValidation.errors.join(', '));
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      toast.error('Şifre en az 6 karakter olmalıdır');
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordErrors(['Şifreler eşleşmiyor']);
+      toast.error('Yeni şifreler eşleşmiyor');
       return;
     }
 
@@ -166,6 +172,7 @@ export default function UserDashboard() {
       toast.success('Şifre değiştirildi');
       setPasswordDialog(false);
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      setPasswordErrors([]);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Şifre değiştirilemedi');
     } finally {
@@ -366,9 +373,33 @@ export default function UserDashboard() {
                                 <Input
                                   type="password"
                                   value={passwordForm.newPassword}
-                                  onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                                  className="bg-white border-gray-300"
+                                  onChange={(e) => {
+                                    setPasswordForm({ ...passwordForm, newPassword: e.target.value });
+                                    const validation = validatePassword(e.target.value);
+                                    setPasswordErrors(validation.errors);
+                                  }}
+                                  className={`bg-white ${passwordErrors.length > 0 ? 'border-red-500' : 'border-gray-300'}`}
                                 />
+                                {passwordForm.newPassword && (
+                                  <div className="bg-gray-50 rounded-lg p-2 space-y-1 text-xs">
+                                    <p className="font-semibold text-gray-700 mb-1">Şifre Gereksinimleri:</p>
+                                    <div className={`flex items-center gap-1.5 ${passwordForm.newPassword.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                                      {passwordForm.newPassword.length >= 8 ? '✓' : '✗'} En az 8 karakter
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(passwordForm.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                                      {/[A-Z]/.test(passwordForm.newPassword) ? '✓' : '✗'} Büyük harf (A-Z)
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 ${/[a-z]/.test(passwordForm.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                                      {/[a-z]/.test(passwordForm.newPassword) ? '✓' : '✗'} Küçük harf (a-z)
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 ${/[0-9]/.test(passwordForm.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                                      {/[0-9]/.test(passwordForm.newPassword) ? '✓' : '✗'} Rakam (0-9)
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 ${/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(passwordForm.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                                      {/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(passwordForm.newPassword) ? '✓' : '✗'} Özel karakter
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                               <div className="space-y-2">
                                 <Label className="text-gray-700">Yeni Şifre (Tekrar)</Label>
@@ -376,8 +407,11 @@ export default function UserDashboard() {
                                   type="password"
                                   value={passwordForm.confirmPassword}
                                   onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                                  className="bg-white border-gray-300"
+                                  className={`bg-white ${passwordForm.newPassword !== passwordForm.confirmPassword && passwordForm.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
                                 />
+                                {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
+                                  <p className="text-xs text-red-500">Şifreler eşleşmiyor</p>
+                                )}
                               </div>
                             </div>
                             <DialogFooter>
@@ -390,7 +424,7 @@ export default function UserDashboard() {
                               </Button>
                               <Button 
                                 onClick={handleChangePassword} 
-                                disabled={changingPassword}
+                                disabled={changingPassword || !validatePassword(passwordForm.newPassword).isValid || passwordForm.newPassword !== passwordForm.confirmPassword || !passwordForm.oldPassword}
                                 className="bg-blue-600 hover:bg-blue-700 text-white"
                               >
                                 {changingPassword ? 'Değiştiriliyor...' : 'Değiştir'}

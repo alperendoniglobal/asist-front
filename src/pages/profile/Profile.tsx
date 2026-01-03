@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { authService } from '@/services/authService';
 import { UserRole } from '@/types';
+import { validatePassword } from '@/utils/validators';
 import { 
   User, Mail, Phone, Building2, GitBranch, Shield, 
   Calendar, Lock, Save, CheckCircle, AlertTriangle
@@ -27,13 +28,15 @@ export default function Profile() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setMessage({ type: 'error', text: 'Yeni şifreler eşleşmiyor!' });
+    // Şifre validasyonu
+    const passwordValidation = validatePassword(passwordData.newPassword);
+    if (!passwordValidation.isValid) {
+      setMessage({ type: 'error', text: passwordValidation.errors.join(', ') });
       return;
     }
 
-    if (passwordData.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'Şifre en az 6 karakter olmalıdır!' });
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setMessage({ type: 'error', text: 'Yeni şifreler eşleşmiyor!' });
       return;
     }
 
@@ -273,8 +276,28 @@ export default function Profile() {
                     value={passwordData.newPassword}
                     onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                     placeholder="••••••••"
+                    className={passwordData.newPassword ? (validatePassword(passwordData.newPassword).isValid ? '' : 'border-red-500') : ''}
                   />
-                  <p className="text-xs text-muted-foreground">En az 6 karakter</p>
+                  {passwordData.newPassword && (
+                    <div className="bg-gray-50 rounded-lg p-2 space-y-1 text-xs">
+                      <p className="font-semibold text-gray-700 mb-1">Şifre Gereksinimleri:</p>
+                      <div className={`flex items-center gap-1.5 ${passwordData.newPassword.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                        {passwordData.newPassword.length >= 8 ? '✓' : '✗'} En az 8 karakter
+                      </div>
+                      <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(passwordData.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[A-Z]/.test(passwordData.newPassword) ? '✓' : '✗'} Büyük harf (A-Z)
+                      </div>
+                      <div className={`flex items-center gap-1.5 ${/[a-z]/.test(passwordData.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[a-z]/.test(passwordData.newPassword) ? '✓' : '✗'} Küçük harf (a-z)
+                      </div>
+                      <div className={`flex items-center gap-1.5 ${/[0-9]/.test(passwordData.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[0-9]/.test(passwordData.newPassword) ? '✓' : '✗'} Rakam (0-9)
+                      </div>
+                      <div className={`flex items-center gap-1.5 ${/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(passwordData.newPassword) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(passwordData.newPassword) ? '✓' : '✗'} Özel karakter
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Yeni Şifre (Tekrar)</Label>
@@ -288,7 +311,7 @@ export default function Profile() {
                 </div>
                 <Button 
                   onClick={handleChangePassword} 
-                  disabled={loading || !passwordData.currentPassword || !passwordData.newPassword}
+                  disabled={loading || !passwordData.currentPassword || !validatePassword(passwordData.newPassword).isValid || passwordData.newPassword !== passwordData.confirmPassword}
                   className="gap-2"
                 >
                   {loading ? (
