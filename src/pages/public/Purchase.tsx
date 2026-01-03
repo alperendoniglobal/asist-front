@@ -324,10 +324,21 @@ export default function Purchase() {
               <span className="font-bold text-sm sm:text-base hidden sm:block">Çözüm Asistan</span>
             </Link>
             
-            {/* Desktop Contact */}
-            <div className="hidden md:flex items-center gap-2">
-              <Phone className="h-4 w-4 text-blue-200" />
-              <span className="text-blue-100 text-sm">+90 (850) 304 54 40</span>
+            {/* Desktop Contact & User Menu */}
+            <div className="hidden md:flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-blue-200" />
+                <span className="text-blue-100 text-sm">+90 (850) 304 54 40</span>
+              </div>
+              {/* Giriş yapmış kullanıcı için dashboard linki */}
+              {isAuthenticated && userCustomer && (
+                <Link to="/user/dashboard">
+                  <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+                    <User className="h-4 w-4 mr-2" />
+                    {userCustomer.name}
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -638,6 +649,22 @@ export default function Purchase() {
                           )}
                         </ul>
                       </div>
+
+                      {/* Fiyat - Giriş yapmış kullanıcılar için göster */}
+                      {isAuthenticated && pkg.price && (
+                        <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4 pb-3 sm:pb-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs sm:text-sm text-gray-600">Toplam Tutar</span>
+                            <span className="text-xl sm:text-2xl font-bold text-[#0066CC]">
+                              {new Intl.NumberFormat('tr-TR', {
+                                style: 'currency',
+                                currency: 'TRY',
+                                minimumFractionDigits: 2
+                              }).format(Number(pkg.price))}
+                            </span>
+                          </div>
+                        </div>
+                      )}
 
                       <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4 space-y-1.5 sm:space-y-2">
                         <div className="flex justify-between text-xs sm:text-sm">

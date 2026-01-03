@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { contentService, type PageContent, type LandingPageContent } from '@/services/contentService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowRight, Phone, Building2, Target, Users, Award, Zap } from 'lucide-react';
+import { useUserCustomer } from '@/contexts/UserCustomerContext';
+import { Loader2, ArrowRight, Phone, Building2, Target, Users, Award, Zap, User } from 'lucide-react';
 
 /**
  * About Page
@@ -12,6 +13,7 @@ import { Loader2, ArrowRight, Phone, Building2, Target, Users, Award, Zap } from
  */
 export default function AboutPage() {
   const navigate = useNavigate();
+  const { userCustomer, isAuthenticated } = useUserCustomer();
   const [pageContent, setPageContent] = useState<PageContent | null>(null);
   const [landingContent, setLandingContent] = useState<LandingPageContent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,13 +111,24 @@ export default function AboutPage() {
                 />
               </div>
             </Link>
-            <Link to="/login">
-              <Button size="sm" className="sm:size-default gap-1.5 sm:gap-2 bg-white text-slate-900 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2">
-                <span className="hidden sm:inline">Giriş Yap</span>
-                <span className="sm:hidden">Giriş</span>
-                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
-              </Button>
-            </Link>
+            {/* Giriş yapmış kullanıcı için dashboard linki, yoksa giriş butonu */}
+            {isAuthenticated && userCustomer ? (
+              <Link to="/user/dashboard">
+                <Button size="sm" variant="outline" className="sm:size-default gap-1.5 sm:gap-2 border-white/20 text-white hover:bg-white/10 shadow-lg hover:shadow-xl transition-all text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2">
+                  <User className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">{userCustomer.name}</span>
+                  <span className="sm:hidden">Profil</span>
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/login">
+                <Button size="sm" className="sm:size-default gap-1.5 sm:gap-2 bg-white text-slate-900 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all text-sm sm:text-base px-3 sm:px-4 py-1.5 sm:py-2">
+                  <span className="hidden sm:inline">Giriş Yap</span>
+                  <span className="sm:hidden">Giriş</span>
+                  <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+              </Link>
+            )}
           </div>
         </header>
 

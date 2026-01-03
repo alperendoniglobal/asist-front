@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { publicService, type PublicPackage } from '@/services/publicService';
+import { useUserCustomer } from '@/contexts/UserCustomerContext';
 import { 
   ArrowRight, 
   ArrowLeft,
@@ -22,7 +23,8 @@ import {
   Zap,
   Star,
   Menu,
-  X
+  X,
+  User
 } from 'lucide-react';
 
 /**
@@ -31,6 +33,7 @@ import {
  * Tüm aktif paketleri fiyatsız olarak görüntüler
  */
 export default function PublicPackages() {
+  const { userCustomer, isAuthenticated } = useUserCustomer();
   const [packages, setPackages] = useState<PublicPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>('all');
@@ -144,12 +147,22 @@ export default function PublicPackages() {
               <Link to="/bayilik-basvurusu" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
                 Bayilik Başvurusu
               </Link>
-              <Link to="/login">
-                <Button size="sm" className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full">
-                  Giriş Yap
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
+              {/* Giriş yapmış kullanıcı için dashboard linki, yoksa giriş butonu */}
+              {isAuthenticated && userCustomer ? (
+                <Link to="/user/dashboard">
+                  <Button size="sm" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full">
+                    <User className="h-4 w-4 mr-2" />
+                    {userCustomer.name}
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/login">
+                  <Button size="sm" className="bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full">
+                    Giriş Yap
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -180,11 +193,21 @@ export default function PublicPackages() {
                 >
                   Bayilik Başvurusu
                 </Link>
-                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full mt-2">
-                    Giriş Yap
-                  </Button>
-                </Link>
+                {/* Giriş yapmış kullanıcı için dashboard linki, yoksa giriş butonu */}
+                {isAuthenticated && userCustomer ? (
+                  <Link to="/user/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full mt-2">
+                      <User className="h-4 w-4 mr-2" />
+                      {userCustomer.name}
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full mt-2">
+                      Giriş Yap
+                    </Button>
+                  </Link>
+                )}
               </nav>
             </div>
           )}
@@ -362,6 +385,23 @@ export default function PublicPackages() {
                             )}
                           </ul>
                         </div>
+
+                        {/* Fiyat - Giriş yapmış kullanıcılar için göster */}
+                        {pkg.price && (
+                          <div className="mb-4 sm:mb-5 pb-4 sm:pb-5 border-b border-gray-100">
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-xs sm:text-sm text-gray-500">Fiyat</span>
+                              <span className="text-2xl sm:text-3xl font-bold text-gray-900">
+                                {new Intl.NumberFormat('tr-TR', {
+                                  style: 'currency',
+                                  currency: 'TRY',
+                                  minimumFractionDigits: 2
+                                }).format(Number(pkg.price))}
+                              </span>
+                            </div>
+                            <p className="text-[10px] sm:text-xs text-gray-400 mt-1">KDV dahil</p>
+                          </div>
+                        )}
 
                         {/* CTA */}
                         <Link to={`/purchase/${pkg.id}`} className="block">

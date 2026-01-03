@@ -37,13 +37,37 @@ export interface DealerApplicationLocal {
 // API base URL - public endpoint'ler için
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://cozum.net/api/v1';
 
-// Public API client (authentication gerektirmez)
+// Public API client (authentication gerektirmez, ama giriş yapmış kullanıcılar için token gönderilir)
 const publicClient = axios.create({
   baseURL: `${API_BASE_URL}/public`,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Token interceptor for public requests - giriş yapmış kullanıcılar için fiyat gösterimi için
+publicClient.interceptors.request.use(
+  (config) => {
+    // UserCustomer token'ını kontrol et (userCustomerAccessToken)
+    const userCustomerToken = localStorage.getItem('userCustomerAccessToken');
+    if (userCustomerToken) {
+      config.headers.Authorization = `Bearer ${userCustomerToken}`;
+      // Debug için (production'da kaldırılabilir)
+      if (import.meta.env.DEV) {
+        console.log('[publicClient] Token eklendi:', userCustomerToken.substring(0, 20) + '...');
+      }
+    } else {
+      // Debug için (production'da kaldırılabilir)
+      if (import.meta.env.DEV) {
+        console.log('[publicClient] Token bulunamadı');
+      }
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Authenticated API client (dealer applications için)
 const apiClient = axios.create({
@@ -64,13 +88,14 @@ apiClient.interceptors.request.use((config) => {
 
 // ===== TİP TANIMLAMALARI =====
 
-// Fiyatsız paket (public görünüm için)
+// Public paket (giriş yapmış kullanıcılar için fiyat gösterilir)
 export interface PublicPackage {
   id: string;
   name: string;
   description?: string;
   vehicle_type: string;
   max_vehicle_age: number;
+  price?: number; // Giriş yapmış kullanıcılar için fiyat gösterilir
   covers: PublicPackageCover[];
 }
 
@@ -185,18 +210,36 @@ export const publicService = {
   // ===== PAKETLER =====
 
   /**
-   * Tüm aktif paketleri fiyatsız olarak getir
+   * Tüm aktif paketleri getir
+   * Giriş yapmış kullanıcılar için fiyat dahil
    */
   async getPackages(): Promise<PublicPackage[]> {
-    const response = await publicClient.get('/packages');
+    // Her istekte token'ı kontrol et ve ekle (interceptor'a ek olarak)
+    const token = localStorage.getItem('userCustomerAccessToken');
+    const config = token ? {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    } : {};
+    
+    const response = await publicClient.get('/packages', config);
     return response.data.data;
   },
 
   /**
-   * Tek bir paketi fiyatsız olarak getir
+   * Tek bir paketi getir
+   * Giriş yapmış kullanıcılar için fiyat dahil
    */
   async getPackageById(id: string): Promise<PublicPackage> {
-    const response = await publicClient.get(`/packages/${id}`);
+    // Her istekte token'ı kontrol et ve ekle (interceptor'a ek olarak)
+    const token = localStorage.getItem('userCustomerAccessToken');
+    const config = token ? {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    } : {};
+    
+    const response = await publicClient.get(`/packages/${id}`, config);
     return response.data.data;
   },
 

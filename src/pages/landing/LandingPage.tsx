@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { contentService, type LandingPageContent, type LandingPageStat } from '@/services/contentService';
 import { publicService, type PublicPackage } from '@/services/publicService';
+import { useUserCustomer } from '@/contexts/UserCustomerContext';
 import * as LucideIcons from 'lucide-react';
 import {
   Users,
@@ -32,7 +33,8 @@ import {
   Award,
   Headphones,
   Send,
-  Heart
+  Heart,
+  User
 } from 'lucide-react';
 
 /**
@@ -41,6 +43,7 @@ import {
  * Yerel görseller kullanılır
  */
 export default function LandingPage() {
+  const { userCustomer, isAuthenticated } = useUserCustomer();
   // Backend'den çekilen veriler
   const [landingContent, setLandingContent] = useState<LandingPageContent | null>(null);
   const [stats, setStats] = useState<LandingPageStat[]>([]);
@@ -247,11 +250,21 @@ export default function LandingPage() {
 
               {/* Sağ: CTA Buttons */}
               <div className="flex items-center justify-end gap-3">
-                <Link to="/login" className="hidden sm:block">
-                  <Button className="bg-[#0066CC] hover:bg-[#0052A3] text-white px-6 rounded-full shadow-lg hover:shadow-xl transition-all">
-                    Giriş Yap
-                  </Button>
-                </Link>
+                {/* Giriş yapmış kullanıcı için dashboard linki, yoksa giriş butonu */}
+                {isAuthenticated && userCustomer ? (
+                  <Link to="/user/dashboard" className="hidden sm:block">
+                    <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 px-6 rounded-full shadow-lg hover:shadow-xl transition-all">
+                      <User className="h-4 w-4 mr-2" />
+                      {userCustomer.name}
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/login" className="hidden sm:block">
+                    <Button className="bg-[#0066CC] hover:bg-[#0052A3] text-white px-6 rounded-full shadow-lg hover:shadow-xl transition-all">
+                      Giriş Yap
+                    </Button>
+                  </Link>
+                )}
                 
                 {/* Mobile Menu Button */}
                 <button 
@@ -318,11 +331,21 @@ export default function LandingPage() {
                     Gizlilik Politikası
                   </Link>
                   <div className="pt-2 px-4">
-                    <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full">
-                        Giriş Yap
-                      </Button>
-                    </Link>
+                    {/* Giriş yapmış kullanıcı için dashboard linki, yoksa giriş butonu */}
+                    {isAuthenticated && userCustomer ? (
+                      <Link to="/user/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full">
+                          <User className="h-4 w-4 mr-2" />
+                          {userCustomer.name}
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button className="w-full bg-[#0066CC] hover:bg-[#0052A3] text-white rounded-full">
+                          Giriş Yap
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </nav>
                             </div>
