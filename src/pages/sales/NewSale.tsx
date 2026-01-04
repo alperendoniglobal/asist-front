@@ -726,20 +726,26 @@ export default function NewSale() {
       // PayTR ödeme yöntemi seçildiyse token al ve iframe göster
       if (paymentMethod === PaymentType.PAYTR) {
         try {
-          const tokenResult = await paymentService.getPaytrToken(sale.id, {
-            merchant_ok_url: `${window.location.origin}/payment/success`,
+          // PayTR için sale kaydedilmedi, sadece payment bilgileri döndü
+          const tempMerchantOid = (sale as any).temp_merchant_oid || sale.id;
+          
+          // temp_merchant_oid'yi localStorage'a kaydet (PaymentSuccess sayfasında kullanmak için)
+          localStorage.setItem('last_paytr_merchant_oid', tempMerchantOid);
+          
+          const tokenResult = await paymentService.getPaytrToken(tempMerchantOid, {
+            merchant_ok_url: `${window.location.origin}/payment/success?merchant_oid=${tempMerchantOid}`,
             merchant_fail_url: `${window.location.origin}/payment/fail`,
           });
           setPaytrToken(tokenResult.token);
           setIsPaytrModalOpen(true);
         } catch (error: any) {
           console.error('PayTR token alma hatası:', error);
-          toast.error('PayTR token alınamadı. Satış oluşturuldu ancak ödeme başlatılamadı.');
+          toast.error('PayTR token alınamadı. Lütfen tekrar deneyin.');
         }
+      } else {
+        // Bakiye ödemesi için başarı modalini aç
+        setSuccessModal({ open: true, saleId: sale.id });
       }
-
-      // Başarı modalini aç
-      setSuccessModal({ open: true, saleId: sale.id });
     } catch (error: any) {
       console.error('Satış oluşturulurken hata:', error);
       // Hata mesajını göster - transaction sayesinde hiçbir kayıt oluşturulmadı

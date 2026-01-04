@@ -48,6 +48,10 @@ export const authService = {
     await apiClient.post('/auth/change-password', { oldPassword, newPassword });
   },
 
+  async forgotPassword(phone: string): Promise<void> {
+    await apiClient.post('/auth/forgot-password', { phone });
+  },
+
   logout() {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');

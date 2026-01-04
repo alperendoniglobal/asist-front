@@ -217,6 +217,13 @@ export const userCustomerService = {
   },
 
   /**
+   * Şifremi unuttum
+   */
+  async forgotPassword(phone: string): Promise<void> {
+    await userCustomerClient.post('/forgot-password', { phone });
+  },
+
+  /**
    * Satın alınan paketleri getir
    */
   async getPurchases(): Promise<UserCustomerPurchase[]> {

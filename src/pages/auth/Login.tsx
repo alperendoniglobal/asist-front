@@ -225,6 +225,16 @@ export default function Login() {
                     )}
                   </Button>
 
+                  {/* Şifremi unuttum linki */}
+                  <div className="text-center">
+                    <Link
+                      to="/forgot-password-user"
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Şifremi Unuttum
+                    </Link>
+                  </div>
+
                   {/* Kayıt linki */}
                   <div className="text-center text-sm text-muted-foreground pt-2">
                     Hesabınız yok mu?{' '}
@@ -284,6 +294,16 @@ export default function Login() {
                       </div>
                     )}
                   </Button>
+
+                  {/* Şifremi unuttum linki */}
+                  <div className="text-center">
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Şifremi Unuttum
+                    </Link>
+                  </div>
 
                   {/* Bayilik başvurusu linki */}
                   <div className="text-center text-sm text-muted-foreground pt-2">

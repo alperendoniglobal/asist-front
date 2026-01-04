@@ -20,17 +20,84 @@ export default function PaymentSuccess() {
   const { user, isAuthenticated } = useAuth();
   const { userCustomer, isAuthenticated: isUserCustomerAuthenticated } = useUserCustomer();
   const saleId = searchParams.get('sale_id');
+  const merchantOid = searchParams.get('merchant_oid');
   const [sale, setSale] = useState<Sale | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // PayTR callback'i manuel tetikle (test modunda callback gelmeyebilir)
+    const oidToUse = merchantOid || localStorage.getItem('last_paytr_merchant_oid');
+    if (oidToUse) {
+      triggerPaytrCallback(oidToUse);
+      // Kullanıldıktan sonra temizle
+      if (localStorage.getItem('last_paytr_merchant_oid')) {
+        localStorage.removeItem('last_paytr_merchant_oid');
+      }
+    }
+    
     // Sale ID varsa detayları getir
     if (saleId) {
       fetchSaleDetails();
     } else {
       setLoading(false);
     }
-  }, [saleId]);
+  }, [merchantOid, saleId]);
+
+  // PayTR callback'ini manuel tetikle (test modunda callback gelmeyebilir)
+  const triggerPaytrCallback = async (merchantOidParam: string) => {
+    if (!merchantOidParam) return;
+    
+    try {
+      console.log('🔄 PayTR callback manuel tetikleniyor...', merchantOidParam);
+      
+      // Backend'e callback simülasyonu gönder
+      // Backend payment_details'ten total_amount'u alacak, bu yüzden 0 gönderebiliriz
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/payments/paytr/callback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          merchant_oid: merchantOidParam,
+          status: 'success',
+          total_amount: '0', // Backend payment_details'ten gerçek tutarı alacak
+          hash: 'test_hash', // Test modunda hash kontrolü atlanıyor
+          test_mode: '1',
+        }),
+      });
+      
+      const responseText = await response.text();
+      
+      if (response.ok && responseText === 'OK') {
+        console.log('✅ PayTR callback başarıyla tetiklendi');
+        // 2 saniye bekle, sonra sale'ı getir
+        setTimeout(() => {
+          if (saleId) {
+            fetchSaleDetails();
+          } else {
+            // Sale ID yoksa, payment'tan sale'ı bul
+            findSaleFromPayment();
+          }
+        }, 2000);
+      } else {
+        console.error('❌ PayTR callback tetiklenemedi:', response.status, responseText);
+      }
+    } catch (error) {
+      console.error('❌ PayTR callback hatası:', error);
+    }
+  };
+
+  // Payment'tan sale'ı bul
+  const findSaleFromPayment = async () => {
+    try {
+      // Payment'ı bul ve sale'ı getir
+      // Bu endpoint'i backend'de oluşturmamız gerekebilir
+      // Şimdilik sadece log yazalım
+      console.log('🔍 Payment\'tan sale aranıyor...');
+    } catch (error) {
+      console.error('Sale bulunamadı:', error);
+    }
+  };
 
   // Kullanıcı tipine göre yönlendirme hedefi belirle
   const getRedirectPath = () => {

@@ -17,6 +17,8 @@ import AgencyCommissionDistribution from "./pages/agencies/AgencyCommissionDistr
 const DealerApplications = lazy(() => import("./pages/agencies/DealerApplications"))
 const UserRegister = lazy(() => import("./pages/auth/UserRegister"))
 const UserDashboard = lazy(() => import("./pages/user/UserDashboard"))
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"))
+const UserForgotPassword = lazy(() => import("./pages/auth/UserForgotPassword"))
 const ContractAcceptance = lazy(() => import("./pages/contract/ContractAcceptance"))
 const ContractManagement = lazy(() => import("./pages/admin/ContractManagement"))
 import Branches from "./pages/branches/Branches"
@@ -46,6 +48,7 @@ import Purchase from "./pages/public/Purchase"
 import DealerApplication from "./pages/public/DealerApplication"
 import PaymentSuccess from "./pages/payments/PaymentSuccess"
 import PaymentFail from "./pages/payments/PaymentFail"
+import ViewSaleContract from "./pages/pdf/ViewSaleContract"
 import { UserRole } from "./types" // Force rebuild
 import { Toaster } from "./components/ui/sonner"
 
@@ -62,6 +65,24 @@ function App() {
               
               {/* Login - Public (hem yetkili hem kullanıcı) */}
               <Route path="/login" element={<Login />} />
+              
+              {/* Şifremi Unuttum Sayfaları */}
+              <Route 
+                path="/forgot-password" 
+                element={
+                  <Suspense fallback={<div className="flex items-center justify-center h-screen">Yükleniyor...</div>}>
+                    <ForgotPassword />
+                  </Suspense>
+                } 
+              />
+              <Route 
+                path="/forgot-password-user" 
+                element={
+                  <Suspense fallback={<div className="flex items-center justify-center h-screen">Yükleniyor...</div>}>
+                    <UserForgotPassword />
+                  </Suspense>
+                } 
+              />
               
               {/* UserCustomer Routes - Bireysel kullanıcılar için */}
               <Route 
@@ -96,6 +117,9 @@ function App() {
               {/* Payment Result Pages - PayTR yönlendirmeleri için */}
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/fail" element={<PaymentFail />} />
+              
+              {/* PDF Routes - Public, authentication gerektirmez */}
+              <Route path="/pdf/sale/:id" element={<ViewSaleContract />} />
 
               {/* Sözleşme Kabul Sayfası - Auth gerekli ama sözleşme kontrolü yok */}
               <Route 
