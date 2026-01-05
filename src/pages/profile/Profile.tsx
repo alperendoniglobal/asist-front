@@ -65,9 +65,9 @@ export default function Profile() {
       case UserRole.SUPER_ADMIN:
         return 'Süper Admin';
       case UserRole.AGENCY_ADMIN:
-        return 'Acente Yöneticisi';
+        return 'Broker Yöneticisi'; // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
       case UserRole.BRANCH_ADMIN:
-        return 'Şube Yöneticisi';
+        return 'Acente Yöneticisi'; // Görüntüleme: Acente Yöneticisi (değer: BRANCH_ADMIN)
       case UserRole.BRANCH_USER:
         return 'Kullanıcı';
       default:

@@ -69,7 +69,7 @@ export default function Agencies() {
       const data = await agencyService.getAll();
       setAgencies(data);
     } catch (error) {
-      console.error('Acenteler yüklenirken hata:', error);
+      console.error('Brokerlar yüklenirken hata:', error);
     } finally {
       setLoading(false);
     }
@@ -94,10 +94,10 @@ export default function Agencies() {
       setIsCreateOpen(false);
       resetForm();
       fetchAgencies();
-      alert('Acente başarıyla oluşturuldu!');
+      alert('Broker başarıyla oluşturuldu!');
     } catch (error) {
-      console.error('Acente oluşturulurken hata:', error);
-      alert('Acente oluşturulamadı!');
+      console.error('Broker oluşturulurken hata:', error);
+      alert('Broker oluşturulamadı!');
     }
   };
 
@@ -117,22 +117,22 @@ export default function Agencies() {
       setIsEditOpen(false);
       resetForm();
       fetchAgencies();
-      alert('Acente başarıyla güncellendi!');
+      alert('Broker başarıyla güncellendi!');
     } catch (error) {
-      console.error('Acente güncellenirken hata:', error);
-      alert('Acente güncellenemedi!');
+      console.error('Broker güncellenirken hata:', error);
+      alert('Broker güncellenemedi!');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bu acenteyi silmek istediğinize emin misiniz?')) return;
+    if (!confirm('Bu broker\'ı silmek istediğinize emin misiniz?')) return;
     try {
       await agencyService.delete(id);
       fetchAgencies();
-      alert('Acente başarıyla silindi!');
+      alert('Broker başarıyla silindi!');
     } catch (error) {
-      console.error('Acente silinirken hata:', error);
-      alert('Acente silinemedi!');
+      console.error('Broker silinirken hata:', error);
+      alert('Broker silinemedi!');
     }
   };
 
@@ -238,13 +238,13 @@ export default function Agencies() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Building2 className="h-8 w-8" />
-            Acenteler
+            Brokerlar
           </h1>
-          <p className="text-muted-foreground">Tüm acenteleri görüntüleyin ve yönetin</p>
+          <p className="text-muted-foreground">Tüm brokerları görüntüleyin ve yönetin</p>
         </div>
         <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} className="gap-2">
           <Plus className="h-4 w-4" />
-          Yeni Acente
+          Yeni Broker
         </Button>
       </div>
 
@@ -254,7 +254,7 @@ export default function Agencies() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Toplam Acente</p>
+                <p className="text-sm text-muted-foreground">Toplam Broker</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <Building2 className="h-8 w-8 text-muted-foreground" />
@@ -265,7 +265,7 @@ export default function Agencies() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Aktif Acente</p>
+                <p className="text-sm text-muted-foreground">Aktif Broker</p>
                 <p className="text-2xl font-bold text-emerald-600">{stats.active}</p>
               </div>
               <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -301,14 +301,14 @@ export default function Agencies() {
       {/* ===== ARAMA ===== */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Acente Ara</CardTitle>
+          <CardTitle className="text-lg">Broker Ara</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Acente adı veya vergi numarası..."
+                placeholder="Broker adı veya vergi numarası..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -322,12 +322,12 @@ export default function Agencies() {
         </CardContent>
       </Card>
 
-      {/* ===== ACENTE LİSTESİ ===== */}
+      {/* ===== BROKER LİSTESİ ===== */}
       <Card>
         <CardHeader>
-          <CardTitle>Acente Listesi</CardTitle>
+          <CardTitle>Broker Listesi</CardTitle>
           <CardDescription>
-            Toplam {filteredAgencies.length} acente bulundu
+            Toplam {filteredAgencies.length} broker bulundu
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -338,7 +338,7 @@ export default function Agencies() {
           ) : filteredAgencies.length === 0 ? (
             <div className="text-center py-12">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Henüz acente bulunmuyor</p>
+              <p className="text-muted-foreground">Henüz broker bulunmuyor</p>
             </div>
           ) : (
             <div className="rounded-md border overflow-x-auto">
@@ -346,7 +346,7 @@ export default function Agencies() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Logo</TableHead>
-                    <TableHead>Acente Adı</TableHead>
+                    <TableHead>Broker Adı</TableHead>
                     <TableHead>Vergi No</TableHead>
                     <TableHead>Telefon</TableHead>
                     <TableHead className="text-center">Komisyon</TableHead>
@@ -412,12 +412,12 @@ export default function Agencies() {
         </CardContent>
       </Card>
 
-      {/* ===== YENİ ACENTE MODAL ===== */}
+      {/* ===== YENİ BROKER MODAL ===== */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Yeni Acente</DialogTitle>
-            <DialogDescription>Yeni acente kaydı oluşturun</DialogDescription>
+            <DialogTitle>Yeni Broker</DialogTitle>
+            <DialogDescription>Yeni broker kaydı oluşturun</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {/* İki Kolonlu Layout */}
@@ -425,12 +425,12 @@ export default function Agencies() {
               {/* Sol Kolon */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Acente Adı *</Label>
+                  <Label htmlFor="name">Broker Adı *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Örn: ABC Sigorta Acentesi"
+                    placeholder="Örn: ABC Sigorta Broker"
                   />
                 </div>
                 
@@ -475,7 +475,7 @@ export default function Agencies() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="info@acente.com"
+                      placeholder="info@broker.com"
                     />
                   </div>
                 </div>
@@ -486,7 +486,7 @@ export default function Agencies() {
                     id="address"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Acente adresi..."
+                    placeholder="Broker adresi..."
                     rows={3}
                   />
                 </div>
@@ -502,7 +502,7 @@ export default function Agencies() {
                       <div className="border rounded-lg p-4 flex items-center gap-4">
                         <img 
                           src={formData.logo} 
-                          alt="Acente logosu" 
+                          alt="Broker logosu" 
                           className="h-20 w-20 object-contain rounded border"
                         />
                         <div className="flex-1">
@@ -619,8 +619,8 @@ export default function Agencies() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Acente Düzenle</DialogTitle>
-            <DialogDescription>Acente bilgilerini güncelleyin</DialogDescription>
+            <DialogTitle>Broker Düzenle</DialogTitle>
+            <DialogDescription>Broker bilgilerini güncelleyin</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {/* İki Kolonlu Layout */}
@@ -628,7 +628,7 @@ export default function Agencies() {
               {/* Sol Kolon */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit_name">Acente Adı *</Label>
+                  <Label htmlFor="edit_name">Broker Adı *</Label>
                   <Input
                     id="edit_name"
                     value={formData.name}
@@ -700,7 +700,7 @@ export default function Agencies() {
                       <div className="border rounded-lg p-4 flex items-center gap-4">
                         <img 
                           src={formData.logo} 
-                          alt="Acente logosu" 
+                          alt="Broker logosu" 
                           className="h-20 w-20 object-contain rounded border"
                         />
                         <div className="flex-1">
@@ -821,13 +821,13 @@ export default function Agencies() {
               <Building2 className="h-6 w-6" />
               {selectedAgency?.name}
             </DialogTitle>
-            <DialogDescription>Acente detayları ve şubeleri</DialogDescription>
+            <DialogDescription>Broker detayları ve acenteleri</DialogDescription>
           </DialogHeader>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Sol Kolon - Acente Bilgileri */}
+            {/* Sol Kolon - Broker Bilgileri */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg border-b pb-2">Acente Bilgileri</h3>
+              <h3 className="font-semibold text-lg border-b pb-2">Broker Bilgileri</h3>
               
               {/* Komisyon ve Bakiye Kartları */}
               <div className="grid grid-cols-2 gap-3">
@@ -927,14 +927,14 @@ export default function Agencies() {
               </div>
             </div>
             
-            {/* Sağ Kolon - Şubeler */}
+            {/* Sağ Kolon - Acenteler */}
             <div className="space-y-4">
               <h3 className="font-semibold text-lg border-b pb-2 flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                Şubeler
+                Acenteler
                 {selectedAgency?.branches && (
                   <Badge variant="secondary" className="ml-auto">
-                    {selectedAgency.branches.length} şube
+                    {selectedAgency.branches.length} acente
                   </Badge>
                 )}
               </h3>
@@ -946,7 +946,7 @@ export default function Agencies() {
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="font-semibold text-sm">{branch.name}</h4>
                         <Badge variant={branch.is_active ? 'default' : 'secondary'} className="text-xs">
-                          {branch.is_active ? 'Aktif' : 'Pasif'}
+                          {branch.status === EntityStatus.ACTIVE ? 'Aktif' : 'Pasif'}
                         </Badge>
                       </div>
                       <div className="space-y-1.5 text-sm text-muted-foreground">
@@ -969,7 +969,7 @@ export default function Agencies() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <Building2 className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Henüz şube eklenmemiş</p>
+                  <p className="text-sm">Henüz acente eklenmemiş</p>
                 </div>
               )}
             </div>

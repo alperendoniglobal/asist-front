@@ -363,11 +363,11 @@ export default function PublicPackages() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <span className="text-sm text-gray-700 leading-relaxed">{cover.title}</span>
-                                  {cover.usage_count > 1 && (
+                                    {cover.usage_count > 1 && (
                                     <span className="text-xs text-gray-400 ml-1">
-                                      ({cover.usage_count}x)
-                                    </span>
-                                  )}
+                                        ({cover.usage_count}x)
+                                      </span>
+                                    )}
                                 </div>
                               </li>
                             ))}
@@ -387,7 +387,7 @@ export default function PublicPackages() {
                               <div className="flex items-baseline gap-1">
                                 <span className="text-2xl font-bold text-gray-900">
                                   {Number(pkg.price).toLocaleString('tr-TR')}
-                                </span>
+                              </span>
                                 <span className="text-base text-gray-500">₺</span>
                               </div>
                             </div>

@@ -208,10 +208,10 @@ export default function UserDashboard() {
           <div className="flex justify-between items-center h-20">
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="w-16 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-3">
-                <img 
-                  src="/cozumasistanlog.svg" 
-                  alt="Çözüm Asistan" 
-                  className="h-8 w-auto"
+              <img 
+                src="/cozumasistanlog.svg" 
+                alt="Çözüm Asistan" 
+                className="h-8 w-auto"
                   onError={(e) => {
                     // Logo yüklenemezse iconlogo kullan
                     const target = e.target as HTMLImageElement;

@@ -30,9 +30,9 @@ import {
 // Menu yapisi
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
-  { icon: Building2, label: "Acenteler", path: "/dashboard/agencies", roles: [UserRole.SUPER_ADMIN] },
+  { icon: Building2, label: "Brokerlar", path: "/dashboard/agencies", roles: [UserRole.SUPER_ADMIN] },
   { icon: Store, label: "Bayilik Başvuruları", path: "/dashboard/dealer-applications", roles: [UserRole.SUPER_ADMIN] },
-  { icon: GitBranch, label: "Subeler", path: "/dashboard/branches", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN] },
+  { icon: GitBranch, label: "Acenteler", path: "/dashboard/branches", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN] },
   { icon: UserCircle, label: "Kullanicilar", path: "/dashboard/users", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN] },
   { icon: Users, label: "Musteriler", path: "/dashboard/customers", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
   { icon: Car, label: "Araclar", path: "/dashboard/vehicles", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
@@ -92,8 +92,8 @@ export function MainLayout() {
   const getRoleLabel = (role?: UserRole) => {
     switch (role) {
       case UserRole.SUPER_ADMIN: return 'Super Admin'
-      case UserRole.AGENCY_ADMIN: return 'Acente'
-      case UserRole.BRANCH_ADMIN: return 'Sube'
+      case UserRole.AGENCY_ADMIN: return 'Broker Yöneticisi' // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
+      case UserRole.BRANCH_ADMIN: return 'Acente Yöneticisi' // Görüntüleme: Acente Yöneticisi (değer: BRANCH_ADMIN)
       default: return 'Kullanici'
     }
   }

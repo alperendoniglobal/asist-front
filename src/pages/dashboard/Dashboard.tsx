@@ -345,8 +345,9 @@ export default function Dashboard() {
           </Card>
           <Badge variant="secondary" className="py-1.5">
             {user?.role === UserRole.SUPER_ADMIN ? 'Süper Admin' :
-             user?.role === UserRole.AGENCY_ADMIN ? 'Acente Admin' :
-             user?.role === UserRole.BRANCH_ADMIN ? 'Şube Admin' : 'Kullanıcı'}
+             user?.role === UserRole.AGENCY_ADMIN ? 'Broker Yöneticisi' : // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
+             user?.role === UserRole.BRANCH_ADMIN ? 'Acente Yöneticisi' : // Görüntüleme: Acente Yöneticisi (değer: BRANCH_ADMIN)
+             'Kullanıcı'}
           </Badge>
         </div>
       </div>
@@ -467,12 +468,12 @@ export default function Dashboard() {
       {/* ===== SUPER ADMIN EK KARTLARI ===== */}
       {user?.role === UserRole.SUPER_ADMIN && (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-          {/* Acenteler */}
+          {/* Brokerlar */}
           <Card className="bg-gradient-to-br from-cyan-500/5 to-cyan-500/10 border-cyan-500/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Toplam Acente</p>
+                  <p className="text-sm text-muted-foreground">Toplam Broker</p>
                   <div className="flex items-baseline gap-2">
                     <p className="text-4xl font-bold">{totalAgencies}</p>
                     <Badge className="bg-emerald-500/20 text-emerald-600 border-0">
@@ -494,16 +495,16 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Şubeler */}
+          {/* Acenteler */}
           <Card className="bg-gradient-to-br from-pink-500/5 to-pink-500/10 border-pink-500/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Toplam Şube</p>
+                  <p className="text-sm text-muted-foreground">Toplam Acente</p>
                   <div className="flex items-baseline gap-2">
                     <p className="text-4xl font-bold">{totalBranches}</p>
                     <span className="text-xs text-muted-foreground">
-                      ~{totalAgencies > 0 ? Math.round(totalBranches / totalAgencies) : 0}/acente
+                      ~{totalAgencies > 0 ? Math.round(totalBranches / totalAgencies) : 0}/broker
                     </span>
                   </div>
       </div>
@@ -514,7 +515,7 @@ export default function Dashboard() {
               <div className="mt-4 flex gap-2">
                 <Link to="/dashboard/branches" className="flex-1">
                   <Button variant="outline" size="sm" className="w-full text-xs">
-                    Şubeleri Gör
+                    Acenteleri Gör
                   </Button>
                 </Link>
                 <Link to="/dashboard/agencies">
@@ -551,7 +552,7 @@ export default function Dashboard() {
                 </Link>
                 <Link to="/dashboard/agencies">
                   <Button variant="outline" size="sm" className="w-full text-xs gap-1 h-9">
-                    <Building2 className="h-3 w-3" /> Acenteler
+                    <Building2 className="h-3 w-3" /> Brokerlar
                   </Button>
                 </Link>
               </div>
@@ -571,7 +572,7 @@ export default function Dashboard() {
                   {user?.role === UserRole.SUPER_ADMIN ? (
                     <>
                       <Building2 className="h-5 w-5 text-primary" />
-                      Acente Performansı
+                      Broker Performansı
                     </>
                   ) : (
                     <>
@@ -582,7 +583,7 @@ export default function Dashboard() {
             </CardTitle>
                 <CardDescription>
                   {user?.role === UserRole.SUPER_ADMIN 
-                    ? 'Acentelerin satış ve gelir karşılaştırması' 
+                    ? 'Brokerların satış ve gelir karşılaştırması' 
                     : 'Günlük satış ve gelir analizi'}
                 </CardDescription>
               </div>

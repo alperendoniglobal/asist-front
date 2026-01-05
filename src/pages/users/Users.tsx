@@ -170,9 +170,9 @@ export default function Users() {
       case UserRole.SUPER_ADMIN:
         return 'Super Admin';
       case UserRole.AGENCY_ADMIN:
-        return 'kaynak Yoneticisi';
+        return 'Broker Yöneticisi'; // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
       case UserRole.BRANCH_ADMIN:
-        return 'Sube Yoneticisi';
+        return 'Acente Yöneticisi'; // Görüntüleme: Acente Yöneticisi (değer: BRANCH_ADMIN)
       case UserRole.BRANCH_USER:
         return 'Kullanici';
       case UserRole.SUPPORT:

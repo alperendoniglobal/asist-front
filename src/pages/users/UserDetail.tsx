@@ -24,7 +24,7 @@ import { UserRole } from '@/types';
 import { 
   ArrowLeft, Edit, Trash2, Mail, Phone, Shield, Calendar,
   ShoppingCart, DollarSign, Car, UserCheck, TrendingUp,
-  Building2, GitBranch, Save, X
+  Building2, GitBranch, Save, X, Lock, Eye, EyeOff
 } from 'lucide-react';
 
 // Kullanici aktivite tipi
@@ -66,6 +66,7 @@ export default function UserDetail() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Plain text şifreyi gösterme durumu
   
   // Form state
   const [formData, setFormData] = useState({
@@ -236,9 +237,9 @@ export default function UserDetail() {
       case UserRole.SUPER_ADMIN:
         return 'Super Admin';
       case UserRole.AGENCY_ADMIN:
-        return 'kaynak Yoneticisi';
+        return 'Broker Yöneticisi'; // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
       case UserRole.BRANCH_ADMIN:
-        return 'Sube Yoneticisi';
+        return 'Acente Yöneticisi'; // Görüntüleme: Acente Yöneticisi (değer: BRANCH_ADMIN)
       case UserRole.BRANCH_USER:
         return 'Kullanici';
       case UserRole.SUPPORT:
@@ -560,6 +561,49 @@ export default function UserDetail() {
                       <p className="font-medium">{formatDate(user.created_at)}</p>
                     </div>
                   </div>
+                  {/* SUPER_ADMIN için şifre bilgisi - Plain text şifreyi göster */}
+                  {isSuperAdmin && (user as any).plain_password !== undefined && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <Lock className="h-5 w-5 text-muted-foreground" />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm text-muted-foreground">Şifre</p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="h-7 px-2 text-xs"
+                          >
+                            {showPassword ? (
+                              <>
+                                <EyeOff className="h-3 w-3 mr-1" />
+                                Gizle
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-3 w-3 mr-1" />
+                                Göster
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        {showPassword ? (
+                          <div>
+                            <p className="font-medium font-mono text-sm break-all bg-background p-2 rounded border">
+                              {(user as any).plain_password || 'Şifre bulunamadı'}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1 text-amber-600">
+                              ⚠️ Güvenlik: Bu şifre sadece SUPER_ADMIN tarafından görülebilir
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            Şifreyi görmek için "Göster" butonuna tıklayın
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </CardContent>

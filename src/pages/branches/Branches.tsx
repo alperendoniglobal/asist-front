@@ -32,6 +32,7 @@ export default function Branches() {
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAgencyFilter, setSelectedAgencyFilter] = useState<string>(''); // Broker bazlı filtreleme
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
@@ -46,7 +47,7 @@ export default function Branches() {
     iban: '' // IBAN
   });
   
-  // Seçili acentenin maksimum komisyon oranı (validasyon için)
+  // Seçili broker'ın maksimum komisyon oranı (validasyon için)
   const [maxCommissionRate, setMaxCommissionRate] = useState<number>(100);
 
   const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
@@ -72,9 +73,12 @@ export default function Branches() {
     }
   };
 
-  const filteredBranches = branches.filter(branch =>
-    branch.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filtreleme: hem arama hem de broker bazlı filtreleme
+  const filteredBranches = branches.filter(branch => {
+    const matchesSearch = branch.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesAgency = !selectedAgencyFilter || branch.agency_id === selectedAgencyFilter;
+    return matchesSearch && matchesAgency;
+  });
 
   const handleCreate = async () => {
     try {
@@ -86,9 +90,9 @@ export default function Branches() {
       
       const commissionRate = parseFloat(formData.commission_rate);
       
-      // Acente komisyonundan fazla olamaz kontrolü
+      // Broker komisyonundan fazla olamaz kontrolü
       if (commissionRate > maxCommissionRate) {
-        alert(`Komisyon orani acente komisyonundan (%${maxCommissionRate}) fazla olamaz`);
+        alert(`Komisyon orani broker komisyonundan (%${maxCommissionRate}) fazla olamaz`);
         return;
       }
       
@@ -115,8 +119,8 @@ export default function Branches() {
       resetForm();
       fetchData();
     } catch (error: any) {
-      console.error('Sube olusturulurken hata:', error);
-      alert(error.response?.data?.message || 'Sube olusturulurken hata olustu');
+      console.error('Acente oluşturulurken hata:', error);
+      alert(error.response?.data?.message || 'Acente oluşturulurken hata oluştu');
     }
   };
 
@@ -131,9 +135,9 @@ export default function Branches() {
       
       const commissionRate = parseFloat(formData.commission_rate);
       
-      // Acente komisyonundan fazla olamaz kontrolü
+      // Broker komisyonundan fazla olamaz kontrolü
       if (commissionRate > maxCommissionRate) {
-        alert(`Komisyon orani acente komisyonundan (%${maxCommissionRate}) fazla olamaz`);
+        alert(`Komisyon orani broker komisyonundan (%${maxCommissionRate}) fazla olamaz`);
         return;
       }
       
@@ -160,19 +164,19 @@ export default function Branches() {
       resetForm();
       fetchData();
     } catch (error: any) {
-      console.error('Sube guncellenirken hata:', error);
-      alert(error.response?.data?.message || 'Sube guncellenirken hata olustu');
+      console.error('Acente güncellenirken hata:', error);
+      alert(error.response?.data?.message || 'Acente güncellenirken hata oluştu');
     }
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('Bu subeyi silmek istediginize emin misiniz?')) return;
+    if (!confirm('Bu acenteyi silmek istediğinize emin misiniz?')) return;
     try {
       await branchService.delete(id);
       fetchData();
     } catch (error) {
-      console.error('Sube silinirken hata:', error);
+      console.error('Acente silinirken hata:', error);
     }
   };
 
@@ -188,7 +192,7 @@ export default function Branches() {
       account_name: branch.account_name || '',
       iban: branch.iban || ''
     });
-    // Acentenin maksimum komisyon oranını ayarla
+    // Broker'ın maksimum komisyon oranını ayarla
     if (branch.agency_max_commission) {
       setMaxCommissionRate(branch.agency_max_commission);
     } else if (branch.agency?.commission_rate) {
@@ -216,13 +220,13 @@ export default function Branches() {
     return agency?.name || '-';
   };
 
-  // Acente seçildiğinde maksimum komisyon oranını güncelle
+  // Broker seçildiğinde maksimum komisyon oranını güncelle
   const handleAgencyChange = (agencyId: string) => {
     setFormData({ ...formData, agency_id: agencyId });
     const agency = agencies.find(a => a.id === agencyId);
     if (agency) {
       setMaxCommissionRate(agency.commission_rate);
-      // Eğer mevcut komisyon oranı yeni acentenin oranından fazlaysa sıfırla
+      // Eğer mevcut komisyon oranı yeni broker'ın oranından fazlaysa sıfırla
       if (formData.commission_rate && parseFloat(formData.commission_rate) > agency.commission_rate) {
         setFormData(prev => ({ ...prev, agency_id: agencyId, commission_rate: '' }));
       }
@@ -242,13 +246,13 @@ export default function Branches() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <GitBranch className="h-8 w-8" />
-            Subeler
+            Acenteler
           </h1>
-          <p className="text-muted-foreground">Subeleri goruntuleyip yonetin</p>
+          <p className="text-muted-foreground">Acenteleri görüntüleyip yönetin</p>
         </div>
         <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} className="gap-2">
           <Plus className="h-4 w-4" />
-          Yeni Sube
+          Yeni Acente
         </Button>
       </div>
 
@@ -258,7 +262,7 @@ export default function Branches() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Toplam Sube</p>
+                <p className="text-sm text-muted-foreground">Toplam Acente</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <GitBranch className="h-8 w-8 text-muted-foreground" />
@@ -269,7 +273,7 @@ export default function Branches() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Aktif Sube</p>
+                <p className="text-sm text-muted-foreground">Aktif Acente</p>
                 <p className="text-2xl font-bold text-emerald-600">{stats.active}</p>
               </div>
               <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -280,36 +284,67 @@ export default function Branches() {
         </Card>
       </div>
 
-      {/* Arama */}
+      {/* Arama ve Filtreleme */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Sube Ara</CardTitle>
+          <CardTitle className="text-lg">Acente Ara</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Sube adi..."
+                placeholder="Acente adı..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Button onClick={() => setSearchQuery('')} variant="outline" className="gap-2">
+            {/* SUPER_ADMIN için Broker bazlı filtreleme */}
+            {isSuperAdmin && agencies.length > 0 && (
+              <Select 
+                value={selectedAgencyFilter || 'all'} 
+                onValueChange={(value) => setSelectedAgencyFilter(value === 'all' ? '' : value)}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Tüm Brokerlar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tüm Brokerlar</SelectItem>
+                  {agencies.map((agency) => (
+                    <SelectItem key={agency.id} value={agency.id}>
+                      {agency.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button 
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedAgencyFilter('');
+              }} 
+              variant="outline" 
+              className="gap-2"
+            >
               <RefreshCcw className="h-4 w-4" />
-              Sifirla
+              Sıfırla
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Sube Listesi */}
+      {/* Acente Listesi */}
       <Card>
         <CardHeader>
-          <CardTitle>Sube Listesi</CardTitle>
+          <CardTitle>Acente Listesi</CardTitle>
           <CardDescription>
-            Toplam {filteredBranches.length} sube bulundu
+            Toplam {filteredBranches.length} acente bulundu
+            {selectedAgencyFilter && (
+              <span className="ml-2 text-primary">
+                (Filtrelenmiş: {agencies.find(a => a.id === selectedAgencyFilter)?.name})
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -320,15 +355,15 @@ export default function Branches() {
           ) : filteredBranches.length === 0 ? (
             <div className="text-center py-12">
               <GitBranch className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Henuz sube bulunmuyor</p>
+              <p className="text-muted-foreground">Henüz acente bulunmuyor</p>
             </div>
           ) : (
             <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Sube Adi</TableHead>
-                    {isSuperAdmin && <TableHead>Acente</TableHead>}
+                    <TableHead>Acente Adı</TableHead>
+                    {isSuperAdmin && <TableHead>Broker</TableHead>}
                     <TableHead>Telefon</TableHead>
                     <TableHead>Komisyon Orani</TableHead>
                     <TableHead>Durum</TableHead>
@@ -411,23 +446,23 @@ export default function Branches() {
         </CardContent>
       </Card>
 
-      {/* Yeni Sube Modal */}
+      {/* Yeni Acente Modal */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Yeni Sube</DialogTitle>
-            <DialogDescription>Yeni sube kaydi olusturun</DialogDescription>
+            <DialogTitle>Yeni Acente</DialogTitle>
+            <DialogDescription>Yeni acente kaydı oluşturun</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {isSuperAdmin && (
               <div className="space-y-2">
-                <Label>Acente *</Label>
+                <Label>Broker *</Label>
                 <Select
                   value={formData.agency_id}
                   onValueChange={handleAgencyChange}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Acente secin" />
+                    <SelectValue placeholder="Broker seçin" />
                   </SelectTrigger>
                   <SelectContent>
                     {agencies.map((agency) => (
@@ -445,7 +480,7 @@ export default function Branches() {
               {/* Sol Kolon */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Sube Adi *</Label>
+                  <Label htmlFor="name">Acente Adı *</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -496,7 +531,7 @@ export default function Branches() {
                   </div>
                   
                   <p className="text-xs text-muted-foreground">
-                    Komisyon orani zorunludur ve acente komisyonundan
+                    Komisyon oranı zorunludur ve broker komisyonundan
                     <span className="font-semibold text-purple-600 dark:text-purple-400"> (maks. %{maxCommissionRate}) </span>
                     fazla olamaz.
                   </p>
@@ -559,19 +594,19 @@ export default function Branches() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Sube Duzenle</DialogTitle>
-            <DialogDescription>Sube bilgilerini guncelleyin</DialogDescription>
+            <DialogTitle>Acente Düzenle</DialogTitle>
+            <DialogDescription>Acente bilgilerini güncelleyin</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {isSuperAdmin && (
               <div className="space-y-2">
-                <Label>Acente *</Label>
+                <Label>Broker *</Label>
                 <Select
                   value={formData.agency_id}
                   onValueChange={handleAgencyChange}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Acente secin" />
+                    <SelectValue placeholder="Broker seçin" />
                   </SelectTrigger>
                   <SelectContent>
                     {agencies.map((agency) => (
@@ -589,7 +624,7 @@ export default function Branches() {
               {/* Sol Kolon */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="edit_name">Sube Adi *</Label>
+                  <Label htmlFor="edit_name">Acente Adı *</Label>
                   <Input
                     id="edit_name"
                     value={formData.name}
@@ -640,7 +675,7 @@ export default function Branches() {
                   </div>
                   
                   <p className="text-xs text-muted-foreground">
-                    Komisyon orani zorunludur ve acente komisyonundan
+                    Komisyon oranı zorunludur ve broker komisyonundan
                     <span className="font-semibold text-purple-600 dark:text-purple-400"> (maks. %{maxCommissionRate}) </span>
                     fazla olamaz.
                   </p>

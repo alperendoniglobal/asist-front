@@ -744,7 +744,7 @@ export default function NewSale() {
         }
       } else {
         // Bakiye ödemesi için başarı modalini aç
-        setSuccessModal({ open: true, saleId: sale.id });
+      setSuccessModal({ open: true, saleId: sale.id });
       }
     } catch (error: any) {
       console.error('Satış oluşturulurken hata:', error);

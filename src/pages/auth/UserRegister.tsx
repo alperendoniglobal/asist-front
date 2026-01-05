@@ -304,34 +304,34 @@ export default function UserRegister() {
 
               {/* Şifre */}
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Şifre *</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={formData.password}
-                        onChange={(e) => handleChange('password', e.target.value)}
-                        className={`pl-10 ${passwordErrors.length > 0 ? 'border-red-500' : ''}`}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Şifre Tekrar *</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Şifre *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      id="confirmPassword"
+                      id="password"
                       type="password"
                       placeholder="••••••••"
-                      value={formData.confirmPassword}
-                      onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                      className={formData.password !== formData.confirmPassword && formData.confirmPassword ? 'border-red-500' : ''}
+                      value={formData.password}
+                      onChange={(e) => handleChange('password', e.target.value)}
+                        className={`pl-10 ${passwordErrors.length > 0 ? 'border-red-500' : ''}`}
                       required
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Şifre Tekrar *</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                      className={formData.password !== formData.confirmPassword && formData.confirmPassword ? 'border-red-500' : ''}
+                    required
+                  />
+                </div>
                 </div>
                 
                 {/* Şifre gereksinimleri */}

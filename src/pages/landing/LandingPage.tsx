@@ -643,14 +643,14 @@ export default function LandingPage() {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#019242]/10 text-[#019242] text-sm font-medium mb-4 animate-fadeIn">
                 <ShoppingCart className="h-4 w-4" />
                 <span>Hizmetlerimiz</span>
-              </div>
+            </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 animate-fadeIn">
                 Size Özel <span className="text-[#019242]">Paketler</span>
-              </h2>
+            </h2>
               <p className="text-gray-600 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
                 İhtiyacınıza en uygun yol yardım paketini seçin, güvende kalın
-              </p>
-            </div>
+            </p>
+          </div>
 
             {/* Package Cards Carousel - Shopping Cart Style */}
             <div 
@@ -707,15 +707,15 @@ export default function LandingPage() {
                             <div className="flex items-center justify-between mb-3">
                               <div className={`w-12 h-12 rounded-xl ${color.bg} flex items-center justify-center shadow-md transition-transform duration-500 ${isActive ? 'scale-105' : ''}`}>
                                 <VehicleIcon className="h-5 w-5 text-white" />
-                              </div>
+                      </div>
                               <span className={`px-3 py-1 rounded-lg ${color.bg} text-white text-xs font-semibold uppercase tracking-wide`}>
-                                {pkg.vehicle_type}
-                              </span>
-                            </div>
+                              {pkg.vehicle_type}
+                            </span>
+                          </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.name}</h3>
-                            {pkg.description && (
+                          {pkg.description && (
                               <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{pkg.description}</p>
-                            )}
+                          )}
                             
                             {/* Price Badge - Minimal Style */}
                             {pkg.price && (
@@ -728,7 +728,7 @@ export default function LandingPage() {
                               </div>
                             )}
                           </div>
-                        </div>
+                    </div>
                     
                         {/* Package Features - Clean & Minimal */}
                         <CardContent className="p-5 flex flex-col flex-grow bg-white">
