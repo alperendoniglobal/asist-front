@@ -25,77 +25,117 @@ export default function PaymentSuccess() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // PayTR callback'i manuel tetikle (test modunda callback gelmeyebilir)
-    const oidToUse = merchantOid || localStorage.getItem('last_paytr_merchant_oid');
-    if (oidToUse) {
-      triggerPaytrCallback(oidToUse);
-      // Kullanıldıktan sonra temizle
-      if (localStorage.getItem('last_paytr_merchant_oid')) {
-        localStorage.removeItem('last_paytr_merchant_oid');
-      }
+    // merchant_oid URL'den geliyor, backend'de payment kontrol edilip sale oluşturulacak
+    if (merchantOid) {
+      // Önce backend'de payment'ı kontrol et ve sale oluşturmayı tetikle (anında çözüm)
+      checkPaymentAndCreateSale(merchantOid).then(() => {
+        // Sale oluşturulduktan sonra PayTR callback'ini tetikle (PayTR'de durumu güncellemek için)
+        triggerPaytrCallback(merchantOid);
+      });
     }
     
     // Sale ID varsa detayları getir
     if (saleId) {
       fetchSaleDetails();
-    } else {
+    } else if (!merchantOid) {
+      // Ne merchant_oid ne de sale_id varsa loading'i kapat
       setLoading(false);
     }
   }, [merchantOid, saleId]);
 
-  // PayTR callback'ini manuel tetikle (test modunda callback gelmeyebilir)
+  // PayTR callback'ini tetikle (PayTR'de ödeme durumunu güncellemek için)
   const triggerPaytrCallback = async (merchantOidParam: string) => {
     if (!merchantOidParam) return;
-    
+
     try {
       console.log('🔄 PayTR callback manuel tetikleniyor...', merchantOidParam);
-      
-      // Backend'e callback simülasyonu gönder
-      // Backend payment_details'ten total_amount'u alacak, bu yüzden 0 gönderebiliriz
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/payments/paytr/callback`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          merchant_oid: merchantOidParam,
-          status: 'success',
-          total_amount: '0', // Backend payment_details'ten gerçek tutarı alacak
-          hash: 'test_hash', // Test modunda hash kontrolü atlanıyor
-          test_mode: '1',
-        }),
-      });
-      
-      const responseText = await response.text();
-      
-      if (response.ok && responseText === 'OK') {
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'https://cozum.net/api/v1'}/payments/paytr/callback`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            merchant_oid: merchantOidParam,
+            status: 'success',
+            total_amount: '0', // PayTR callback'te total_amount gerekli ama backend payment_details'ten alacak
+            hash: 'callback_triggered', // Backend hash kontrolü yapacak
+          }),
+        }
+      );
+
+      if (response.ok) {
         console.log('✅ PayTR callback başarıyla tetiklendi');
-        // 2 saniye bekle, sonra sale'ı getir
-        setTimeout(() => {
-          if (saleId) {
-            fetchSaleDetails();
-          } else {
-            // Sale ID yoksa, payment'tan sale'ı bul
-            findSaleFromPayment();
-          }
-        }, 2000);
       } else {
-        console.error('❌ PayTR callback tetiklenemedi:', response.status, responseText);
+        console.warn('⚠️ PayTR callback tetiklenirken hata:', response.status);
       }
     } catch (error) {
-      console.error('❌ PayTR callback hatası:', error);
+      console.error('❌ PayTR callback tetikleme hatası:', error);
+      // Hata olsa bile devam et, kritik değil
     }
   };
 
-  // Payment'tan sale'ı bul
-  const findSaleFromPayment = async () => {
+  // Payment'ı kontrol et ve sale oluşturmayı tetikle (anında çözüm)
+  const checkPaymentAndCreateSale = async (merchantOidParam: string) => {
+    if (!merchantOidParam) {
+      setLoading(false);
+      return;
+    }
+    
     try {
-      // Payment'ı bul ve sale'ı getir
-      // Bu endpoint'i backend'de oluşturmamız gerekebilir
-      // Şimdilik sadece log yazalım
-      console.log('🔍 Payment\'tan sale aranıyor...');
+      console.log('🔄 Payment kontrol ediliyor ve sale oluşturuluyor...', merchantOidParam);
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'https://cozum.net/api/v1'}/payments/paytr/check?merchant_oid=${encodeURIComponent(merchantOidParam)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      
+      const result = await response.json();
+      
+      if (response.ok && result.data) {
+        console.log('✅ Payment kontrol edildi:', result.data);
+        
+        if (result.data.sale) {
+          console.log('✅ Sale bulundu/oluşturuldu:', result.data.sale.id);
+          
+          // Sale detaylarını getir (tam bilgiler için)
+          if (result.data.sale.id) {
+            try {
+              const saleData = await saleService.getById(result.data.sale.id);
+              setSale(saleData);
+            } catch (error) {
+              // Eğer sale detayları getirilemezse, backend'den gelen sale'ı kullan
+              console.warn('Sale detayları getirilemedi, backend\'den gelen sale kullanılıyor:', error);
+              setSale(result.data.sale);
+            }
+          } else {
+            setSale(result.data.sale);
+          }
+          
+          setLoading(false);
+          
+          // Sale ID varsa URL'yi güncelle
+          if (!saleId && result.data.sale.id) {
+            window.history.replaceState({}, '', `?sale_id=${result.data.sale.id}&merchant_oid=${merchantOidParam}`);
+          }
+        } else {
+          console.log('⚠️ Sale henüz oluşturulmadı, callback bekleniyor...');
+          setLoading(false);
+        }
+      } else {
+        console.error('❌ Payment kontrol edilemedi:', response.status, result);
+        setLoading(false);
+      }
     } catch (error) {
-      console.error('Sale bulunamadı:', error);
+      console.error('❌ Payment kontrol hatası:', error);
+      setLoading(false);
     }
   };
 

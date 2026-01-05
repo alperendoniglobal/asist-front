@@ -28,7 +28,7 @@ export default function ViewSaleContract() {
         setError(null);
 
         // Backend API URL'ini oluştur
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const apiUrl = "https://cozum.net";
         const backendPdfUrl = `${apiUrl}/api/v1/public/pdf/sale/${id}`;
         
         // PDF'i fetch ile al

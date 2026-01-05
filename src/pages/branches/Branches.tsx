@@ -18,7 +18,7 @@ import {
 import { branchService, agencyService } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Branch, Agency } from '@/types';
-import { UserRole } from '@/types';
+import { EntityStatus, UserRole } from '@/types';
 import { formatIBAN, validateIBAN } from '@/utils/validators';
 import { 
   Plus, Search, Edit, Trash2, Eye, GitBranch, 
@@ -368,8 +368,8 @@ export default function Branches() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={branch.is_active ? 'success' : 'secondary'}>
-                          {branch.is_active ? 'Aktif' : 'Pasif'}
+                        <Badge variant={branch.status === EntityStatus.ACTIVE ? 'success' : 'secondary'}>
+                          {branch.status === EntityStatus.ACTIVE ? 'Aktif' : 'Pasif'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
