@@ -328,11 +328,7 @@ export default function BranchDetail() {
             <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
               %{Number(branch.commission_rate).toFixed(1)}
             </p>
-            {branch.agency_max_commission && (
-              <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-1">
-                Maks: %{branch.agency_max_commission}
-              </p>
-            )}
+
           </CardContent>
         </Card>
         <Card>
@@ -448,12 +444,6 @@ export default function BranchDetail() {
                       />
                       <span className="text-sm text-muted-foreground">%</span>
                     </div>
-                    
-                    <p className="text-xs text-muted-foreground">
-                      Komisyon orani zorunludur ve acente komisyonundan
-                      <span className="font-semibold text-purple-600 dark:text-purple-400"> (maks. %{maxCommissionRate}) </span>
-                      fazla olamaz.
-                    </p>
                   </div>
 
                   {/* Hesap Bilgileri */}
@@ -533,11 +523,7 @@ export default function BranchDetail() {
                         <p className="font-medium text-purple-700 dark:text-purple-300">
                           %{Number(branch.commission_rate).toFixed(1)}
                         </p>
-                        {branch.agency_max_commission && (
-                          <span className="text-xs text-muted-foreground">
-                            (maks: %{branch.agency_max_commission})
-                          </span>
-                        )}
+
                       </div>
                     </div>
                   </div>

@@ -156,9 +156,8 @@ export default function Branches() {
         }
       }
       
-      const updateData = {
+      const updateData: any = {
         name: formData.name,
-        agency_id: formData.agency_id,
         address: formData.address,
         phone: formData.phone,
         commission_rate: commissionRate,
@@ -166,6 +165,20 @@ export default function Branches() {
         iban: formData.iban || null
       };
       
+      // agency_id sadece SUPER_ADMIN veya SUPER_AGENCY_ADMIN için gönder
+      // Boş string kontrolü yap - eğer boş string ise gönderme
+      if ((isSuperAdmin || isSuperAgencyAdmin) && formData.agency_id && formData.agency_id.trim() !== '') {
+        updateData.agency_id = formData.agency_id;
+        console.log('📤 Frontend: agency_id gönderiliyor:', formData.agency_id);
+      } else {
+        console.log('⚠️ Frontend: agency_id gönderilmiyor', { 
+          isSuperAdmin, 
+          isSuperAgencyAdmin, 
+          agencyId: formData.agency_id 
+        });
+      }
+      
+      console.log('📤 Frontend: Update Data:', updateData);
       await branchService.update(selectedBranch.id, updateData);
       setIsEditOpen(false);
       resetForm();
@@ -190,9 +203,11 @@ export default function Branches() {
   const handleEdit = (branch: Branch, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedBranch(branch);
+    // agency_id'yi branch.agency_id veya branch.agency?.id'den al
+    const agencyId = branch.agency_id || (branch as any).agency?.id || '';
     setFormData({
       name: branch.name,
-      agency_id: branch.agency_id,
+      agency_id: agencyId,
       address: branch.address,
       phone: branch.phone,
       commission_rate: String(branch.commission_rate),
@@ -402,11 +417,7 @@ export default function Branches() {
                             <Percent className="h-3 w-3" />
                             {Number(branch.commission_rate).toFixed(1)}%
                           </Badge>
-                          {branch.agency_max_commission && (
-                            <span className="text-xs text-muted-foreground">
-                              (max: %{branch.agency_max_commission})
-                            </span>
-                          )}
+      
                         </div>
                       </TableCell>
                       <TableCell>
@@ -537,11 +548,6 @@ export default function Branches() {
                     <span className="text-sm text-muted-foreground">%</span>
                   </div>
                   
-                  <p className="text-xs text-muted-foreground">
-                    Komisyon oranı zorunludur ve broker komisyonundan
-                    <span className="font-semibold text-purple-600 dark:text-purple-400"> (maks. %{maxCommissionRate}) </span>
-                    fazla olamaz.
-                  </p>
                 </div>
 
                 {/* Hesap Bilgileri */}
@@ -605,7 +611,7 @@ export default function Branches() {
             <DialogDescription>Acente bilgilerini güncelleyin</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            {isSuperAdmin && (
+            {(isSuperAdmin || isSuperAgencyAdmin) && (
               <div className="space-y-2">
                 <Label>Broker *</Label>
                 <Select
@@ -681,11 +687,6 @@ export default function Branches() {
                     <span className="text-sm text-muted-foreground">%</span>
                   </div>
                   
-                  <p className="text-xs text-muted-foreground">
-                    Komisyon oranı zorunludur ve broker komisyonundan
-                    <span className="font-semibold text-purple-600 dark:text-purple-400"> (maks. %{maxCommissionRate}) </span>
-                    fazla olamaz.
-                  </p>
                 </div>
 
                 {/* Hesap Bilgileri */}
