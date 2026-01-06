@@ -99,9 +99,9 @@ export default function UserDetail() {
     }
   }, [id]);
 
-  // Kullanıcı yüklendiğinde ve AGENCY_ADMIN ise brokerları getir
+  // Kullanıcı yüklendiğinde ve SUPER_AGENCY_ADMIN veya AGENCY_ADMIN ise brokerları getir
   useEffect(() => {
-    if (user?.role === UserRole.AGENCY_ADMIN && id) {
+    if ((user?.role === UserRole.SUPER_AGENCY_ADMIN || user?.role === UserRole.AGENCY_ADMIN) && id) {
       fetchManagedAgencies();
       if (isSuperAdmin) {
         fetchAgencies(); // Tüm brokerları da getir (atama için)
@@ -309,6 +309,8 @@ export default function UserDetail() {
     switch (role) {
       case UserRole.SUPER_ADMIN:
         return 'destructive';
+      case UserRole.SUPER_AGENCY_ADMIN:
+        return 'default';
       case UserRole.AGENCY_ADMIN:
         return 'default';
       case UserRole.BRANCH_ADMIN:
@@ -323,10 +325,10 @@ export default function UserDetail() {
   };
 
   // Kullanilabilir roller
-  // SUPPORT rolü sadece SUPER_ADMIN tarafından oluşturulabilir
+  // SUPPORT ve SUPER_AGENCY_ADMIN rolü sadece SUPER_ADMIN tarafından oluşturulabilir
   const getAvailableRoles = () => {
     if (isSuperAdmin) {
-      return [UserRole.SUPER_ADMIN, UserRole.SUPPORT, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
+      return [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.SUPPORT, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
     }
     if (isAgencyAdmin) {
       return [UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
@@ -664,8 +666,8 @@ export default function UserDetail() {
             </CardContent>
           </Card>
 
-          {/* Broker Yönetimi - Sadece AGENCY_ADMIN rolü için ve SUPER_ADMIN tarafından görülebilir */}
-          {user.role === UserRole.AGENCY_ADMIN && isSuperAdmin && (
+          {/* Broker Yönetimi - SUPER_AGENCY_ADMIN ve AGENCY_ADMIN rolü için ve SUPER_ADMIN tarafından görülebilir */}
+          {(user.role === UserRole.SUPER_AGENCY_ADMIN || user.role === UserRole.AGENCY_ADMIN) && isSuperAdmin && (
             <Card>
               <CardHeader>
                 <CardTitle>Broker Yönetimi</CardTitle>
