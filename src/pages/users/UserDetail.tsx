@@ -85,15 +85,16 @@ export default function UserDetail() {
 
   // Rol kontrolleri
   const isSuperAdmin = currentUser?.role === UserRole.SUPER_ADMIN;
+  const isSuperAgencyAdmin = currentUser?.role === UserRole.SUPER_AGENCY_ADMIN;
   const isAgencyAdmin = currentUser?.role === UserRole.AGENCY_ADMIN;
-  const canEdit = isSuperAdmin || isAgencyAdmin;
+  const canEdit = isSuperAdmin || isSuperAgencyAdmin || isAgencyAdmin;
   const isOwnProfile = currentUser?.id === id;
 
   useEffect(() => {
     if (id) {
       fetchUserDetail();
       fetchBranches();
-      if (isSuperAdmin) {
+      if (isSuperAdmin || isSuperAgencyAdmin) {
         fetchAgencies();
       }
     }
@@ -326,9 +327,14 @@ export default function UserDetail() {
 
   // Kullanilabilir roller
   // SUPPORT ve SUPER_AGENCY_ADMIN rolü sadece SUPER_ADMIN tarafından oluşturulabilir
+  // SUPER_AGENCY_ADMIN SUPER_ADMIN rolünü de seçebilir (düzenleme için)
   const getAvailableRoles = () => {
     if (isSuperAdmin) {
       return [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.SUPPORT, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
+    }
+    if (isSuperAgencyAdmin) {
+      // SUPER_AGENCY_ADMIN SUPER_ADMIN'i de düzenleyebilir
+      return [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
     }
     if (isAgencyAdmin) {
       return [UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
