@@ -12,6 +12,7 @@ import { useTheme } from "@/contexts/ThemeContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { UserRole } from "@/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { BrokerSelector } from "@/components/BrokerSelector"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -189,6 +190,11 @@ export function MainLayout() {
             >
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
+
+            {/* Broker Seçici - Sadece AGENCY_ADMIN için */}
+            {user?.role === UserRole.AGENCY_ADMIN && (
+              <BrokerSelector />
+            )}
 
             {/* Profil */}
             <DropdownMenu>

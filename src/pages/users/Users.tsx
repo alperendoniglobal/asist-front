@@ -115,12 +115,18 @@ export default function Users() {
     }
     
     try {
+      // AGENCY_ADMIN için seçili broker'ı kullan (localStorage'dan)
+      const selectedAgencyId = localStorage.getItem('selected_agency_id');
+      const agencyIdForCreate = formData.role === UserRole.SUPPORT 
+        ? '' 
+        : (isSuperAdmin 
+          ? formData.agency_id 
+          : (selectedAgencyId || currentUser?.agency_id));
+      
       // SUPPORT rolü global bir rol olduğu için agency_id ve branch_id boş olmalı
       const createData = {
         ...formData,
-        agency_id: formData.role === UserRole.SUPPORT 
-          ? '' 
-          : (isSuperAdmin ? formData.agency_id : currentUser?.agency_id),
+        agency_id: agencyIdForCreate,
         branch_id: formData.role === UserRole.SUPPORT 
           ? '' 
           : (isAgencyAdmin && !formData.branch_id ? currentUser?.branch_id : formData.branch_id)

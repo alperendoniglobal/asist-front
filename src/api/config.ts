@@ -9,13 +9,20 @@ export const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add token
+// Request interceptor to add token and selected agency ID
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // AGENCY_ADMIN için seçili broker ID'sini header'a ekle
+    const selectedAgencyId = localStorage.getItem('selected_agency_id');
+    if (selectedAgencyId) {
+      config.headers['X-Selected-Agency-Id'] = selectedAgencyId;
+    }
+    
     return config;
   },
   (error) => {

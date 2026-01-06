@@ -19,11 +19,18 @@ export interface RegisterData {
 export const authService = {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', credentials);
-    const { user, accessToken, refreshToken } = response.data.data;
+    const { user, accessToken, refreshToken, managed_agencies } = response.data.data;
 
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(user));
+
+    // AGENCY_ADMIN için managed_agencies'i localStorage'a kaydet
+    if (managed_agencies && managed_agencies.length > 0) {
+      localStorage.setItem('managed_agencies', JSON.stringify(managed_agencies));
+      // İlk acenteyi varsayılan olarak seç
+      localStorage.setItem('selected_agency_id', managed_agencies[0].id);
+    }
 
     return response.data.data;
   },
@@ -56,6 +63,8 @@ export const authService = {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('managed_agencies');
+    localStorage.removeItem('selected_agency_id');
   },
 
   getStoredUser(): User | null {

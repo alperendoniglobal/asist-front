@@ -108,6 +108,24 @@ export const userService = {
     const response = await apiClient.patch<ApiResponse<User>>(`/users/${id}/toggle-status`);
     return response.data.data;
   },
+
+  // AGENCY_ADMIN kullanıcısına broker atama
+  async assignAgency(userId: string, agencyId: string): Promise<User> {
+    const response = await apiClient.post<ApiResponse<User>>(`/users/${userId}/agencies/${agencyId}`);
+    return response.data.data;
+  },
+
+  // AGENCY_ADMIN kullanıcısından broker kaldırma
+  async removeAgency(userId: string, agencyId: string): Promise<User> {
+    const response = await apiClient.delete<ApiResponse<User>>(`/users/${userId}/agencies/${agencyId}`);
+    return response.data.data;
+  },
+
+  // Kullanıcının yönettiği brokerları getir
+  async getManagedAgencies(userId: string): Promise<Agency[]> {
+    const response = await apiClient.get<ApiResponse<Agency[]>>(`/users/${userId}/agencies`);
+    return response.data.data;
+  },
 };
 
 // Customer Service

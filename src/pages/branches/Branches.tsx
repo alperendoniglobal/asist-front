@@ -104,9 +104,15 @@ export default function Branches() {
         }
       }
       
+      // AGENCY_ADMIN için seçili broker'ı kullan (localStorage'dan)
+      const selectedAgencyId = localStorage.getItem('selected_agency_id');
+      const agencyIdForCreate = isSuperAdmin 
+        ? formData.agency_id 
+        : (selectedAgencyId || user?.agency_id);
+      
       const createData = {
         name: formData.name,
-        agency_id: isSuperAdmin ? formData.agency_id : user?.agency_id,
+        agency_id: agencyIdForCreate,
         address: formData.address,
         phone: formData.phone,
         commission_rate: commissionRate,

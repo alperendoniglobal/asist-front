@@ -24,8 +24,9 @@ import { UserRole } from '@/types';
 import { 
   ArrowLeft, Edit, Trash2, Mail, Phone, Shield, Calendar,
   ShoppingCart, DollarSign, Car, UserCheck, TrendingUp,
-  Building2, GitBranch, Save, X, Lock, Eye, EyeOff
+  Building2, GitBranch, Save, X, Lock, Eye, EyeOff, Plus, Minus
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Kullanici aktivite tipi
 interface UserActivity {
@@ -62,11 +63,13 @@ export default function UserDetail() {
   const [user, setUser] = useState<UserWithActivity | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [managedAgencies, setManagedAgencies] = useState<Agency[]>([]); // AGENCY_ADMIN için yönettiği brokerlar
   const [loading, setLoading] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false); // Plain text şifreyi gösterme durumu
+  const [selectedAgencyToAdd, setSelectedAgencyToAdd] = useState<string>(''); // Yeni broker eklemek için
   
   // Form state
   const [formData, setFormData] = useState({
@@ -95,6 +98,16 @@ export default function UserDetail() {
       }
     }
   }, [id]);
+
+  // Kullanıcı yüklendiğinde ve AGENCY_ADMIN ise brokerları getir
+  useEffect(() => {
+    if (user?.role === UserRole.AGENCY_ADMIN && id) {
+      fetchManagedAgencies();
+      if (isSuperAdmin) {
+        fetchAgencies(); // Tüm brokerları da getir (atama için)
+      }
+    }
+  }, [user?.role, id, isSuperAdmin]);
 
   // Kullanici detaylarini yukle
   const fetchUserDetail = async () => {
@@ -140,6 +153,46 @@ export default function UserDetail() {
       setAgencies(data);
     } catch (error) {
       console.error('Acenteler yuklenirken hata:', error);
+    }
+  };
+
+  // AGENCY_ADMIN kullanıcısının yönettiği brokerları getir
+  const fetchManagedAgencies = async () => {
+    if (!id) return;
+    try {
+      const data = await userService.getManagedAgencies(id);
+      setManagedAgencies(data);
+    } catch (error) {
+      console.error('Yönetilen brokerlar yuklenirken hata:', error);
+    }
+  };
+
+  // Broker atama
+  const handleAssignAgency = async () => {
+    if (!id || !selectedAgencyToAdd) return;
+    try {
+      await userService.assignAgency(id, selectedAgencyToAdd);
+      await fetchManagedAgencies();
+      await fetchUserDetail(); // Kullanıcı bilgilerini yenile
+      setSelectedAgencyToAdd('');
+      toast.success('Broker başarıyla atandı');
+    } catch (error: any) {
+      console.error('Broker atanırken hata:', error);
+      toast.error(error.response?.data?.error || 'Broker atanırken bir hata oluştu');
+    }
+  };
+
+  // Broker kaldırma
+  const handleRemoveAgency = async (agencyId: string) => {
+    if (!id) return;
+    try {
+      await userService.removeAgency(id, agencyId);
+      await fetchManagedAgencies();
+      await fetchUserDetail(); // Kullanıcı bilgilerini yenile
+      toast.success('Broker başarıyla kaldırıldı');
+    } catch (error: any) {
+      console.error('Broker kaldırılırken hata:', error);
+      toast.error(error.response?.data?.error || 'Broker kaldırılırken bir hata oluştu');
     }
   };
 
@@ -608,6 +661,89 @@ export default function UserDetail() {
               )}
             </CardContent>
           </Card>
+
+          {/* Broker Yönetimi - Sadece AGENCY_ADMIN rolü için ve SUPER_ADMIN tarafından görülebilir */}
+          {user.role === UserRole.AGENCY_ADMIN && isSuperAdmin && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Broker Yönetimi</CardTitle>
+                <CardDescription>
+                  Bu kullanıcının yönettiği brokerlar (Acenteler)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Mevcut Brokerlar */}
+                <div>
+                  <Label className="mb-2 block">Yönetilen Brokerlar</Label>
+                  {managedAgencies.length > 0 ? (
+                    <div className="space-y-2">
+                      {managedAgencies.map((agency) => (
+                        <div
+                          key={agency.id}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-muted/50"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Building2 className="h-5 w-5 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium">{agency.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Komisyon: %{agency.commission_rate}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveAgency(agency.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Minus className="h-4 w-4 mr-1" />
+                            Kaldır
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground p-3 rounded-lg border bg-muted/50">
+                      Henüz broker atanmamış
+                    </p>
+                  )}
+                </div>
+
+                {/* Yeni Broker Ekle */}
+                <div className="pt-4 border-t">
+                  <Label className="mb-2 block">Yeni Broker Ekle</Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={selectedAgencyToAdd}
+                      onValueChange={setSelectedAgencyToAdd}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Broker seçin" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {agencies
+                          .filter(agency => !managedAgencies.some(ma => ma.id === agency.id))
+                          .map((agency) => (
+                            <SelectItem key={agency.id} value={agency.id}>
+                              {agency.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      onClick={handleAssignAgency}
+                      disabled={!selectedAgencyToAdd}
+                      size="default"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ekle
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sag Kolon - Istatistikler ve Satislar */}

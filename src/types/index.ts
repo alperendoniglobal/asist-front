@@ -47,6 +47,7 @@ export interface User {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  managed_agency_ids?: string[]; // Optional, for internal use (AGENCY_ADMIN için)
 }
 
 /**
@@ -347,6 +348,7 @@ export interface LoginResponse {
   user: User;
   accessToken: string;
   refreshToken: string;
+  managed_agencies?: Agency[]; // AGENCY_ADMIN için yönettiği acenteler (brokerlar)
 }
 
 export interface ApiResponse<T> {
