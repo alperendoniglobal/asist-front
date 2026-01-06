@@ -73,11 +73,13 @@ export default function Dashboard() {
         customerService.getAll()
       ];
 
-      // Super Admin için ek veriler
-      if (user?.role === UserRole.SUPER_ADMIN) {
+      // Super Admin ve SUPER_AGENCY_ADMIN için ek veriler
+      if (user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.SUPER_AGENCY_ADMIN) {
         promises.push(agencyService.getAll());
         promises.push(branchService.getAll());
-        promises.push(supportFileService.getAll()); // Hasar dosyaları
+        if (user?.role === UserRole.SUPER_ADMIN) {
+          promises.push(supportFileService.getAll()); // Hasar dosyaları (sadece SUPER_ADMIN için)
+        }
       }
 
       const results = await Promise.all(promises);
@@ -86,10 +88,12 @@ export default function Dashboard() {
       setRecentSales(results[1].slice(0, 5));
       setRecentCustomers(results[2].slice(0, 5));
       
-      if (user?.role === UserRole.SUPER_ADMIN) {
+      if (user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.SUPER_AGENCY_ADMIN) {
         setAgencies(results[3] || []);
         setBranches(results[4] || []);
-        setSupportFiles(results[5]?.slice(0, 10) || []); // Son 10 hasar dosyası
+        if (user?.role === UserRole.SUPER_ADMIN) {
+          setSupportFiles(results[5]?.slice(0, 10) || []); // Son 10 hasar dosyası
+        }
       }
     } catch (error) {
       console.error('Dashboard verileri yüklenirken hata:', error);
@@ -345,6 +349,7 @@ export default function Dashboard() {
           </Card>
           <Badge variant="secondary" className="py-1.5">
             {user?.role === UserRole.SUPER_ADMIN ? 'Süper Admin' :
+             user?.role === UserRole.SUPER_AGENCY_ADMIN ? 'Süper Broker Yöneticisi' :
              user?.role === UserRole.AGENCY_ADMIN ? 'Broker Yöneticisi' : // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
              user?.role === UserRole.BRANCH_ADMIN ? 'Acente Yöneticisi' : // Görüntüleme: Acente Yöneticisi (değer: BRANCH_ADMIN)
              'Kullanıcı'}

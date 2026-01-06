@@ -15,8 +15,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { agencyService } from '@/services/apiService';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Agency } from '@/types';
-import { EntityStatus } from '@/types';
+import { EntityStatus, UserRole } from '@/types';
 import { formatIBAN, validateIBAN } from '@/utils/validators';
 import { 
   Plus, Search, Edit, Trash2, Eye, Building2, 
@@ -37,6 +38,7 @@ const statusColors: Record<EntityStatus, 'default' | 'secondary' | 'destructive'
 };
 
 export default function Agencies() {
+  const { user: currentUser } = useAuth();
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +46,9 @@ export default function Agencies() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
+  
+  // Rol kontrolleri
+  const isSuperAdmin = currentUser?.role === UserRole.SUPER_ADMIN;
   
   // Form state - komisyon oranı eklendi
   const [formData, setFormData] = useState({
@@ -56,7 +61,8 @@ export default function Agencies() {
     status: EntityStatus.ACTIVE,
     logo: null as string | null, // Base64 logo
     account_name: '', // Banka hesap adı
-    iban: '' // IBAN
+    iban: '', // IBAN
+    assigned_to_user_id: '' // SUPER_ADMIN için: Broker'ı hangi SUPER_AGENCY_ADMIN'a atayacak
   });
 
   useEffect(() => {
@@ -90,7 +96,11 @@ export default function Agencies() {
     }
     
     try {
-      await agencyService.create(formData);
+      // assigned_to_user_id alanını gönderme (Broker oluştururken kullanılmıyor)
+      const dataToSend = { ...formData };
+      delete (dataToSend as any).assigned_to_user_id;
+      
+      await agencyService.create(dataToSend);
       setIsCreateOpen(false);
       resetForm();
       fetchAgencies();
@@ -153,7 +163,8 @@ export default function Agencies() {
       status: agency.status,
       logo: agency.logo || null,
       account_name: agency.account_name || '',
-      iban: agency.iban || ''
+      iban: agency.iban || '',
+      assigned_to_user_id: '' // Edit için gerekli değil
     });
     setIsEditOpen(true);
   };
@@ -169,7 +180,8 @@ export default function Agencies() {
       status: EntityStatus.ACTIVE,
       logo: null,
       account_name: '',
-      iban: ''
+      iban: '',
+      assigned_to_user_id: ''
     });
     setSelectedAgency(null);
   };
@@ -562,6 +574,7 @@ export default function Agencies() {
                   </Select>
                 </div>
 
+
                 {/* Hesap Bilgileri */}
                 <div className="space-y-4 p-4 border rounded-lg bg-slate-50">
                   <div className="flex items-center gap-2">
@@ -610,7 +623,12 @@ export default function Agencies() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>İptal</Button>
-            <Button onClick={handleCreate} disabled={!formData.name}>Kaydet</Button>
+            <Button 
+              onClick={handleCreate} 
+              disabled={!formData.name || (isSuperAdmin && !formData.assigned_to_user_id)}
+            >
+              Kaydet
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -51,6 +51,7 @@ export default function Branches() {
   const [maxCommissionRate, setMaxCommissionRate] = useState<number>(100);
 
   const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
+  const isSuperAgencyAdmin = user?.role === UserRole.SUPER_AGENCY_ADMIN;
 
   useEffect(() => {
     fetchData();
@@ -62,7 +63,7 @@ export default function Branches() {
       // Komisyon bilgileriyle birlikte şubeleri getir
       const [branchesData, agenciesData] = await Promise.all([
         branchService.getAllWithCommission(),
-        isSuperAdmin ? agencyService.getAll() : Promise.resolve([])
+        (isSuperAdmin || isSuperAgencyAdmin) ? agencyService.getAll() : Promise.resolve([])
       ]);
       setBranches(branchesData);
       setAgencies(agenciesData);
@@ -106,11 +107,11 @@ export default function Branches() {
       
       // AGENCY_ADMIN için seçili broker'ı kullan (localStorage'dan)
       const selectedAgencyId = localStorage.getItem('selected_agency_id');
-      const agencyIdForCreate = isSuperAdmin 
+      const agencyIdForCreate = (isSuperAdmin || isSuperAgencyAdmin)
         ? formData.agency_id 
         : (selectedAgencyId || user?.agency_id);
       
-      const createData = {
+      const createData: any = {
         name: formData.name,
         agency_id: agencyIdForCreate,
         address: formData.address,
@@ -460,7 +461,7 @@ export default function Branches() {
             <DialogDescription>Yeni acente kaydı oluşturun</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            {isSuperAdmin && (
+            {(isSuperAdmin || isSuperAgencyAdmin) && (
               <div className="space-y-2">
                 <Label>Broker *</Label>
                 <Select

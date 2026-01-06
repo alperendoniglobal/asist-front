@@ -1,5 +1,6 @@
 export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
+  SUPER_AGENCY_ADMIN = 'SUPER_AGENCY_ADMIN', // Süper Broker Yöneticisi - Birden fazla broker yönetebilir, yeni broker oluşturabilir
   AGENCY_ADMIN = 'AGENCY_ADMIN',
   BRANCH_ADMIN = 'BRANCH_ADMIN',
   BRANCH_USER = 'BRANCH_USER',
@@ -47,7 +48,6 @@ export interface User {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  managed_agency_ids?: string[]; // Optional, for internal use (AGENCY_ADMIN için)
 }
 
 /**

@@ -146,7 +146,7 @@ function App() {
                 <Route
                   path="agencies"
                   element={
-                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN]}>
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN]}>
                       <Agencies />
                     </ProtectedRoute>
                   }
@@ -164,7 +164,7 @@ function App() {
                 <Route
                   path="branches"
                   element={
-                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN]}>
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN]}>
                       <Branches />
                     </ProtectedRoute>
                   }
@@ -172,7 +172,7 @@ function App() {
                 <Route
                   path="branches/:id"
                   element={
-                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN]}>
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN]}>
                       <BranchDetail />
                     </ProtectedRoute>
                   }
@@ -180,7 +180,7 @@ function App() {
                 <Route
                   path="users"
                   element={
-                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN]}>
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN]}>
                       <Users />
                     </ProtectedRoute>
                   }
@@ -188,7 +188,7 @@ function App() {
                 <Route
                   path="users/:id"
                   element={
-                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN]}>
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN]}>
                       <UserDetail />
                     </ProtectedRoute>
                   }
@@ -204,7 +204,7 @@ function App() {
                 <Route
                   path="commission-distribution"
                   element={
-                    <ProtectedRoute allowedRoles={[UserRole.AGENCY_ADMIN, UserRole.SUPER_ADMIN]}>
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.SUPER_ADMIN]}>
                       <AgencyCommissionDistribution />
                     </ProtectedRoute>
                   }
@@ -213,7 +213,7 @@ function App() {
                 <Route
                   path="system-support"
                   element={
-                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER]}>
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER]}>
                       <Support />
                     </ProtectedRoute>
                   }
@@ -222,7 +222,7 @@ function App() {
                 <Route
                   path="support-files"
                   element={
-                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN]}>
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN]}>
                       <SupportFiles />
                     </ProtectedRoute>
                   }

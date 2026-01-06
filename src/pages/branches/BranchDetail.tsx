@@ -209,6 +209,8 @@ export default function BranchDetail() {
     switch (role) {
       case UserRole.SUPER_ADMIN:
         return 'Super Admin';
+      case UserRole.SUPER_AGENCY_ADMIN:
+        return 'Süper Broker Yöneticisi';
       case UserRole.AGENCY_ADMIN:
         return 'Broker Yöneticisi'; // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
       case UserRole.BRANCH_ADMIN:

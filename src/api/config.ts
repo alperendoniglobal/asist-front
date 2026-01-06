@@ -17,10 +17,21 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // AGENCY_ADMIN için seçili broker ID'sini header'a ekle
-    const selectedAgencyId = localStorage.getItem('selected_agency_id');
-    if (selectedAgencyId) {
-      config.headers['X-Selected-Agency-Id'] = selectedAgencyId;
+    // AGENCY_ADMIN için seçili broker ID'sini header'a ekle (SUPER_AGENCY_ADMIN için gerekmez)
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        // Sadece AGENCY_ADMIN için header gönder (SUPER_AGENCY_ADMIN tüm brokerları görebilir)
+        if (user.role === 'AGENCY_ADMIN') {
+          const selectedAgencyId = localStorage.getItem('selected_agency_id');
+          if (selectedAgencyId) {
+            config.headers['X-Selected-Agency-Id'] = selectedAgencyId;
+          }
+        }
+      } catch (error) {
+        // User parse hatası durumunda devam et
+      }
     }
     
     return config;

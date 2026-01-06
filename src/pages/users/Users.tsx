@@ -56,6 +56,7 @@ export default function Users() {
 
   // Rol kontrolleri
   const isSuperAdmin = currentUser?.role === UserRole.SUPER_ADMIN;
+  const isSuperAgencyAdmin = currentUser?.role === UserRole.SUPER_AGENCY_ADMIN;
   const isAgencyAdmin = currentUser?.role === UserRole.AGENCY_ADMIN;
 
   useEffect(() => {
@@ -68,7 +69,7 @@ export default function Users() {
       setLoading(true);
       const [usersData, agenciesData, branchesData] = await Promise.all([
         userService.getAll(),
-        isSuperAdmin ? agencyService.getAll() : Promise.resolve([]),
+        (isSuperAdmin || isSuperAgencyAdmin) ? agencyService.getAll() : Promise.resolve([]),
         branchService.getAll()
       ]);
       setUsers(usersData);
@@ -175,6 +176,8 @@ export default function Users() {
     switch (role) {
       case UserRole.SUPER_ADMIN:
         return 'Super Admin';
+      case UserRole.SUPER_AGENCY_ADMIN:
+        return 'Süper Broker Yöneticisi';
       case UserRole.AGENCY_ADMIN:
         return 'Broker Yöneticisi'; // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
       case UserRole.BRANCH_ADMIN:
@@ -193,6 +196,8 @@ export default function Users() {
     switch (role) {
       case UserRole.SUPER_ADMIN:
         return 'destructive';
+      case UserRole.SUPER_AGENCY_ADMIN:
+        return 'default';
       case UserRole.AGENCY_ADMIN:
         return 'default';
       case UserRole.BRANCH_ADMIN:
@@ -208,9 +213,13 @@ export default function Users() {
 
   // Kullanilabilir roller
   // SUPPORT rolü sadece SUPER_ADMIN tarafından oluşturulabilir
+  // SUPER_AGENCY_ADMIN rolü sadece SUPER_ADMIN tarafından oluşturulabilir
   const getAvailableRoles = () => {
     if (isSuperAdmin) {
-      return [UserRole.SUPER_ADMIN, UserRole.SUPPORT, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
+      return [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.SUPPORT, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
+    }
+    if (isSuperAgencyAdmin) {
+      return [UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
     }
     if (isAgencyAdmin) {
       return [UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER];
@@ -219,7 +228,7 @@ export default function Users() {
   };
 
   // Secili acenteye gore subeler
-  const filteredBranches = isSuperAdmin 
+  const filteredBranches = (isSuperAdmin || isSuperAgencyAdmin)
     ? branches.filter(b => b.agency_id === formData.agency_id)
     : branches;
 
@@ -522,7 +531,8 @@ export default function Users() {
               </Select>
             </div>
             {/* SUPPORT rolü global bir rol olduğu için acente ve şube seçimi gerekmez */}
-            {isSuperAdmin && formData.role !== UserRole.SUPPORT && (
+            {/* SUPER_ADMIN ve SUPER_AGENCY_ADMIN broker seçebilir */}
+            {(isSuperAdmin || isSuperAgencyAdmin) && formData.role !== UserRole.SUPPORT && (
               <div className="space-y-2">
                 <Label>kaynak</Label>
                 <Select
@@ -543,15 +553,15 @@ export default function Users() {
               </div>
             )}
             {/* SUPPORT rolü global bir rol olduğu için şube seçimi gerekmez */}
-            {(isSuperAdmin || isAgencyAdmin) && formData.role !== UserRole.SUPPORT && (
+            {(isSuperAdmin || isSuperAgencyAdmin || isAgencyAdmin) && formData.role !== UserRole.SUPPORT && (
               <div className="space-y-2">
-                <Label>Sube</Label>
+                <Label>Acente</Label>
                 <Select
                   value={formData.branch_id}
                   onValueChange={(value) => setFormData({ ...formData, branch_id: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sube secin" />
+                    <SelectValue placeholder="Acente secin" />
                   </SelectTrigger>
                   <SelectContent>
                     {filteredBranches.map((branch) => (

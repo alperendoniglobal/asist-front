@@ -12,7 +12,6 @@ import { useTheme } from "@/contexts/ThemeContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { UserRole } from "@/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { BrokerSelector } from "@/components/BrokerSelector"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,20 +29,20 @@ import {
 
 // Menu yapisi
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
-  { icon: Building2, label: "Brokerlar", path: "/dashboard/agencies", roles: [UserRole.SUPER_ADMIN] },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
+  { icon: Building2, label: "Brokerlar", path: "/dashboard/agencies", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN] },
   { icon: Store, label: "Bayilik Başvuruları", path: "/dashboard/dealer-applications", roles: [UserRole.SUPER_ADMIN] },
-  { icon: GitBranch, label: "Acenteler", path: "/dashboard/branches", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN] },
-  { icon: UserCircle, label: "Kullanicilar", path: "/dashboard/users", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN] },
-  { icon: Users, label: "Musteriler", path: "/dashboard/customers", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
-  { icon: Car, label: "Araclar", path: "/dashboard/vehicles", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
-  { icon: Package, label: "Paketler", path: "/dashboard/packages", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
-  { icon: ShoppingCart, label: "Satislar", path: "/dashboard/sales", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
-  { icon: CreditCard, label: "Odemeler", path: "/dashboard/payments", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
-  { icon: TrendingUp, label: "Komisyonlar", path: "/dashboard/commissions", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN] },
-  { icon: Calculator, label: "Komisyon Dağılımı", path: "/dashboard/commission-distribution", roles: [UserRole.AGENCY_ADMIN, UserRole.SUPER_ADMIN] },
-  { icon: MessageSquare, label: "Destek", path: "/dashboard/system-support", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
-  { icon: FileText, label: "Hasar Dosyaları", path: "/dashboard/support-files", roles: [UserRole.SUPER_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN] },
+  { icon: GitBranch, label: "Acenteler", path: "/dashboard/branches", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN] },
+  { icon: UserCircle, label: "Kullanicilar", path: "/dashboard/users", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN] },
+  { icon: Users, label: "Musteriler", path: "/dashboard/customers", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
+  { icon: Car, label: "Araclar", path: "/dashboard/vehicles", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
+  { icon: Package, label: "Paketler", path: "/dashboard/packages", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
+  { icon: ShoppingCart, label: "Satislar", path: "/dashboard/sales", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
+  { icon: CreditCard, label: "Odemeler", path: "/dashboard/payments", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
+  { icon: TrendingUp, label: "Komisyonlar", path: "/dashboard/commissions", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN] },
+  { icon: Calculator, label: "Komisyon Dağılımı", path: "/dashboard/commission-distribution", roles: [UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.SUPER_ADMIN] },
+  { icon: MessageSquare, label: "Destek", path: "/dashboard/system-support", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN, UserRole.BRANCH_USER] },
+  { icon: FileText, label: "Hasar Dosyaları", path: "/dashboard/support-files", roles: [UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.BRANCH_ADMIN] },
   { icon: Settings, label: "İçerik Yönetimi", path: "/dashboard/content", roles: [UserRole.SUPER_ADMIN] },
   { icon: ScrollText, label: "Sözleşme Yönetimi", path: "/dashboard/contracts", roles: [UserRole.SUPER_ADMIN] },
 ]
@@ -84,6 +83,7 @@ export function MainLayout() {
   const getRoleColor = (role?: UserRole) => {
     switch (role) {
       case UserRole.SUPER_ADMIN: return 'bg-purple-500'
+      case UserRole.SUPER_AGENCY_ADMIN: return 'bg-indigo-500'
       case UserRole.AGENCY_ADMIN: return 'bg-blue-500'
       case UserRole.BRANCH_ADMIN: return 'bg-green-500'
       default: return 'bg-orange-500'
@@ -93,6 +93,7 @@ export function MainLayout() {
   const getRoleLabel = (role?: UserRole) => {
     switch (role) {
       case UserRole.SUPER_ADMIN: return 'Super Admin'
+      case UserRole.SUPER_AGENCY_ADMIN: return 'Süper Broker Yöneticisi'
       case UserRole.AGENCY_ADMIN: return 'Broker Yöneticisi' // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
       case UserRole.BRANCH_ADMIN: return 'Acente Yöneticisi' // Görüntüleme: Acente Yöneticisi (değer: BRANCH_ADMIN)
       default: return 'Kullanici'
@@ -191,10 +192,7 @@ export function MainLayout() {
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
-            {/* Broker Seçici - Sadece AGENCY_ADMIN için */}
-            {user?.role === UserRole.AGENCY_ADMIN && (
-              <BrokerSelector />
-            )}
+            {/* Broker Seçici - Kaldırıldı, SUPER_AGENCY_ADMIN tüm brokerları görebilir */}
 
             {/* Profil */}
             <DropdownMenu>
