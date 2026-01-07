@@ -625,7 +625,7 @@ export default function Agencies() {
             <Button variant="outline" onClick={() => setIsCreateOpen(false)}>İptal</Button>
             <Button 
               onClick={handleCreate} 
-              disabled={!formData.name || (isSuperAdmin && !formData.assigned_to_user_id)}
+              disabled={!formData.name}
             >
               Kaydet
             </Button>
