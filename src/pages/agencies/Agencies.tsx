@@ -15,9 +15,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { agencyService } from '@/services/apiService';
-import { useAuth } from '@/contexts/AuthContext';
 import type { Agency } from '@/types';
-import { EntityStatus, UserRole } from '@/types';
+import { EntityStatus } from '@/types';
 import { formatIBAN, validateIBAN } from '@/utils/validators';
 import { 
   Plus, Search, Edit, Trash2, Eye, Building2, 
@@ -38,7 +37,6 @@ const statusColors: Record<EntityStatus, 'default' | 'secondary' | 'destructive'
 };
 
 export default function Agencies() {
-  const { user: currentUser } = useAuth();
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,7 +46,6 @@ export default function Agencies() {
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
   
   // Rol kontrolleri
-  const isSuperAdmin = currentUser?.role === UserRole.SUPER_ADMIN;
   
   // Form state - komisyon oranı eklendi
   const [formData, setFormData] = useState({
