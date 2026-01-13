@@ -139,7 +139,7 @@ export default function DealerApplication() {
     return (
       <>
         <Helmet>
-          <title>Başvurunuz Alındı | Çözüm Asistan</title>
+          <title>Başvurunuz Alındı | Çözüm Net A.Ş</title>
         </Helmet>
 
         <div className="light public-page min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-white flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
@@ -198,13 +198,13 @@ export default function DealerApplication() {
   return (
     <>
       <Helmet>
-        <title>Bayilik Başvurusu | Çözüm Asistan</title>
-        <meta name="description" content="Çözüm Asistan bayilik ağına katılın. Yol yardım hizmetleri sektöründe yerinizi alın." />
+        <title>Bayilik Başvurusu | Çözüm Net A.Ş</title>
+        <meta name="description" content="Çözüm Net A.Ş. bayilik ağına katılın. Yol yardım hizmetleri sektöründe yerinizi alın." />
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}
       <div className="light public-page min-h-screen bg-white text-gray-900" style={{ colorScheme: 'light' }}>
-        
+          
         {/* Mobile Header - Sadece mobilde görünür */}
         <header className="lg:hidden sticky top-0 z-50 bg-[#019242] text-white shadow-lg">
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -212,7 +212,7 @@ export default function DealerApplication() {
               <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
                 <img src="/cozumasistanlog.svg" alt="Logo" className="h-5" />
               </div>
-              <span className="font-bold text-sm">Çözüm Asistan</span>
+              <span className="font-bold text-sm">Çözüm Net A.Ş</span>
             </Link>
             
             <button 
@@ -278,7 +278,7 @@ export default function DealerApplication() {
                   <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
                     <img src="/cozumasistanlog.svg" alt="Logo" className="h-7" />
                   </div>
-                  <span className="font-bold text-xl">Çözüm Asistan</span>
+                  <span className="font-bold text-xl">Çözüm Net A.Ş</span>
                 </Link>
                 <div className="flex items-center gap-4">
                   <Link to="/packages" className="text-blue-100 hover:text-white text-sm font-medium transition-colors">
@@ -306,7 +306,7 @@ export default function DealerApplication() {
                 </h1>
                 
                 <p className="text-base lg:text-lg text-blue-100 mb-6 lg:mb-8 max-w-md">
-                  Yol yardım hizmetleri sektöründe yerinizi alın. Çözüm Asistan bayilik ağına katılın.
+                  Yol yardım hizmetleri sektöründe yerinizi alın. Çözüm Net A.Ş. bayilik ağına katılın.
                 </p>
 
                 {/* Avantajlar - 2x2 Grid */}
@@ -339,11 +339,11 @@ export default function DealerApplication() {
                       </div>
                       <span className="text-xs font-medium">+90 (850) 304 54 40</span>
                     </a>
-                    <a href="mailto:info@cozumasistan.com" className="flex items-center gap-2 text-white hover:text-blue-200 transition-colors">
+                    <a href="mailto:info@cozum.net" className="flex items-center gap-2 text-white hover:text-blue-200 transition-colors">
                       <div className="p-1.5 rounded-md bg-white/10">
                         <Mail className="h-3.5 w-3.5" />
                       </div>
-                      <span className="text-xs font-medium">info@cozumasistan.com</span>
+                      <span className="text-xs font-medium">info@cozum.net</span>
                     </a>
                   </div>
                 </div>
@@ -631,7 +631,7 @@ export default function DealerApplication() {
             <div className="flex flex-col items-center gap-4">
               <div className="flex items-center gap-3">
                 <img src="/cozumasistanlog.svg" alt="Logo" className="h-5" />
-                <span className="text-gray-400 text-xs">© {new Date().getFullYear()} Çözüm Asistan</span>
+                <span className="text-gray-400 text-xs">© 2023 Çözüm Net A.Ş</span>
               </div>
               <div className="flex items-center gap-4 text-xs text-gray-400">
                 <Link to="/" className="hover:text-white transition-colors">Ana Sayfa</Link>

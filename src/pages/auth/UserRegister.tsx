@@ -148,7 +148,7 @@ export default function UserRegister() {
           <Link to="/" className="flex items-center gap-3 mb-4">
             <img 
               src="/cozumasistanlog.svg" 
-              alt="Çözüm Asistan" 
+              alt="Çözüm Net A.Ş" 
               className="h-10 w-auto cursor-pointer"
             />
           </Link>
@@ -177,7 +177,7 @@ export default function UserRegister() {
 
         <div className="relative z-10">
           <p className="text-white/50 text-sm">
-            © 2023 Çözüm Asistan. Tüm hakları saklıdır.
+            © 2023 Çözüm Net A.Ş. Tüm hakları saklıdır.
           </p>
         </div>
       </div>

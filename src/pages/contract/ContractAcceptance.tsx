@@ -139,7 +139,7 @@ export default function ContractAcceptance() {
             </div>
             ${contract.content}
             <div class="footer">
-              <p>Bu belge Çözüm Asistan Yol Yardım Hizmetleri tarafından hazırlanmıştır.</p>
+              <p>Bu belge Çözüm Net A.Ş Yol Yardım Hizmetleri tarafından hazırlanmıştır.</p>
             </div>
           </body>
           </html>

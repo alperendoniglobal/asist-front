@@ -158,7 +158,7 @@ export default function LandingPage() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": landingContent?.company_name || "Çözüm Asistan - Yol Yardım Hizmetleri",
+    "name": landingContent?.company_name || "Çözüm Net A.Ş - Yol Yardım Hizmetleri",
     "url": window.location.origin,
     "logo": `${window.location.origin}/cozumasistanlog.svg`,
     "description": "Profesyonel yol yardım hizmetleri. 7/24 çekici, tamirci ve acil durum desteği.",
@@ -182,7 +182,7 @@ export default function LandingPage() {
     <>
       <Helmet>
         <html lang="tr" />
-        <title>Yol Yardım | 7/24 Çekici Hizmeti | {landingContent?.company_name || 'Çözüm Asistan'}</title>
+        <title>Yol Yardım | 7/24 Çekici Hizmeti | {landingContent?.company_name || 'Çözüm Net A.Ş'}</title>
         <meta name="description" content={`Profesyonel yol yardım hizmetleri. 7/24 çekici ve acil durum desteği. ${landingContent?.support_phone || '+90 (850) 304 54 40'}`} />
         <meta name="keywords" content="yol yardım, çekici hizmeti, 7/24 yol yardım, araç kurtarma" />
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
@@ -204,11 +204,11 @@ export default function LandingPage() {
                   <span className="font-medium">{landingContent?.support_phone || '+90 (850) 304 54 40'}</span>
                 </a>
                 <a 
-                  href={`mailto:${landingContent?.support_email || 'info@cozumasistan.com'}`} 
+                  href={`mailto:${landingContent?.support_email || 'info@cozum.net'}`} 
                   className="flex items-center gap-2 hover:text-blue-200 transition-colors"
                 >
                   <Mail className="h-4 w-4" />
-                  <span>{landingContent?.support_email || 'info@cozumasistan.com'}</span>
+                  <span>{landingContent?.support_email || 'info@cozum.net'}</span>
                 </a>
               </div>
               <div className="flex items-center gap-4">
@@ -230,12 +230,12 @@ export default function LandingPage() {
                 <div className="w-16 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-3">
                   <img 
                     src="/cozumasistanlog.svg" 
-                    alt={landingContent?.company_name || "Çözüm Asistan"} 
+                    alt={landingContent?.company_name || "Çözüm Net A.Ş"} 
                     className="h-8 w-auto"
                   />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Çözüm Asistan</h1>
+                  <h1 className="text-xl font-bold text-gray-900">Çözüm Net A.Ş</h1>
                   <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
                 </div>
               </Link>
@@ -285,12 +285,12 @@ export default function LandingPage() {
                 <div className="w-14 h-10 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-2.5">
                   <img 
                     src="/cozumasistanlog.svg" 
-                    alt={landingContent?.company_name || "Çözüm Asistan"} 
+                    alt={landingContent?.company_name || "Çözüm Net A.Ş"} 
                     className="h-6 w-auto"
                   />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-base font-bold text-gray-900">Çözüm Asistan</h1>
+                  <h1 className="text-base font-bold text-gray-900">Çözüm Net A.Ş</h1>
                   <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
                 </div>
               </Link>
@@ -347,7 +347,7 @@ export default function LandingPage() {
                   <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                     <img 
                       src="/cozumasistanlog.svg" 
-                      alt="Çözüm Asistan" 
+                      alt="Çözüm Net A.Ş" 
                       className="h-6 filter brightness-0 invert"
                     />
                   </div>

@@ -30,10 +30,10 @@ export default function AboutPage() {
             id: '',
             slug: 'about',
             title: 'Hakkımızda',
-            content: '<h1>Hakkımızda</h1><p>Çözüm Asistan olarak, sigorta sektöründe dijital dönüşümü hızlandırmak için çalışıyoruz.</p>',
-            meta_title: 'Hakkımızda | Çözüm Asistan',
-            meta_description: 'Çözüm Asistan hakkında bilgiler.',
-            meta_keywords: 'hakkımızda, çözüm asistan',
+            content: '<h1>Hakkımızda</h1><p>Çözüm Net A.Ş olarak, yol yardım hizmetleri sektöründe dijital dönüşümü hızlandırmak için çalışıyoruz.</p>',
+            meta_title: 'Hakkımızda | Çözüm Net A.Ş',
+            meta_description: 'Çözüm Net A.Ş hakkında bilgiler.',
+            meta_keywords: 'hakkımızda, çözüm net',
             is_active: true,
             created_at: '',
             updated_at: '',
@@ -61,12 +61,12 @@ export default function AboutPage() {
     <>
       <Helmet>
         <html lang="tr" />
-        <title>{pageContent?.meta_title || 'Hakkımızda | Çözüm Asistan'}</title>
-        <meta name="description" content={pageContent?.meta_description || 'Çözüm Asistan hakkında bilgiler.'} />
-        <meta name="keywords" content={pageContent?.meta_keywords || 'hakkımızda, çözüm asistan'} />
+        <title>{pageContent?.meta_title || 'Hakkımızda | Çözüm Net A.Ş'}</title>
+        <meta name="description" content={pageContent?.meta_description || 'Çözüm Net A.Ş hakkında bilgiler.'} />
+        <meta name="keywords" content={pageContent?.meta_keywords || 'hakkımızda, çözüm net'} />
         <link rel="canonical" href={`${window.location.origin}/about`} />
-        <meta property="og:title" content={pageContent?.meta_title || 'Hakkımızda | Çözüm Asistan'} />
-        <meta property="og:description" content={pageContent?.meta_description || 'Çözüm Asistan hakkında bilgiler.'} />
+        <meta property="og:title" content={pageContent?.meta_title || 'Hakkımızda | Çözüm Net A.Ş'} />
+        <meta property="og:description" content={pageContent?.meta_description || 'Çözüm Net A.Ş hakkında bilgiler.'} />
         <meta property="og:url" content={`${window.location.origin}/about`} />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">
@@ -74,11 +74,11 @@ export default function AboutPage() {
             "@context": "https://schema.org",
             "@type": "AboutPage",
             "name": pageContent?.title || "Hakkımızda",
-            "description": pageContent?.meta_description || "Çözüm Asistan hakkında bilgiler.",
+            "description": pageContent?.meta_description || "Çözüm Net A.Ş hakkında bilgiler.",
             "url": `${window.location.origin}/about`,
             "mainEntity": {
               "@type": "Organization",
-              "name": "Çözüm Asistan",
+              "name": "Çözüm Net A.Ş",
               "url": window.location.origin
             }
           })}
@@ -95,12 +95,12 @@ export default function AboutPage() {
                 <div className="w-16 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-3">
                   <img 
                     src="/cozumasistanlog.svg" 
-                    alt="Çözüm Asistan" 
+                    alt="Çözüm Net A.Ş" 
                     className="h-8 w-auto"
                   />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Asistan</h1>
+                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Net A.Ş</h1>
                   <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
                 </div>
               </Link>
@@ -134,7 +134,7 @@ export default function AboutPage() {
                 {pageContent?.title || 'Hakkımızda'}
               </h1>
               <p className="text-xl md:text-2xl text-white/90 leading-relaxed max-w-2xl mx-auto">
-                Sigorta sektöründe dijital dönüşümü hızlandıran, yenilikçi ve güvenilir çözümler sunuyoruz.
+                Yol yardım hizmetleri sektöründe dijital dönüşümü hızlandıran, yenilikçi ve güvenilir çözümler sunuyoruz.
               </p>
             </div>
           </div>

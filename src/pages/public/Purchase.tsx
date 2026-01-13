@@ -242,7 +242,7 @@ export default function Purchase() {
     return (
       <>
         <Helmet>
-          <title>Giriş Yapın | Çözüm Asistan</title>
+          <title>Giriş Yapın | Çözüm Net A.Ş</title>
         </Helmet>
 
         <div className="light min-h-screen bg-gradient-to-br from-blue-50 via-white to-gray-50 flex items-center justify-center p-4" style={{ colorScheme: 'light' }}>
@@ -309,7 +309,7 @@ export default function Purchase() {
   return (
     <>
       <Helmet>
-        <title>Satın Al - {pkg?.name} | Çözüm Asistan</title>
+        <title>Satın Al - {pkg?.name} | Çözüm Net A.Ş</title>
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}
@@ -321,7 +321,7 @@ export default function Purchase() {
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <img src="/cozumasistanlog.svg" alt="Logo" className="h-5 sm:h-6" />
               </div>
-              <span className="font-bold text-sm sm:text-base hidden sm:block">Çözüm Asistan</span>
+              <span className="font-bold text-sm sm:text-base hidden sm:block">Çözüm Net A.Ş</span>
             </Link>
             
             {/* Desktop Contact & User Menu */}

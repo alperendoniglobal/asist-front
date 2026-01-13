@@ -15,7 +15,7 @@ export default function PaymentFail() {
   return (
     <>
       <Helmet>
-        <title>Ödeme Başarısız | Çözüm Asistan</title>
+        <title>Ödeme Başarısız | Çözüm Net A.Ş</title>
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}

@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
             slug: 'privacy-policy',
             title: 'Gizlilik ve Güvenlik Politikası',
             content: '<h1>Gizlilik ve Güvenlik Politikası</h1><p>Gizlilik ve güvenlik politikamız hakkında bilgiler.</p>',
-            meta_title: 'Gizlilik ve Güvenlik Politikası | Çözüm Asistan',
+            meta_title: 'Gizlilik ve Güvenlik Politikası | Çözüm Net A.Ş',
             meta_description: 'Gizlilik ve güvenlik politikamız.',
             meta_keywords: 'gizlilik politikası, güvenlik politikası',
             is_active: true,
@@ -58,11 +58,11 @@ export default function PrivacyPolicyPage() {
     <>
       <Helmet>
         <html lang="tr" />
-        <title>{pageContent?.meta_title || 'Gizlilik ve Güvenlik Politikası | Çözüm Asistan'}</title>
+        <title>{pageContent?.meta_title || 'Gizlilik ve Güvenlik Politikası | Çözüm Net A.Ş'}</title>
         <meta name="description" content={pageContent?.meta_description || 'Gizlilik ve güvenlik politikamız.'} />
         <meta name="keywords" content={pageContent?.meta_keywords || 'gizlilik politikası, güvenlik politikası'} />
         <link rel="canonical" href={`${window.location.origin}/privacy-policy`} />
-        <meta property="og:title" content={pageContent?.meta_title || 'Gizlilik ve Güvenlik Politikası | Çözüm Asistan'} />
+        <meta property="og:title" content={pageContent?.meta_title || 'Gizlilik ve Güvenlik Politikası | Çözüm Net A.Ş'} />
         <meta property="og:description" content={pageContent?.meta_description || 'Gizlilik ve güvenlik politikamız.'} />
         <meta property="og:url" content={`${window.location.origin}/privacy-policy`} />
         <meta property="og:type" content="website" />
@@ -75,7 +75,7 @@ export default function PrivacyPolicyPage() {
             "url": `${window.location.origin}/privacy-policy`,
             "isPartOf": {
               "@type": "WebSite",
-              "name": "Çözüm Asistan",
+              "name": "Çözüm Net A.Ş",
               "url": window.location.origin
             }
           })}
@@ -92,12 +92,12 @@ export default function PrivacyPolicyPage() {
                 <div className="w-16 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-3">
                   <img 
                     src="/cozumasistanlog.svg" 
-                    alt="Çözüm Asistan" 
+                    alt="Çözüm Net A.Ş" 
                     className="h-8 w-auto"
                   />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Asistan</h1>
+                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Net A.Ş</h1>
                   <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
                 </div>
               </Link>

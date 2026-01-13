@@ -102,7 +102,7 @@ export default function Login() {
           <Link to="/" className="flex items-center gap-3 mb-4">
             <img 
               src="/cozumasistanlog.svg" 
-              alt="Çözüm Asistan" 
+              alt="Çözüm Net A.Ş" 
               className="h-10 w-auto cursor-pointer"
             />
           </Link>
@@ -129,7 +129,7 @@ export default function Login() {
 
         <div className="relative z-10">
           <p className="text-slate-500 text-sm">
-            © 2023 Çözüm Asistan. Tüm hakları saklıdır.
+            © 2023 Çözüm Net A.Ş. Tüm hakları saklıdır.
           </p>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function Login() {
               <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/60 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primary/25">
                 <img 
                   src="/iconlogo.svg" 
-                  alt="Çözüm Asistan" 
+                  alt="Çözüm Net A.Ş" 
                   className="h-10 w-10"
                 />
               </div>

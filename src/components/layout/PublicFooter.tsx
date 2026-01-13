@@ -68,11 +68,11 @@ export function PublicFooter() {
               </li>
               <li>
                 <a 
-                  href={`mailto:${landingContent?.support_email || 'info@cozumasistan.com'}`} 
+                  href={`mailto:${landingContent?.support_email || 'info@cozum.net'}`} 
                   className="flex items-center gap-2 sm:gap-3 text-gray-400 hover:text-white transition-colors text-sm"
                 >
                   <Mail className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="truncate">{landingContent?.support_email || 'info@cozumasistan.com'}</span>
+                  <span className="truncate">{landingContent?.support_email || 'info@cozum.net'}</span>
                 </a>
               </li>
             </ul>
@@ -175,11 +175,11 @@ export function PublicFooter() {
               <div className="flex items-center gap-3 sm:gap-4">
                 <img 
                   src="/cozumasistanlog.svg" 
-                  alt={landingContent?.company_name || "Çözüm Asistan"} 
+                  alt={landingContent?.company_name || "Çözüm Net A.Ş"} 
                   className="h-7 sm:h-8"
                 />
                 <p className="text-gray-400 text-xs sm:text-sm">
-                  © {new Date().getFullYear()} {landingContent?.company_name || 'Çözüm Asistan'}. Tüm hakları saklıdır.
+                  © 2023 {landingContent?.company_name || 'Çözüm Net A.Ş'}. Tüm hakları saklıdır.
                 </p>
               </div>
             </div>

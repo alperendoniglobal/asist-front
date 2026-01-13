@@ -99,7 +99,7 @@ export default function LandingPageSettings() {
               id="company_name"
               value={formData.company_name || ''}
               onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-              placeholder="Çözüm Asistan"
+              placeholder="Çözüm Net A.Ş"
             />
           </div>
 
@@ -123,7 +123,7 @@ export default function LandingPageSettings() {
                   id="meta_title"
                   value={formData.meta_title || ''}
                   onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
-                  placeholder="Yol Yardım | 7/24 Çekici Hizmeti | Çözüm Asistan"
+                  placeholder="Yol Yardım | 7/24 Çekici Hizmeti | Çözüm Net A.Ş"
                 />
               </div>
               <div className="space-y-2">

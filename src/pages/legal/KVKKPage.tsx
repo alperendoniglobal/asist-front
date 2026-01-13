@@ -28,7 +28,7 @@ export default function KVKKPage() {
             slug: 'kvkk',
             title: 'KVKK Aydınlatma Metni',
             content: '<h1>KVKK Aydınlatma Metni</h1><p>Kişisel Verilerin Korunması Kanunu kapsamında aydınlatma metni.</p>',
-            meta_title: 'KVKK Aydınlatma Metni | Çözüm Asistan',
+            meta_title: 'KVKK Aydınlatma Metni | Çözüm Net A.Ş',
             meta_description: 'Kişisel Verilerin Korunması Kanunu kapsamında aydınlatma metni.',
             meta_keywords: 'kvkk, kişisel verilerin korunması, aydınlatma metni',
             is_active: true,
@@ -58,11 +58,11 @@ export default function KVKKPage() {
     <>
       <Helmet>
         <html lang="tr" />
-        <title>{pageContent?.meta_title || 'KVKK Aydınlatma Metni | Çözüm Asistan'}</title>
+        <title>{pageContent?.meta_title || 'KVKK Aydınlatma Metni | Çözüm Net A.Ş'}</title>
         <meta name="description" content={pageContent?.meta_description || 'Kişisel Verilerin Korunması Kanunu kapsamında aydınlatma metni.'} />
         <meta name="keywords" content={pageContent?.meta_keywords || 'kvkk, kişisel verilerin korunması, aydınlatma metni'} />
         <link rel="canonical" href={`${window.location.origin}/kvkk`} />
-        <meta property="og:title" content={pageContent?.meta_title || 'KVKK Aydınlatma Metni | Çözüm Asistan'} />
+        <meta property="og:title" content={pageContent?.meta_title || 'KVKK Aydınlatma Metni | Çözüm Net A.Ş'} />
         <meta property="og:description" content={pageContent?.meta_description || 'Kişisel Verilerin Korunması Kanunu kapsamında aydınlatma metni.'} />
         <meta property="og:url" content={`${window.location.origin}/kvkk`} />
         <meta property="og:type" content="website" />
@@ -75,7 +75,7 @@ export default function KVKKPage() {
             "url": `${window.location.origin}/kvkk`,
             "isPartOf": {
               "@type": "WebSite",
-              "name": "Çözüm Asistan",
+              "name": "Çözüm Net A.Ş",
               "url": window.location.origin
             }
           })}
@@ -92,12 +92,12 @@ export default function KVKKPage() {
                 <div className="w-16 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-3">
                   <img 
                     src="/cozumasistanlog.svg" 
-                    alt="Çözüm Asistan" 
+                    alt="Çözüm Net A.Ş" 
                     className="h-8 w-auto"
                   />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Asistan</h1>
+                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Net A.Ş</h1>
                   <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
                 </div>
               </Link>

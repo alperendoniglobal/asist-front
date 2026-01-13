@@ -1,4 +1,4 @@
-# robots.txt for Çözüm Asistan
+# robots.txt for Çözüm Net A.Ş
 User-agent: *
 Allow: /
 

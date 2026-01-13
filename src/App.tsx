@@ -12,6 +12,7 @@ import LandingPage from "./pages/landing/LandingPage"
 import Dashboard from "./pages/dashboard/Dashboard"
 import Agencies from "./pages/agencies/Agencies"
 import AgencyCommissionDistribution from "./pages/agencies/AgencyCommissionDistribution"
+import PerformanceReport from "./pages/agencies/PerformanceReport"
 
 // Lazy load components
 const DealerApplications = lazy(() => import("./pages/agencies/DealerApplications"))
@@ -206,6 +207,15 @@ function App() {
                   element={
                     <ProtectedRoute allowedRoles={[UserRole.SUPER_AGENCY_ADMIN, UserRole.AGENCY_ADMIN, UserRole.SUPER_ADMIN]}>
                       <AgencyCommissionDistribution />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* SUPER_AGENCY_ADMIN Performans Raporu - SUPER_ADMIN ve SUPER_AGENCY_ADMIN için */}
+                <Route
+                  path="performance-report"
+                  element={
+                    <ProtectedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.SUPER_AGENCY_ADMIN]}>
+                      <PerformanceReport />
                     </ProtectedRoute>
                   }
                 />

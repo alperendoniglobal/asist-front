@@ -501,6 +501,30 @@ export const statsService = {
   async getCustomerStats(params?: any): Promise<any> {
     const response = await apiClient.get<ApiResponse<any>>('/stats/customers', { params });
     return response.data.data;
+  },
+
+  /**
+   * SUPER_AGENCY_ADMIN için performans raporu
+   * Yönettiği agency'ler, branch'ler ve user'ların satış performanslarını döndürür
+   */
+  async getSuperAgencyAdminPerformanceReport(): Promise<any> {
+    const response = await apiClient.get<ApiResponse<any>>('/stats/super-agency-admin/performance');
+    return response.data.data;
+  },
+
+  /**
+   * Seçilen broker için satış trendi ve detaylı istatistikler
+   * @param agencyId - Broker ID
+   * @param startDate - Başlangıç tarihi (YYYY-MM-DD formatında, opsiyonel)
+   * @param endDate - Bitiş tarihi (YYYY-MM-DD formatında, opsiyonel)
+   */
+  async getAgencySalesData(agencyId: string, startDate?: string, endDate?: string): Promise<any> {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    
+    const response = await apiClient.get<ApiResponse<any>>(`/stats/agency/${agencyId}/sales`, { params });
+    return response.data.data;
   }
 };
 

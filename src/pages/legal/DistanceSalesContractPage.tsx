@@ -28,7 +28,7 @@ export default function DistanceSalesContractPage() {
             slug: 'distance-sales-contract',
             title: 'Mesafeli Satış Sözleşmesi',
             content: '<h1>Mesafeli Satış Sözleşmesi</h1><p>Mesafeli satış sözleşmesi şartları ve koşulları.</p>',
-            meta_title: 'Mesafeli Satış Sözleşmesi | Çözüm Asistan',
+            meta_title: 'Mesafeli Satış Sözleşmesi | Çözüm Net A.Ş',
             meta_description: 'Mesafeli satış sözleşmesi şartları ve koşulları.',
             meta_keywords: 'mesafeli satış sözleşmesi',
             is_active: true,
@@ -58,11 +58,11 @@ export default function DistanceSalesContractPage() {
     <>
       <Helmet>
         <html lang="tr" />
-        <title>{pageContent?.meta_title || 'Mesafeli Satış Sözleşmesi | Çözüm Asistan'}</title>
+        <title>{pageContent?.meta_title || 'Mesafeli Satış Sözleşmesi | Çözüm Net A.Ş'}</title>
         <meta name="description" content={pageContent?.meta_description || 'Mesafeli satış sözleşmesi şartları ve koşulları.'} />
         <meta name="keywords" content={pageContent?.meta_keywords || 'mesafeli satış sözleşmesi'} />
         <link rel="canonical" href={`${window.location.origin}/distance-sales-contract`} />
-        <meta property="og:title" content={pageContent?.meta_title || 'Mesafeli Satış Sözleşmesi | Çözüm Asistan'} />
+        <meta property="og:title" content={pageContent?.meta_title || 'Mesafeli Satış Sözleşmesi | Çözüm Net A.Ş'} />
         <meta property="og:description" content={pageContent?.meta_description || 'Mesafeli satış sözleşmesi şartları ve koşulları.'} />
         <meta property="og:url" content={`${window.location.origin}/distance-sales-contract`} />
         <meta property="og:type" content="website" />
@@ -75,7 +75,7 @@ export default function DistanceSalesContractPage() {
             "url": `${window.location.origin}/distance-sales-contract`,
             "isPartOf": {
               "@type": "WebSite",
-              "name": "Çözüm Asistan",
+              "name": "Çözüm Net A.Ş",
               "url": window.location.origin
             }
           })}
@@ -92,12 +92,12 @@ export default function DistanceSalesContractPage() {
                 <div className="w-16 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-3">
                   <img 
                     src="/cozumasistanlog.svg" 
-                    alt="Çözüm Asistan" 
+                    alt="Çözüm Net A.Ş" 
                     className="h-8 w-auto"
                   />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Asistan</h1>
+                  <h1 className="text-lg md:text-xl font-bold text-gray-900">Çözüm Net A.Ş</h1>
                   <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
                 </div>
               </Link>

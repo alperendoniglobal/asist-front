@@ -210,7 +210,7 @@ export default function UserDashboard() {
               <div className="w-16 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-3">
               <img 
                 src="/cozumasistanlog.svg" 
-                alt="Çözüm Asistan" 
+                alt="Çözüm Net A.Ş" 
                 className="h-8 w-auto"
                   onError={(e) => {
                     // Logo yüklenemezse iconlogo kullan
@@ -222,7 +222,7 @@ export default function UserDashboard() {
                 />
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900">Çözüm Asistan</h1>
+                <h1 className="text-xl font-bold text-gray-900">Çözüm Net A.Ş</h1>
                 <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
               </div>
             </Link>
@@ -727,7 +727,7 @@ export default function UserDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-600">
-              © 2023 Çözüm Asistan. Tüm hakları saklıdır.
+              © 2023 Çözüm Net A.Ş. Tüm hakları saklıdır.
             </p>
             <div className="flex items-center gap-4 text-sm">
               <Link to="/kvkk" className="text-gray-600 hover:text-gray-900 transition-colors">KVKK</Link>

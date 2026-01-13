@@ -119,7 +119,7 @@ export default function PublicPackages() {
   return (
     <>
       <Helmet>
-        <title>Yol Yardım Paketleri | Çözüm Asistan</title>
+        <title>Yol Yardım Paketleri | Çözüm Net A.Ş</title>
         <meta name="description" content="Yol yardım paketlerimizi inceleyin. Otomobil, motosiklet, kamyonet ve daha fazlası için 7/24 yol yardım hizmeti." />
       </Helmet>
 
@@ -132,11 +132,11 @@ export default function PublicPackages() {
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#019242] flex items-center justify-center">
                 <img 
                   src="/cozumasistanlog.svg" 
-                  alt="Çözüm Asistan Logo" 
+                  alt="Çözüm Net A.Ş Logo" 
                   className="h-5 sm:h-6"
                 />
               </div>
-              <span className="font-bold text-gray-900 text-sm sm:text-base hidden sm:block">Çözüm Asistan</span>
+              <span className="font-bold text-gray-900 text-sm sm:text-base hidden sm:block">Çözüm Net A.Ş</span>
             </Link>
             
             {/* Desktop Nav */}
@@ -443,7 +443,7 @@ export default function PublicPackages() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
               <div className="flex items-center gap-3">
                 <img src="/cozumasistanlog.svg" alt="Logo" className="h-5 sm:h-6" />
-                <span className="text-gray-500 text-xs sm:text-sm">© {new Date().getFullYear()} Çözüm Asistan</span>
+                <span className="text-gray-500 text-xs sm:text-sm">© 2023 Çözüm Net A.Ş</span>
               </div>
               <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-400">
                 <Link to="/" className="hover:text-white transition-colors">Ana Sayfa</Link>

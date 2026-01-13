@@ -179,7 +179,7 @@ export default function PaymentSuccess() {
   return (
     <>
       <Helmet>
-        <title>Ödeme Başarılı | Çözüm Asistan</title>
+        <title>Ödeme Başarılı | Çözüm Net A.Ş</title>
       </Helmet>
 
       {/* Dark mode'dan korumalı wrapper */}
