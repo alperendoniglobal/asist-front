@@ -40,8 +40,8 @@ const USAGE_TYPES = [
   { value: 'TAXI', label: 'Taksi' },
 ];
 
-// Model Yılları (son 30 yıl)
-const MODEL_YEARS = Array.from({ length: 30 }, (_, i) => new Date().getFullYear() - i);
+// Model Yılları (son 40 yıl)
+const MODEL_YEARS = Array.from({ length: 40 }, (_, i) => new Date().getFullYear() - i);
 
 // Türkiye İlleri - city.json'dan al
 const CITIES = cityData.map((city) => city.il);

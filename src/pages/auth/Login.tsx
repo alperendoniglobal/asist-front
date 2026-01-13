@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserCustomer } from '@/contexts/UserCustomerContext';
 import { UserRole } from '@/types';
@@ -28,7 +28,7 @@ export default function Login() {
   // State'ler
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'user' | 'admin'>('user');
+  const [activeTab, setActiveTab] = useState<'user' | 'admin'>('admin'); // Default olarak Kurumsal (admin)
   
   // Form verileri
   const [userFormData, setUserFormData] = useState({ email: '', password: '' });
@@ -155,18 +155,70 @@ export default function Login() {
           </CardHeader>
           
           <CardContent>
+            {/* Kullanıcı Tipi Seçimi - Card Tabanlı */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => handleTabChange('user')}
+                className={`p-4 rounded-lg border-2 transition-all text-left ${
+                  activeTab === 'user'
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    activeTab === 'user' ? 'bg-primary/10' : 'bg-muted'
+                  }`}>
+                    <User className={`h-5 w-5 ${
+                      activeTab === 'user' ? 'text-primary' : 'text-muted-foreground'
+                    }`} />
+                  </div>
+                  <div>
+                    <div className={`font-semibold text-sm ${
+                      activeTab === 'user' ? 'text-primary' : 'text-foreground'
+                    }`}>
+                      Bireysel
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Müşteri Girişi
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabChange('admin')}
+                className={`p-4 rounded-lg border-2 transition-all text-left ${
+                  activeTab === 'admin'
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    activeTab === 'admin' ? 'bg-primary/10' : 'bg-muted'
+                  }`}>
+                    <Building2 className={`h-5 w-5 ${
+                      activeTab === 'admin' ? 'text-primary' : 'text-muted-foreground'
+                    }`} />
+                  </div>
+                  <div>
+                    <div className={`font-semibold text-sm ${
+                      activeTab === 'admin' ? 'text-primary' : 'text-foreground'
+                    }`}>
+                      Kurumsal
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Yetkili Girişi
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
+
             {/* Tab yapısı */}
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="user" className="gap-2">
-                  <User className="h-4 w-4" />
-                  Kullanıcı
-                </TabsTrigger>
-                <TabsTrigger value="admin" className="gap-2">
-                  <Building2 className="h-4 w-4" />
-                  Yetkili
-                </TabsTrigger>
-              </TabsList>
 
               {/* Hata mesajı */}
               {error && (
