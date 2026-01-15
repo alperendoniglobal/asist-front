@@ -140,9 +140,10 @@ export function validateTCKN(tckn: string | number): boolean {
 
 /**
  * Vergi Kimlik Numarası (VKN) validasyonu
- * VKN 10 haneli olmalı ve belirli kurallara uymalı
+ * Sadece format kontrolü yapar: 10 haneli ve ilk hane 0 olamaz
+ * 
  * @param vkn - Vergi Kimlik Numarası (string veya number)
- * @returns true eğer geçerli bir VKN ise
+ * @returns true eğer format olarak geçerli bir VKN ise
  */
 export function validateVKN(vkn: string | number): boolean {
   const vknStr = String(vkn).trim();
@@ -154,30 +155,6 @@ export function validateVKN(vkn: string | number): boolean {
   
   // İlk hane 0 olamaz
   if (vknStr[0] === '0') {
-    return false;
-  }
-  
-  // VKN kontrol algoritması
-  const digits = vknStr.split('').map(Number);
-  
-  // 9. hane kontrolü
-  // İlk 9 hanenin ağırlıklı toplamı
-  const weights = [1, 2, 1, 2, 1, 2, 1, 2, 1];
-  let sum = 0;
-  
-  for (let i = 0; i < 9; i++) {
-    let product = digits[i] * weights[i];
-    // Eğer çarpım 9'dan büyükse, rakamlarını topla
-    if (product > 9) {
-      product = Math.floor(product / 10) + (product % 10);
-    }
-    sum += product;
-  }
-  
-  // 9. hane: (10 - (sum % 10)) % 10
-  const calculatedNinth = (10 - (sum % 10)) % 10;
-  
-  if (calculatedNinth !== digits[9]) {
     return false;
   }
   

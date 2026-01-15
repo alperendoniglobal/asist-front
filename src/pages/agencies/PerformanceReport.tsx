@@ -678,7 +678,7 @@ export default function PerformanceReport() {
                 <TabsTrigger value="overview">Genel Bakış</TabsTrigger>
                 <TabsTrigger value="packages">Paketler</TabsTrigger>
                 <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
-                <TabsTrigger value="branches">Acenteler</TabsTrigger>
+                <TabsTrigger value="branches">Şubeler</TabsTrigger>
               </TabsList>
 
               {/* Genel Bakış Tab */}
@@ -1083,7 +1083,7 @@ export default function PerformanceReport() {
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">
                         <GitBranch className="h-4 w-4 text-primary" />
-                        Acenteler ({selectedAgency.branches.length})
+                        Şubeler ({selectedAgency.branches.length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
