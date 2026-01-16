@@ -616,14 +616,19 @@ export default function NewSale() {
     setSelectedPackage(pkg || null);
     
     if (pkg) {
-      // Fiyat paketten geliyor (satış anındaki fiyat olarak kaydedilecek)
+      // Fiyat paketten geliyor (satış anındaki fiyat olarak kaydedilecek - KDV dahil)
       const basePrice = Number(pkg.price) || 0;
+      
+      // Komisyon KDV hariç fiyattan hesaplanır (KDV %20)
+      // KDV hariç fiyat = KDV dahil fiyat / 1.20
+      const priceWithoutVAT = basePrice / 1.20;
       
       // Komisyon oranı acentenin gerçek oranından alınıyor
       // Bu oran satış anında sabitlenip commission alanına kaydediliyor
       // Böylece sonradan acente oranı değişse bile bu satış etkilenmiyor
       const commissionRate = Number(currentAgency?.commission_rate) || 20; // Varsayılan %20
-      const commission = basePrice * (commissionRate / 100);
+      // Komisyon = KDV hariç fiyat × komisyon oranı / 100
+      const commission = priceWithoutVAT * (commissionRate / 100);
       
       setSaleForm({
         ...saleForm,

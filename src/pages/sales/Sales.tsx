@@ -151,9 +151,14 @@ export default function Sales() {
   const handlePackageSelect = async (packageId: string) => {
     const selectedPackage = packages.find(p => p.id === packageId);
     if (selectedPackage) {
-      // Paket fiyatını hesapla (örnek değer)
-      const basePrice = 5000;
-      const commission = basePrice * 0.15;
+      // Paket fiyatı (KDV dahil)
+      const basePrice = Number(selectedPackage.price) || 0;
+      // Komisyon KDV hariç fiyattan hesaplanır (KDV %20)
+      // KDV hariç fiyat = KDV dahil fiyat / 1.20
+      const priceWithoutVAT = basePrice / 1.20;
+      // Varsayılan komisyon oranı %20 (backend'de gerçek komisyon hesaplanacak)
+      const defaultCommissionRate = 20;
+      const commission = priceWithoutVAT * (defaultCommissionRate / 100);
       setFormData({ 
         ...formData, 
         package_id: packageId,
