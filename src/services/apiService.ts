@@ -525,6 +525,15 @@ export const statsService = {
     
     const response = await apiClient.get<ApiResponse<any>>(`/stats/agency/${agencyId}/sales`, { params });
     return response.data.data;
+  },
+
+  /**
+   * Satış Dağılım Raporu - SUPER_ADMIN için
+   * En çok satılan marka, model, model yılı ve şehir bazlı dağılım
+   */
+  async getSalesDistributionReport(): Promise<any> {
+    const response = await apiClient.get<ApiResponse<any>>('/stats/sales-distribution');
+    return response.data.data;
   }
 };
 
