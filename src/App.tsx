@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { lazy, Suspense } from "react"
 import { AuthProvider } from "./contexts/AuthContext"
+import { SocketProvider } from "./contexts/SocketContext"
 import { ThemeProvider } from "./contexts/ThemeContext"
 import { UserCustomerProvider } from "./contexts/UserCustomerContext"
 import ProtectedRoute from "./routes/ProtectedRoute"
@@ -58,8 +59,9 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <UserCustomerProvider>
-          <Router>
+        <SocketProvider>
+          <UserCustomerProvider>
+            <Router>
             <ThemeRouteListener />
             <Routes>
               {/* Landing Page - Public */}
@@ -303,6 +305,7 @@ function App() {
           </Router>
           <Toaster richColors position="top-right" />
         </UserCustomerProvider>
+        </SocketProvider>
       </AuthProvider>
     </ThemeProvider>
   )

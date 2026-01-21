@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { DashboardStats, Sale, Customer, Agency, Branch } from '@/types';
 import { UserRole } from '@/types';
+import ActiveUsers from '@/components/dashboard/ActiveUsers';
 
 // Grafik renkleri - modern palette
 const CHART_COLORS = {
@@ -565,15 +566,91 @@ export default function Dashboard() {
             </Card>
         </div>
       )}
+      {/* ===== GRAFİKLER VE AKTİF KULLANICILAR ===== */}
+      <div className="space-y-6">
+        {/* İlk Satır: Aktif Kullanıcılar ve Paket Dağılımı - Yapboz Layout */}
+        <div className="grid gap-6 lg:grid-cols-12">
+          {/* ===== AKTİF KULLANICILAR BÖLÜMÜ ===== */}
+          {/* Sadece SUPER_ADMIN ve SUPER_AGENCY_ADMIN için göster */}
+          {(user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.SUPER_AGENCY_ADMIN) ? (
+            <div className="lg:col-span-4">
+              <ActiveUsers />
+            </div>
+          ) : null}
+          
+          {/* Paket Dağılımı - Daha geniş alan */}
+          <Card className={user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.SUPER_AGENCY_ADMIN ? 'lg:col-span-8' : 'lg:col-span-12'}>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                Paket Dağılımı
+              </CardTitle>
+              <CardDescription>En çok satan paketler</CardDescription>
+            </CardHeader>
+          <CardContent>
+            {stats?.topPackages?.length ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Pie Chart - Daha büyük */}
+                <div className="h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                        data={stats.topPackages}
+                  cx="50%"
+                  cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={3}
+                  dataKey="count"
+                >
+                        {stats.topPackages.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+                </div>
+                {/* Paket Listesi */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold mb-3">Paket Detayları</h4>
+                  {stats.topPackages.slice(0, 6).map((pkg, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 w-4 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
+                        <span className="text-sm font-medium truncate">{pkg.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold">{pkg.count}</span>
+                        <span className="text-xs text-muted-foreground">satış</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground">
+                <Package className="h-12 w-12 mb-3 opacity-20" />
+                <p className="text-sm">Henüz paket satışı yok</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        </div>
 
-      {/* ===== GRAFİKLER ===== */}
-      <div className="grid gap-6 lg:grid-cols-3">
+        {/* İkinci Satır: Broker Performansı */}
         {/* Ana Grafik - Super Admin için Acente Kıyaslaması, diğerleri için Günlük Satışlar */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
-            <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   {user?.role === UserRole.SUPER_ADMIN ? (
                     <>
                       <Building2 className="h-5 w-5 text-primary" />
@@ -585,7 +662,7 @@ export default function Dashboard() {
                       Son 7 Günün Satışları
                     </>
                   )}
-            </CardTitle>
+                </CardTitle>
                 <CardDescription>
                   {user?.role === UserRole.SUPER_ADMIN 
                     ? 'Brokerların satış ve gelir karşılaştırması' 
@@ -644,23 +721,23 @@ export default function Dashboard() {
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                       <Building2 className="h-12 w-12 mb-3 opacity-20" />
                       <p className="text-sm">Henüz acente satış verisi yok</p>
-              </div>
-            )}
+                    </div>
+                  )}
                 </ResponsiveContainer>
               ) : (
                 // Diğer roller için Günlük Satış Area Chart - Dual Y Axis
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={stats?.dailySales?.length ? stats.dailySales : getEmptyDailyData()}>
-                <defs>
+                    <defs>
                       <linearGradient id="gradientRevenue" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.3}/>
                         <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity={0}/>
-                  </linearGradient>
+                      </linearGradient>
                       <linearGradient id="gradientCount" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor={CHART_COLORS.success} stopOpacity={0.3}/>
                         <stop offset="100%" stopColor={CHART_COLORS.success} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
                     {/* Sol Y ekseni - Gelir için */}
@@ -680,17 +757,17 @@ export default function Dashboard() {
                       tick={{ fontSize: 11, fill: CHART_COLORS.success }}
                       allowDecimals={false}
                     />
-                <Tooltip 
-                  contentStyle={{ 
+                    <Tooltip 
+                      contentStyle={{ 
                         backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
+                        border: '1px solid hsl(var(--border))',
                         borderRadius: '12px',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }}
-                  formatter={(value: number, name: string) => [
+                      }}
+                      formatter={(value: number, name: string) => [
                         name === 'revenue' ? formatCurrency(value) : `${value} adet`,
                         name === 'revenue' ? 'Gelir' : 'Satış Adedi'
-                  ]}
+                      ]}
                       labelFormatter={(label) => label}
                     />
                     {/* Gelir - Sol eksene bağlı */}
@@ -713,69 +790,10 @@ export default function Dashboard() {
                       fill="url(#gradientCount)" 
                       name="count" 
                     />
-              </AreaChart>
-            </ResponsiveContainer>
+                  </AreaChart>
+                </ResponsiveContainer>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Paket Dağılımı */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              Paket Dağılımı
-            </CardTitle>
-            <CardDescription>En çok satan paketler</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {stats?.topPackages?.length ? (
-              <div className="space-y-4">
-                <div className="h-[160px]">
-                  <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                        data={stats.topPackages}
-                  cx="50%"
-                  cy="50%"
-                        innerRadius={45}
-                        outerRadius={70}
-                        paddingAngle={3}
-                  dataKey="count"
-                >
-                        {stats.topPackages.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-                </div>
-                <div className="space-y-2">
-                  {stats.topPackages.slice(0, 4).map((pkg, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[index] }}></div>
-                        <span className="text-xs truncate max-w-[120px]">{pkg.name}</span>
-                      </div>
-                      <span className="text-xs font-semibold">{pkg.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="h-[280px] flex flex-col items-center justify-center text-muted-foreground">
-                <Package className="h-12 w-12 mb-3 opacity-20" />
-                <p className="text-sm">Henüz paket satışı yok</p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
