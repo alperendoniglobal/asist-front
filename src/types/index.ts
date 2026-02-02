@@ -246,6 +246,7 @@ export interface Sale {
   user?: User;              // Satışı yapan kullanıcı
   agency?: Agency;          // Acente bilgisi
   branch?: Branch;          // Şube bilgisi
+  payments?: Payment[];     // Ödeme kayıtları (Bakiye / PayTR - liste filtreleme için)
 }
 
 // İade hesaplama sonucu (API'den dönen)
@@ -307,6 +308,7 @@ export enum CommissionStatus {
 export interface Commission {
   id: string;
   agency_id: string;
+  branch_id?: string | null;
   amount: number;
   status: CommissionStatus;
   notes?: string;
@@ -316,6 +318,22 @@ export interface Commission {
   created_at: string;
   updated_at: string;
   agency?: Agency;
+  branch?: Branch;
+}
+
+/** Komisyon özeti: acente ve şube ayrı satırlar; branchId/branchName null ise acente satırı */
+export interface CommissionSummaryItem {
+  agencyId: string;
+  agencyName: string;
+  branchId?: string | null;
+  branchName?: string | null;
+  totalEarned: number;
+  totalPaid: number;
+  balance: number;
+  /** Satırın (broker veya acente) bakiye ile ödenen satış adedi (komisyon kesilmez) */
+  balancePaidCount?: number;
+  /** Satırın bakiye ile ödenen satışların toplam tutarı */
+  balancePaidAmount?: number;
 }
 
 export enum TicketStatus {
@@ -384,4 +402,8 @@ export interface DashboardStats {
   totalRefunds?: number;           // Toplam iade sayısı
   totalRefundAmount?: number;      // Toplam iade tutarı
   recentRefunds?: Sale[];          // Son iadeler listesi
+  // Komisyon özeti: acente/şube bazında ödenen ve ödenecek (dashboard'da gösterilir)
+  commissionSummary?: CommissionSummaryItem[];
+  // Bakiye ile ödenen satışların toplam tutarı (dashboard kartı)
+  totalSalesPaidByBalance?: number;
 }

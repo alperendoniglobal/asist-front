@@ -10,6 +10,7 @@ import type {
   Sale,
   Payment,
   Commission,
+  CommissionSummaryItem,
   SupportTicket,
   SupportMessage,
   DashboardStats,
@@ -372,6 +373,18 @@ export const paymentService = {
 // Commission Service
 export const commissionService = {
   ...createCRUDService<Commission>('/commissions'),
+
+  /** Komisyon özeti: acente bazında toplam kazanılan, toplam ödenen, ödenecek bakiye */
+  async getSummary(): Promise<CommissionSummaryItem[]> {
+    const response = await apiClient.get<ApiResponse<CommissionSummaryItem[]>>('/commissions/summary');
+    return response.data.data;
+  },
+
+  /** Bakiye ile ödenen satışların sayı ve tutarı (bu satışlarda komisyon kesilmez; komisyon sayfalarında gösterilir) */
+  async getBalancePaidStats(): Promise<{ count: number; totalAmount: number }> {
+    const response = await apiClient.get<ApiResponse<{ count: number; totalAmount: number }>>('/commissions/balance-paid-stats');
+    return response.data.data;
+  },
 
   async approve(id: string): Promise<void> {
     await apiClient.post(`/commissions/${id}/approve`);

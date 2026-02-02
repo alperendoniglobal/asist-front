@@ -11,14 +11,14 @@ import {
 } from '@/components/ui/select';
 import { 
   customerService, packageService, saleService,
-  carBrandService, carModelService, motorBrandService, motorModelService, agencyService, pdfService
+  carBrandService, carModelService, motorBrandService, motorModelService, agencyService, branchService, pdfService
 } from '@/services/apiService';
 import { contentService } from '@/services/contentService';
 import { extractRegistrationInfo } from '@/services/ocrService';
 import { toast } from 'sonner';
 import { validateTCKN, validateVKN } from '@/utils/validators';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Customer, Package, CarBrand, CarModel, MotorBrand, MotorModel, Sale, Agency } from '@/types';
+import type { Customer, Package, CarBrand, CarModel, MotorBrand, MotorModel, Sale, Agency, Branch } from '@/types';
 import { PaymentType, UserRole } from '@/types';
 import PaytrIframe from '@/components/payment/PaytrIframe';
 import { paymentService } from '@/services/apiService';
@@ -72,6 +72,8 @@ export default function NewSale() {
   const [isPaytrModalOpen, setIsPaytrModalOpen] = useState(false);
   const [agreements, setAgreements] = useState({ kvkk: false, contract: false });
   const [currentAgency, setCurrentAgency] = useState<Agency | null>(null);
+  /** Şube kullanıcısı ise şube bilgisi (bakiye ve komisyon oranı için) */
+  const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
   
   // Araç tipi seçimi (en başta seçilecek)
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>('');
@@ -160,6 +162,19 @@ export default function NewSale() {
     fetchInitialData();
   }, [user]);
 
+  // Ödeme yöntemi değişince komisyonu güncelle: Bakiye = 0, PayTR = hesaplanan komisyon
+  useEffect(() => {
+    if (paymentMethod === PaymentType.BALANCE) {
+      setSaleForm((prev) => ({ ...prev, commission: 0 }));
+      return;
+    }
+    if (paymentMethod === PaymentType.PAYTR && saleForm.package_id && saleForm.price > 0) {
+      const priceWithoutVAT = saleForm.price / 1.2;
+      const commission = (priceWithoutVAT * (Number(currentAgency?.commission_rate) || 20)) / 100;
+      setSaleForm((prev) => ({ ...prev, commission }));
+    }
+  }, [paymentMethod]);
+
   const fetchInitialData = async () => {
     try {
       const [packagesData, carBrandsData, motorBrandsData] = await Promise.all([
@@ -172,7 +187,7 @@ export default function NewSale() {
       setCarBrands(carBrandsData);
       setMotorBrands(motorBrandsData);
 
-      // Kullanıcının acentesini çek (komisyon oranı için)
+      // Kullanıcının acentesini çek (komisyon oranı ve acente bakiyesi için)
       if (user?.agency_id) {
         try {
           const agency = await agencyService.getById(user.agency_id);
@@ -181,7 +196,6 @@ export default function NewSale() {
           console.error('Acente bilgisi alınamadı:', error);
         }
       } else if (user?.role === UserRole.SUPER_ADMIN) {
-        // Super Admin için varsayılan acente (ilk aktif acente)
         try {
           const agencies = await agencyService.getAll();
           const activeAgency = agencies.find(a => a.status === 'ACTIVE');
@@ -191,6 +205,19 @@ export default function NewSale() {
         } catch (error) {
           console.error('Acenteler alınamadı:', error);
         }
+      }
+
+      // Şube kullanıcısı ise şube bilgisini çek (şube bakiyesi ve komisyon oranı için)
+      if (user?.branch_id) {
+        try {
+          const branch = await branchService.getById(user.branch_id);
+          setCurrentBranch(branch);
+        } catch (error) {
+          console.error('Şube bilgisi alınamadı:', error);
+          setCurrentBranch(null);
+        }
+      } else {
+        setCurrentBranch(null);
       }
     } catch (error) {
       console.error('Veriler yüklenirken hata:', error);
@@ -610,31 +637,25 @@ export default function NewSale() {
     }
   };
 
-  // Paket seçildiğinde fiyat hesapla
+  // Paket seçildiğinde fiyat ve komisyon hesapla (bakiye ile ödemede komisyon 0)
   const handlePackageChange = (packageId: string) => {
     const pkg = packages.find(p => p.id === packageId);
     setSelectedPackage(pkg || null);
     
     if (pkg) {
-      // Fiyat paketten geliyor (satış anındaki fiyat olarak kaydedilecek - KDV dahil)
       const basePrice = Number(pkg.price) || 0;
-      
-      // Komisyon KDV hariç fiyattan hesaplanır (KDV %20)
-      // KDV hariç fiyat = KDV dahil fiyat / 1.20
       const priceWithoutVAT = basePrice / 1.20;
-      
-      // Komisyon oranı acentenin gerçek oranından alınıyor
-      // Bu oran satış anında sabitlenip commission alanına kaydediliyor
-      // Böylece sonradan acente oranı değişse bile bu satış etkilenmiyor
-      const commissionRate = Number(currentAgency?.commission_rate) || 20; // Varsayılan %20
-      // Komisyon = KDV hariç fiyat × komisyon oranı / 100
-      const commission = priceWithoutVAT * (commissionRate / 100);
+      // Bakiye ile ödemede komisyon kesilmez; sadece PayTR/kart ile ödemede hesaplanır
+      const commission =
+        paymentMethod === PaymentType.BALANCE
+          ? 0
+          : (priceWithoutVAT * (Number(currentAgency?.commission_rate) || 20)) / 100;
       
       setSaleForm({
         ...saleForm,
         package_id: packageId,
         price: basePrice,
-        commission: commission,
+        commission,
       });
     } else {
       setSaleForm({
@@ -645,6 +666,16 @@ export default function NewSale() {
       });
     }
   };
+
+  // Bakiye ile ödemede: kullanılabilir bakiye (şube kullanıcısı = şube bakiyesi, acente = acente bakiyesi). null = henüz yüklenmedi.
+  const isBalancePayment = paymentMethod === PaymentType.BALANCE;
+  const availableBalanceForPayment: number | null = isBalancePayment
+    ? (user?.branch_id
+        ? (currentBranch != null ? Number(currentBranch.balance) || 0 : null)
+        : (Number(currentAgency?.balance) || 0))
+    : 0;
+  // Bakiye yetersizse satışa izin verme (eksiye düşmek yok)
+  const isBalanceInsufficient = isBalancePayment && saleForm.price > 0 && (availableBalanceForPayment === null || availableBalanceForPayment < saleForm.price);
 
   // Satışı tamamla - Transaction ile tek seferde işlenir
   // Hata olursa hiçbir kayıt oluşturulmaz (müşteri, araç dahil)
@@ -672,6 +703,21 @@ export default function NewSale() {
     if (!agreements.kvkk || !agreements.contract) {
       alert('Lütfen sözleşmeleri onaylayın');
       return;
+    }
+
+    // Bakiye ile ödeme: bakiyesi yetmiyorsa satışı yaptırma (eksiye düşmek yok)
+    if (paymentMethod === PaymentType.BALANCE) {
+      const balance = user?.branch_id
+        ? (currentBranch != null ? Number(currentBranch.balance) || 0 : null)
+        : (Number(currentAgency?.balance) || 0);
+      if (balance === null) {
+        toast.error('Şube bakiyesi yükleniyor, lütfen bekleyin.');
+        return;
+      }
+      if (balance < saleForm.price) {
+        toast.error(`Yetersiz bakiye. Mevcut: ${formatCurrency(balance)}, Gerekli: ${formatCurrency(saleForm.price)}`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -712,13 +758,13 @@ export default function NewSale() {
         model_year: parseInt(vehicleForm.model_year),
         usage_type: vehicleForm.usage_type,
         },
-        // Satış bilgileri
+        // Satış bilgileri (bakiye ile ödemede komisyon her zaman 0)
         sale: {
         package_id: saleForm.package_id,
         start_date: saleForm.start_date,
         end_date: saleForm.end_date,
         price: saleForm.price,
-        commission: saleForm.commission,
+        commission: paymentMethod === PaymentType.BALANCE ? 0 : saleForm.commission,
         },
         // Ödeme bilgileri
         payment: {
@@ -1354,7 +1400,11 @@ export default function NewSale() {
                   </div>
                   <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
                     <span>Komisyon:</span>
-                    <span className="font-semibold">{formatCurrency(saleForm.commission)}</span>
+                    <span className="font-semibold">
+                      {paymentMethod === PaymentType.BALANCE
+                        ? '₺0,00 (bakiye ile ödemede komisyon kesilmez)'
+                        : formatCurrency(saleForm.commission)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -1405,6 +1455,36 @@ export default function NewSale() {
                 </button>
               </div>
             </div>
+
+            {/* Bakiye ile ödeme: mevcut bakiye + komisyon kesilmez bilgisi */}
+            {/* Şube kullanıcısı (branch_id varsa) sadece şube bakiyesini görür; acente bakiyesi gösterilmez. */}
+            {paymentMethod === PaymentType.BALANCE && (
+              <div className="space-y-2 p-3 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-lg">
+                <p className="text-sm font-medium text-violet-800 dark:text-violet-200">
+                  Bakiye ile ödemede komisyon kesilmez.
+                </p>
+                <p className="text-sm text-violet-700 dark:text-violet-300">
+                  {user?.branch_id
+                    ? (currentBranch
+                        ? <>Mevcut şube bakiyesi: <span className="font-semibold">{formatCurrency(Number(currentBranch.balance) || 0)}</span></>
+                        : <>Şube bakiyesi yükleniyor...</>)
+                    : <>Mevcut bakiye: <span className="font-semibold">{formatCurrency(Number(currentAgency?.balance) || 0)}</span></>}
+                </p>
+                {selectedPackage && saleForm.price > 0 && (
+                  <p className="text-xs text-violet-600 dark:text-violet-400">
+                    Bu satış tutarı ({formatCurrency(saleForm.price)}) {currentBranch || user?.branch_id ? 'şube ' : ''}bakiyenizden düşülecektir.
+                  </p>
+                )}
+                {/* Bakiye yetersizse kutu içinde uyarı göster */}
+                {isBalanceInsufficient && (
+                  <p className="text-sm font-medium text-destructive mt-2 pt-2 border-t border-violet-200 dark:border-violet-800">
+                    {availableBalanceForPayment === null
+                      ? '⚠️ Şube bakiyesi yükleniyor. Lütfen bekleyin veya PayTR ile ödeme yapın.'
+                      : `⚠️ Bakiye yetersiz. Bu satış tutarı (${formatCurrency(saleForm.price)}) bakiyenizden (${formatCurrency(availableBalanceForPayment)}) fazla. Satışı tamamlayamazsınız.`}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* PayTR Bilgilendirme */}
             {paymentMethod === PaymentType.PAYTR && (
@@ -1459,10 +1539,10 @@ export default function NewSale() {
               </label>
             </div>
 
-            {/* Submit Button */}
+            {/* Submit Button - Bakiye yetersizse devre dışı (eksiye düşmek yok) */}
             <Button
               onClick={handleSubmit}
-              disabled={loading || !agreements.kvkk || !agreements.contract || !saleForm.package_id}
+              disabled={loading || !agreements.kvkk || !agreements.contract || !saleForm.package_id || isBalanceInsufficient}
               className="w-full h-12 text-lg bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
             >
               {loading ? (
@@ -1474,6 +1554,11 @@ export default function NewSale() {
                 </>
               )}
             </Button>
+            {isBalanceInsufficient && (
+              <p className="text-sm text-destructive text-center mt-2">
+                Bakiye yetersiz. Bu paketi almak için bakiyeniz yetmiyor (eksiye düşülemez).
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

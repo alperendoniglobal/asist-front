@@ -16,11 +16,13 @@ import {
   Calendar, Package, ArrowUpRight,
   Building2, GitBranch, Activity, Plus, Search, Car, 
   UserPlus, Clock, CheckCircle, FileText, Zap, 
-  Sparkles, Eye, RotateCcw, XCircle, AlertTriangle, Phone, MapPin
+  Sparkles, Eye, RotateCcw, XCircle, AlertTriangle, Phone, MapPin,
+  Banknote
 } from 'lucide-react';
 import type { DashboardStats, Sale, Customer, Agency, Branch } from '@/types';
 import { UserRole } from '@/types';
 import ActiveUsers from '@/components/dashboard/ActiveUsers';
+import TurkeyMapSales from '@/components/maps/TurkeyMapSales';
 
 // Grafik renkleri - modern palette
 const CHART_COLORS = {
@@ -59,6 +61,8 @@ export default function Dashboard() {
   const [branches, setBranches] = useState<Branch[]>([]);
   // Super Admin için hasar dosyaları
   const [supportFiles, setSupportFiles] = useState<any[]>([]);
+  // Super Admin için satış dağılım raporu (Türkiye haritası verisi)
+  const [salesDistributionReport, setSalesDistributionReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -80,6 +84,7 @@ export default function Dashboard() {
         promises.push(branchService.getAll());
         if (user?.role === UserRole.SUPER_ADMIN) {
           promises.push(supportFileService.getAll()); // Hasar dosyaları (sadece SUPER_ADMIN için)
+          promises.push(statsService.getSalesDistributionReport()); // Harita verisi (Türkiye şehir dağılımı)
         }
       }
 
@@ -94,6 +99,7 @@ export default function Dashboard() {
         setBranches(results[4] || []);
         if (user?.role === UserRole.SUPER_ADMIN) {
           setSupportFiles(results[5]?.slice(0, 10) || []); // Son 10 hasar dosyası
+          setSalesDistributionReport(results[6] ?? null); // Satış dağılım raporu (harita)
         }
       }
     } catch (error) {
@@ -170,6 +176,45 @@ export default function Dashboard() {
             {new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </Badge>
         </div>
+
+        {/* Komisyon özeti (acente kullanıcısı kendi acentesinin ödenen/ödenecek bakiyesini görür) + Bakiye ile ödenen satışlar */}
+        {((stats?.commissionSummary?.length ?? 0) > 0 || stats?.totalSalesPaidByBalance !== undefined) && (
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+            {(stats?.commissionSummary?.length ?? 0) > 0 && (
+              <>
+                <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground">Ödenen (Komisyon)</p>
+                    <p className="text-xl font-bold text-emerald-600">
+                      {formatCurrency((stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.totalPaid) || 0), 0))}
+                    </p>
+                    <Banknote className="h-6 w-6 text-emerald-500 mt-2 opacity-70" />
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-violet-500/10 to-violet-500/5 border-violet-500/20">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground">Ödenecek (Bakiye)</p>
+                    <p className="text-xl font-bold text-violet-600">
+                      {formatCurrency((stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.balance) || 0), 0))}
+                    </p>
+                    <Wallet className="h-6 w-6 text-violet-500 mt-2 opacity-70" />
+                  </CardContent>
+                </Card>
+              </>
+            )}
+            {/* Bakiye ile ödenen satışların toplam tutarı */}
+            <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Bakiye ile Ödenen Satışlar</p>
+                <p className="text-xl font-bold text-amber-600">
+                  {formatCurrency(stats?.totalSalesPaidByBalance ?? 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Bakiye kullanılarak yapılan satışların toplamı</p>
+                <Wallet className="h-6 w-6 text-amber-500 mt-2 opacity-70" />
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Hızlı İşlemler */}
         <div>
@@ -352,7 +397,7 @@ export default function Dashboard() {
             {user?.role === UserRole.SUPER_ADMIN ? 'Süper Admin' :
              user?.role === UserRole.SUPER_AGENCY_ADMIN ? 'Süper Broker Yöneticisi' :
              user?.role === UserRole.AGENCY_ADMIN ? 'Broker Yöneticisi' : // Görüntüleme: Broker Yöneticisi (değer: AGENCY_ADMIN)
-             user?.role === UserRole.BRANCH_ADMIN ? 'Acente Yöneticisi' : // Görüntüleme: Acente Yöneticisi (değer: BRANCH_ADMIN)
+             user?.role === UserRole.BRANCH_ADMIN ? 'Acente Yöneticisi' : // BRANCH_ADMIN = acente (şube) yöneticisi
              'Kullanıcı'}
           </Badge>
         </div>
@@ -430,9 +475,9 @@ export default function Dashboard() {
                 <div className="flex items-center gap-1.5 text-xs text-violet-100/70">
                   <Sparkles className="h-3.5 w-3.5" />
                   {user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER 
-                    ? 'Şube komisyonu' 
-                    : user?.role === UserRole.AGENCY_ADMIN 
                     ? 'Acente komisyonu' 
+                    : user?.role === UserRole.AGENCY_ADMIN 
+                    ? 'Broker komisyonu' 
                     : 'Kazanılan komisyon'}
                 </div>
               </div>
@@ -471,6 +516,79 @@ export default function Dashboard() {
         </Card>
       </div>
 
+      {/* ===== KOMİSYON ÖZETİ: Ödenen / Ödenecek / Bakiye ile ödenen satışlar (broker veya acente kendi verisini görür) ===== */}
+      {((stats?.commissionSummary?.length ?? 0) > 0 || stats?.totalSalesPaidByBalance !== undefined) && (
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+          {(stats?.commissionSummary?.length ?? 0) > 0 && (
+            <>
+              <Card className="bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 border-emerald-500/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Ödenen (Komisyon)</p>
+                      <p className="text-2xl font-bold text-emerald-600">
+                        {formatCurrency((stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.totalPaid) || 0), 0))}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Toplam ödenen komisyon</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-emerald-500/10">
+                      <Banknote className="h-8 w-8 text-emerald-600" />
+                    </div>
+                  </div>
+                  {(user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.SUPER_AGENCY_ADMIN || user?.role === UserRole.AGENCY_ADMIN) && (
+                    <Link to="/dashboard/commissions" className="mt-4 inline-block">
+                      <Button variant="outline" size="sm" className="text-xs gap-1">
+                        Komisyonlar <ArrowUpRight className="h-3 w-3" />
+                      </Button>
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-violet-500/5 to-violet-500/10 border-violet-500/20">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Ödenecek (Bakiye)</p>
+                      <p className="text-2xl font-bold text-violet-600">
+                        {formatCurrency((stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.balance) || 0), 0))}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Henüz ödenmemiş komisyon alacağı</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-violet-500/10">
+                      <Wallet className="h-8 w-8 text-violet-600" />
+                    </div>
+                  </div>
+                  {(user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.SUPER_AGENCY_ADMIN || user?.role === UserRole.AGENCY_ADMIN) && (
+                    <Link to="/dashboard/commissions" className="mt-4 inline-block">
+                      <Button variant="outline" size="sm" className="text-xs gap-1">
+                        Komisyonlar <ArrowUpRight className="h-3 w-3" />
+                      </Button>
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
+          {/* Bakiye ile ödenen satışların toplam tutarı */}
+          <Card className="bg-gradient-to-br from-amber-500/5 to-amber-500/10 border-amber-500/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Bakiye ile Ödenen Satışlar</p>
+                  <p className="text-2xl font-bold text-amber-600">
+                    {formatCurrency(stats?.totalSalesPaidByBalance ?? 0)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Bakiye kullanılarak yapılan satışların toplam tutarı</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-500/10">
+                  <Wallet className="h-8 w-8 text-amber-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* ===== SUPER ADMIN EK KARTLARI ===== */}
       {user?.role === UserRole.SUPER_ADMIN && (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
@@ -506,7 +624,7 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Toplam Acente</p>
+                  <p className="text-sm text-muted-foreground">Toplam Acente (şube)</p>
                   <div className="flex items-baseline gap-2">
                     <p className="text-4xl font-bold">{totalBranches}</p>
                     <span className="text-xs text-muted-foreground">
@@ -566,6 +684,74 @@ export default function Dashboard() {
             </Card>
         </div>
       )}
+
+      {/* ===== SUPER ADMIN: TÜRKİYE HARİTASI (layout'a uyumlu, tek satır kaplamaz) ===== */}
+      {user?.role === UserRole.SUPER_ADMIN && salesDistributionReport?.cityDistribution && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          {/* Harita kartı - yarıya yakın genişlik, kompakt boyut */}
+          <Card className="lg:col-span-8">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <MapPin className="h-5 w-5" />
+                    Şehir Bazlı Satış Dağılımı
+                  </CardTitle>
+                  <CardDescription>
+                    Haritada şehir bazlı satış dağılımı.
+                  </CardDescription>
+                </div>
+                <Link to="/dashboard/sales-distribution">
+                  <Button variant="outline" size="sm" className="gap-1">
+                    Raporu Aç <ArrowUpRight className="h-3 w-3" />
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <TurkeyMapSales
+                cityDistribution={salesDistributionReport.cityDistribution}
+                showLegend={true}
+                compact={true}
+              />
+            </CardContent>
+          </Card>
+          {/* Öne çıkan şehirler - aynı veri ile yan sütun */}
+          <Card className="lg:col-span-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Öne Çıkan Şehirler</CardTitle>
+              <CardDescription>En çok satış yapılan ilk 5 şehir</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const topCities = [...(salesDistributionReport.cityDistribution || [])]
+                  .filter((c: any) => c.plateNumber && c.city)
+                  .sort((a: any, b: any) => (b.saleCount || 0) - (a.saleCount || 0))
+                  .slice(0, 5);
+                if (topCities.length === 0) {
+                  return <p className="text-sm text-muted-foreground">Henüz şehir bazlı veri yok.</p>;
+                }
+                return (
+                  <ul className="space-y-3">
+                    {topCities.map((c: any, i: number) => (
+                      <li key={c.plateNumber || i} className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{c.city}</span>
+                        <Badge variant="secondary">{c.saleCount} satış</Badge>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
+              <Link to="/dashboard/sales-distribution" className="mt-4 inline-block">
+                <Button variant="ghost" size="sm" className="w-full gap-1 text-xs">
+                  Tüm rapor <ArrowUpRight className="h-3 w-3" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* ===== GRAFİKLER VE AKTİF KULLANICILAR ===== */}
       <div className="space-y-6">
         {/* İlk Satır: Aktif Kullanıcılar ve Paket Dağılımı - Yapboz Layout */}
@@ -686,7 +872,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="h-[280px]">
               {user?.role === UserRole.SUPER_ADMIN ? (
-                // Super Admin için Acente Kıyaslama Bar Chart
+                // Super Admin için Broker Kıyaslama Bar Chart
                 <ResponsiveContainer width="100%" height="100%">
                   {stats?.agencyPerformance?.length ? (
                     <BarChart data={stats.agencyPerformance} layout="vertical" margin={{ left: 20 }}>
@@ -720,7 +906,7 @@ export default function Dashboard() {
                   ) : (
                     <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                       <Building2 className="h-12 w-12 mb-3 opacity-20" />
-                      <p className="text-sm">Henüz acente satış verisi yok</p>
+                      <p className="text-sm">Henüz broker satış verisi yok</p>
                     </div>
                   )}
                 </ResponsiveContainer>
@@ -1078,7 +1264,7 @@ export default function Dashboard() {
                 </div>
                 <div>
                   <CardTitle className="text-lg">İade İşlemleri</CardTitle>
-                  <CardDescription>Acentenize ait iade işlemleri</CardDescription>
+                  <CardDescription>Broker / acentenize ait iade işlemleri</CardDescription>
                 </div>
               </div>
               <div className="flex items-center gap-4">

@@ -58,6 +58,7 @@ export default function ActiveUsers() {
 
   /**
    * İlk yüklemede aktif kullanıcıları getir (REST API'den)
+   * Hata durumunda sessizce devam eder (socket bağlantısı zaten var)
    */
   useEffect(() => {
     const fetchActiveUsers = async () => {
@@ -65,8 +66,12 @@ export default function ActiveUsers() {
         setLoading(true);
         const users = await activeUsersService.getAll();
         setActiveUsers(users);
-      } catch (error) {
-        console.error('Aktif kullanıcılar yüklenirken hata:', error);
+      } catch (error: any) {
+        // 404 veya diğer hatalar için sessizce devam et
+        // Socket bağlantısı zaten aktif kullanıcıları getirecek
+        if (error?.response?.status !== 404) {
+          console.error('Aktif kullanıcılar yüklenirken hata:', error);
+        }
       } finally {
         setLoading(false);
       }

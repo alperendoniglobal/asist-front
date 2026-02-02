@@ -48,13 +48,28 @@ function isPublicRoute(pathname: string): boolean {
   })
 }
 
+const THEME_STORAGE_KEY = 'theme'
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem('theme') as Theme
-    return stored || 'system'
+  // İlk açılışta temayı localStorage'dan oku (yoksa 'system')
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'system'
+    const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null
+    if (stored === 'dark' || stored === 'light' || stored === 'system') return stored
+    return 'system'
   })
 
   const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>('light')
+
+  // Tema değişince hem state hem localStorage güncellenir (böylece sonraki açılışta aynı tema yüklenir)
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme)
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, newTheme)
+    } catch (e) {
+      // localStorage dolu veya private modda hata verebilir
+    }
+  }
 
   // Route değişikliklerini dinle
   useEffect(() => {

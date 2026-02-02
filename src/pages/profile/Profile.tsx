@@ -211,18 +211,18 @@ export default function Profile() {
                   <div className="p-4 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-2 text-muted-foreground mb-1">
                       <Building2 className="h-4 w-4" />
-                      Acente
+                      Broker
                     </div>
-                    <p className="font-medium">Acente bilgisi</p>
+                    <p className="font-medium">Broker bilgisi</p>
                   </div>
                 )}
                 {user.branch_id && (
                   <div className="p-4 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-2 text-muted-foreground mb-1">
                       <GitBranch className="h-4 w-4" />
-                      Şube
+                      Acente
                     </div>
-                    <p className="font-medium">Şube bilgisi</p>
+                    <p className="font-medium">Acente bilgisi</p>
                   </div>
                 )}
                 <div className="p-4 rounded-lg bg-muted/50">

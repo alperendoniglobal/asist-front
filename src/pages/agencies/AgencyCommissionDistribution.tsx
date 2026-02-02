@@ -7,7 +7,7 @@ import { agencyService } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserRole } from '@/types';
 import type { Agency } from '@/types';
-import { Loader2, TrendingUp, Building2, Calculator, RefreshCw } from 'lucide-react';
+import { Loader2, TrendingUp, Building2, Calculator, RefreshCw, Banknote, Wallet } from 'lucide-react';
 
 // Para formatı fonksiyonu
 const formatCurrency = (value: number | string | undefined | null) => {
@@ -20,10 +20,10 @@ const formatCurrency = (value: number | string | undefined | null) => {
 };
 
 /**
- * Acente Komisyon Dağılım Raporu
- * Ana acente için her şubesi ile arasındaki komisyon dağılımını gösterir
- * - Her şube için: Toplam satış, Şube komisyonu, Acente komisyonu
- * - Özet: Toplam satış, Toplam şube komisyonu, Toplam acente komisyonu
+ * Broker Komisyon Dağılım Raporu
+ * Broker (üst kurum) için her acentesi (şube) ile arasındaki komisyon dağılımını gösterir
+ * - Her acente için: Toplam satış, Acente komisyonu, Broker komisyonu
+ * - Özet: Toplam satış, Toplam acente komisyonu, Toplam broker komisyonu
  */
 export default function AgencyCommissionDistribution() {
   const { user } = useAuth();
@@ -40,7 +40,7 @@ export default function AgencyCommissionDistribution() {
     if (isSuperAdmin) {
       fetchAgencies();
     } else {
-      // Acente admin için direkt kendi acentesini yükle
+      // Broker admin için direkt kendi brokerını yükle
       if (user?.agency_id) {
         setSelectedAgencyId(user.agency_id);
         fetchDistribution(user.agency_id);
@@ -59,13 +59,13 @@ export default function AgencyCommissionDistribution() {
       setLoadingAgencies(true);
       const data = await agencyService.getAll();
       setAgencies(data);
-      // İlk acenteyi seç
+      // İlk brokerı seç
       if (data.length > 0) {
         setSelectedAgencyId(data[0].id);
       }
     } catch (err: any) {
       console.error('Acenteler yüklenirken hata:', err);
-      setError('Acenteler yüklenirken bir hata oluştu');
+      setError('Brokerlar yüklenirken bir hata oluştu');
     } finally {
       setLoadingAgencies(false);
     }
@@ -120,14 +120,14 @@ export default function AgencyCommissionDistribution() {
             Komisyon Dağılım Raporu
           </h1>
           <p className="text-muted-foreground mt-1">
-            {distribution ? `${distribution.agency_name} - Şube bazlı komisyon dağılımı` : 'Şube bazlı komisyon dağılımı'}
+            {distribution ? `${distribution.agency_name} - Acente bazlı komisyon dağılımı` : 'Acente bazlı komisyon dağılımı'}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {isSuperAdmin && (
             <Select value={selectedAgencyId} onValueChange={setSelectedAgencyId} disabled={loadingAgencies}>
               <SelectTrigger className="w-[250px]">
-                <SelectValue placeholder="Acente seçin" />
+                <SelectValue placeholder="Broker seçin" />
               </SelectTrigger>
               <SelectContent>
                 {agencies.map((agency) => (
@@ -152,7 +152,7 @@ export default function AgencyCommissionDistribution() {
           <CardContent className="pt-6">
             <div className="text-center py-8">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Lütfen bir acente seçin</p>
+              <p className="text-muted-foreground">Lütfen bir broker seçin</p>
             </div>
           </CardContent>
         </Card>
@@ -167,30 +167,30 @@ export default function AgencyCommissionDistribution() {
         </div>
       )}
 
-      {/* Acente Bilgileri */}
+      {/* Broker Bilgileri */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            Acente Bilgileri
+            Broker Bilgileri
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Acente Adı</p>
+              <p className="text-sm text-muted-foreground">Broker Adı</p>
               <p className="font-semibold">{distribution.agency_name}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Acente Komisyon Oranı</p>
+              <p className="text-sm text-muted-foreground">Broker Komisyon Oranı</p>
               <p className="font-semibold text-primary">{distribution.agency_commission_rate}%</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Özet Kartları */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Özet Kartları: Kazanılan + Ödenen / Ödenecek */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -209,12 +209,40 @@ export default function AgencyCommissionDistribution() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Toplam Şube Komisyonu</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {formatCurrency(distribution.summary.total_branch_commission)}
+                <p className="text-sm text-muted-foreground">Toplam Kazanılan Komisyon</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {formatCurrency(distribution.summary.total_commission)}
                 </p>
               </div>
-              <Building2 className="h-8 w-8 text-blue-500" />
+              <Calculator className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 border-emerald-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Ödenen (Komisyon)</p>
+                <p className="text-2xl font-bold text-emerald-600">
+                  {formatCurrency(distribution.summary.total_paid_all ?? 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Broker + acentelere ödenen</p>
+              </div>
+              <Banknote className="h-8 w-8 text-emerald-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-violet-500/5 to-violet-500/10 border-violet-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Ödenecek (Bakiye)</p>
+                <p className="text-2xl font-bold text-violet-600">
+                  {formatCurrency(distribution.summary.total_balance_all ?? 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Henüz ödenmemiş alacak</p>
+              </div>
+              <Wallet className="h-8 w-8 text-violet-500" />
             </div>
           </CardContent>
         </Card>
@@ -223,11 +251,25 @@ export default function AgencyCommissionDistribution() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Toplam Acente Komisyonu</p>
-                <p className="text-2xl font-bold text-emerald-600">
-                  {formatCurrency(distribution.summary.total_agency_commission)}
+                <p className="text-2xl font-bold text-blue-600">
+                  {formatCurrency(distribution.summary.total_branch_commission)}
                 </p>
               </div>
-              <Calculator className="h-8 w-8 text-emerald-500" />
+              <Building2 className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-amber-500/5 border-amber-500/20 lg:col-span-2">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Bakiye ile Ödenen Satışlar</p>
+                <p className="text-2xl font-bold text-amber-600">
+                  {(distribution.balance_paid_sales_count ?? 0)} adet · {formatCurrency(distribution.balance_paid_sales_amount ?? 0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Bu satışlarda komisyon kesilmez</p>
+              </div>
+              <Wallet className="h-8 w-8 text-amber-500" />
             </div>
           </CardContent>
         </Card>
@@ -235,43 +277,68 @@ export default function AgencyCommissionDistribution() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Toplam Komisyon</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {formatCurrency(distribution.summary.total_commission)}
+                <p className="text-sm text-muted-foreground">Toplam Broker Komisyonu</p>
+                <p className="text-2xl font-bold text-emerald-600">
+                  {formatCurrency(distribution.summary.total_agency_commission)}
                 </p>
               </div>
-              <TrendingUp className="h-8 w-8 text-purple-500" />
+              <TrendingUp className="h-8 w-8 text-emerald-500" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Şube Bazlı Detaylar */}
+      {/* Broker düzeyi (acentesiz) ödenen / bakiye */}
+      <Card className="bg-muted/30 border-dashed">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Broker (acentesiz) — Ödenen</p>
+              <p className="text-lg font-bold text-emerald-600">
+                {formatCurrency(distribution.summary.agency_total_paid ?? 0)}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Broker (acentesiz) — Bakiye</p>
+              <p className="text-lg font-bold text-violet-600">
+                {formatCurrency(distribution.summary.agency_balance ?? 0)}
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Acenteye atanmadan broker adına yapılan ödemeler ve broker bakiyesi
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Acente Bazlı Detaylar */}
       <Card>
         <CardHeader>
-          <CardTitle>Şube Bazlı Komisyon Dağılımı</CardTitle>
+          <CardTitle>Acente Bazlı Komisyon Dağılımı</CardTitle>
           <CardDescription>
-            Her şube için satış ve komisyon detayları
+            Her acente için satış, kazanılan komisyon, ödenen komisyon ve bakiye
           </CardDescription>
         </CardHeader>
         <CardContent>
           {distribution.branches.length === 0 ? (
             <div className="text-center py-8">
               <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Henüz şube bulunmuyor</p>
+              <p className="text-muted-foreground">Henüz acente bulunmuyor</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Şube Adı</TableHead>
-                    <TableHead>Şube Komisyon Oranı</TableHead>
+                    <TableHead>Acente Adı</TableHead>
+                    <TableHead>Acente Komisyon Oranı</TableHead>
                     <TableHead>Satış Sayısı</TableHead>
                     <TableHead>Toplam Satış Tutarı</TableHead>
-                    <TableHead className="text-blue-600">Şube Komisyonu</TableHead>
-                    <TableHead className="text-emerald-600">Acente Komisyonu</TableHead>
+                    <TableHead className="text-blue-600">Acente Komisyonu</TableHead>
+                    <TableHead className="text-emerald-600">Broker Komisyonu</TableHead>
                     <TableHead className="text-purple-600">Toplam Komisyon</TableHead>
+                    <TableHead className="text-emerald-600">Ödenen</TableHead>
+                    <TableHead className="text-violet-600">Bakiye</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -290,6 +357,12 @@ export default function AgencyCommissionDistribution() {
                       <TableCell className="text-purple-600 font-semibold">
                         {formatCurrency(branch.total_commission)}
                       </TableCell>
+                      <TableCell className="text-emerald-600 font-semibold">
+                        {formatCurrency(branch.total_paid ?? 0)}
+                      </TableCell>
+                      <TableCell className="text-violet-600 font-semibold">
+                        {formatCurrency(branch.balance ?? 0)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -299,13 +372,13 @@ export default function AgencyCommissionDistribution() {
         </CardContent>
       </Card>
 
-      {/* Şube Olmayan Satışlar */}
+      {/* Acenteye Atanmamış Satışlar */}
       {distribution.sales_without_branch.total_sales_count > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Şube Olmayan Satışlar</CardTitle>
+            <CardTitle>Acenteye Atanmamış Satışlar</CardTitle>
             <CardDescription>
-              Şubeye atanmamış satışlar (sadece acente komisyonu)
+              Acenteye atanmamış satışlar (sadece broker komisyonu)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -321,7 +394,7 @@ export default function AgencyCommissionDistribution() {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Acente Komisyonu</p>
+                <p className="text-sm text-muted-foreground">Broker Komisyonu</p>
                 <p className="text-xl font-bold text-emerald-600">
                   {formatCurrency(distribution.sales_without_branch.total_agency_commission)}
                 </p>
