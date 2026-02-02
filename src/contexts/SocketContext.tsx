@@ -63,7 +63,13 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     // API base URL'den socket URL'ini oluştur
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://cozum.net/api/v1';
     // Socket URL'i API base URL'den türetilir (protocol ve host kısmı)
-    const socketUrl = API_BASE_URL.replace('/api/v1', '').replace('/api', '');
+    // Production'da socket.io genellikle aynı domain'de çalışır
+    let socketUrl = API_BASE_URL.replace('/api/v1', '').replace('/api', '');
+    
+    // Eğer URL boşsa veya sadece path ise, window.location'dan al
+    if (!socketUrl || socketUrl.startsWith('/')) {
+      socketUrl = window.location.origin;
+    }
 
     console.log('Connecting to socket server:', socketUrl);
 
@@ -91,7 +97,11 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     });
 
     newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      // Production'da socket bağlantı hatalarını sessizce logla
+      // Kullanıcıya gösterme, sadece console'da tut
+      if (import.meta.env.DEV) {
+        console.error('Socket connection error:', error);
+      }
       setIsConnected(false);
     });
 

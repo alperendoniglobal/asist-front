@@ -60,7 +60,7 @@ export default function Branches() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Komisyon bilgileriyle birlikte şubeleri getir
+      // Komisyon bilgileriyle birlikte acenteleri getir
       const [branchesData, agenciesData] = await Promise.all([
         branchService.getAllWithCommission(),
         (isSuperAdmin || isSuperAgencyAdmin) ? agencyService.getAll() : Promise.resolve([])

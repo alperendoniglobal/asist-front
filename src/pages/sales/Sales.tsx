@@ -39,6 +39,8 @@ export default function Sales() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  /** Ödeme türüne göre filtre: Tümü / Bakiye / PayTR */
+  const [paymentTypeFilter, setPaymentTypeFilter] = useState<'all' | PaymentType>('all');
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -94,13 +96,15 @@ export default function Sales() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [paymentTypeFilter]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
+      const params: Record<string, string> = {};
+      if (paymentTypeFilter !== 'all') params.payment_type = paymentTypeFilter;
       const [salesData, customersData, packagesData] = await Promise.all([
-        saleService.getAll(),
+        saleService.getAll(params),
         customerService.getAll(),
         packageService.getAll()
       ]);
@@ -132,10 +136,18 @@ export default function Sales() {
     return filteredSales.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredSales, currentPage]);
 
-  // Arama degistiginde sayfa numarasini sifirla
+  // Arama veya ödeme filtresi degistiginde sayfa numarasini sifirla
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, paymentTypeFilter]);
+
+  // Satışın ödeme türü (Bakiye / PayTR) - payments dizisindeki tamamlanmış ödemeye göre
+  const getSalePaymentType = (sale: Sale): PaymentType | null => {
+    const payments = (sale as any).payments;
+    if (!Array.isArray(payments) || payments.length === 0) return null;
+    const completed = payments.find((p: any) => p.status === 'COMPLETED');
+    return completed?.type ?? payments[0]?.type ?? null;
+  };
 
   const handleCustomerSelect = async (customerId: string) => {
     setFormData({ ...formData, customer_id: customerId, vehicle_id: '' });
@@ -421,14 +433,14 @@ export default function Sales() {
         </CardContent>
       </Card>
 
-      {/* Arama */}
+      {/* Arama ve ödeme türü filtresi */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Satış Ara</CardTitle>
-          <CardDescription>Satış no, müşteri adı, plaka veya paket ile arayın</CardDescription>
+          <CardDescription>Satış no, müşteri adı, plaka veya paket ile arayın. Ödeme türüne göre filtreleyebilirsiniz.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -438,7 +450,23 @@ export default function Sales() {
                 className="pl-10"
               />
             </div>
-            <Button onClick={() => setSearchQuery('')} variant="outline" className="gap-2">
+            {/* Ödeme türü filtresi: Tümü / Bakiye / PayTR */}
+            <Select value={paymentTypeFilter} onValueChange={(v: 'all' | PaymentType) => setPaymentTypeFilter(v)}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <Wallet className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Ödeme türü" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tümü</SelectItem>
+                <SelectItem value={PaymentType.BALANCE}>Bakiye ile ödenenler</SelectItem>
+                <SelectItem value={PaymentType.PAYTR}>PayTR ile ödenenler</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => { setSearchQuery(''); setPaymentTypeFilter('all'); }}
+              variant="outline"
+              className="gap-2"
+            >
               <RefreshCcw className="h-4 w-4" />
               Sıfırla
             </Button>
@@ -475,6 +503,7 @@ export default function Sales() {
                       <TableHead>Musteri</TableHead>
                       <TableHead>Arac</TableHead>
                       <TableHead>Satisi Yapan</TableHead>
+                      <TableHead>Odeme</TableHead>
                       <TableHead>Baslangic</TableHead>
                       <TableHead>Bitis</TableHead>
                       <TableHead>Fiyat</TableHead>
@@ -497,6 +526,21 @@ export default function Sales() {
                             <span className="text-xs text-muted-foreground block">
                               {sale.branch.name}
                             </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {getSalePaymentType(sale) === PaymentType.BALANCE ? (
+                            <Badge variant="secondary" className="gap-1">
+                              <Wallet className="h-3 w-3" />
+                              Bakiye
+                            </Badge>
+                          ) : getSalePaymentType(sale) === PaymentType.PAYTR ? (
+                            <Badge variant="outline" className="gap-1">
+                              <CreditCard className="h-3 w-3" />
+                              PayTR
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">-</span>
                           )}
                         </TableCell>
                         <TableCell>{formatDate(sale.start_date)}</TableCell>
@@ -663,10 +707,10 @@ export default function Sales() {
                             <span className="font-semibold text-blue-600">{formatCurrency(formData.branch_commission)}</span>
                           </div>
                         ) : (
-                          // Acente kullanıcıları ve Super Admin: Dağılımlı komisyon göster
+                          // Broker kullanıcıları ve Super Admin: Dağılımlı komisyon göster
                           <>
                             <div className="flex justify-between">
-                              <span>Şube Komisyonu:</span>
+                              <span>Acente Komisyonu:</span>
                               <span className="font-semibold text-blue-600">{formatCurrency(formData.branch_commission)}</span>
                             </div>
                             <div className="flex justify-between">
@@ -680,7 +724,7 @@ export default function Sales() {
                           </>
                         )
                       ) : (
-                        // Şube yoksa: Sadece acente komisyonu göster
+                        // Acente yoksa: Sadece broker komisyonu göster
                     <div className="flex justify-between">
                       <span>Komisyon:</span>
                       <span className="font-semibold text-emerald-600">{formatCurrency(formData.commission)}</span>
@@ -894,7 +938,7 @@ export default function Sales() {
 
               {/* Sağ Kolon */}
               <div className="space-y-4">
-                {/* Satışı Yapan ve Acente/Şube */}
+                {/* Satışı Yapan ve Broker/Acente */}
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <User className="h-4 w-4" />
@@ -911,12 +955,12 @@ export default function Sales() {
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <ShoppingCart className="h-4 w-4" />
-                    <span className="font-medium">kaynak / Şube</span>
+                    <span className="font-medium">Broker / Acente</span>
                   </div>
                   <p className="font-semibold">{selectedSale?.agency?.name || '-'}</p>
                   {selectedSale?.branch?.name && (
                     <p className="text-sm text-muted-foreground mt-1">
-                      Şube: {selectedSale.branch.name}
+                      Acente: {selectedSale.branch.name}
                     </p>
                   )}
                 </div>
@@ -957,11 +1001,11 @@ export default function Sales() {
                             <p className="font-bold text-lg text-blue-600">{formatCurrency(selectedSale.branch_commission)}</p>
                           </>
                         ) : (
-                          // Acente kullanıcıları ve Super Admin: Dağılımlı komisyon göster
+                          // Broker kullanıcıları ve Super Admin: Dağılımlı komisyon göster
                           <div className="space-y-1">
                             <div className="text-muted-foreground mb-1 text-xs">Komisyon Dağılımı</div>
                             <div className="text-xs text-blue-600 dark:text-blue-400">
-                              Şube: {formatCurrency(selectedSale.branch_commission)}
+                              Acente: {formatCurrency(selectedSale.branch_commission)}
                             </div>
                             <div className="text-xs text-purple-600 dark:text-purple-400">
                               kaynak: {formatCurrency(selectedSale.agency_commission || 0)}
@@ -972,7 +1016,7 @@ export default function Sales() {
                           </div>
                         )
                       ) : (
-                        // Şube yoksa: Sadece acente komisyonu göster
+                        // Acente yoksa: Sadece broker komisyonu göster
                         <>
                       <div className="text-muted-foreground mb-1 text-xs">Komisyon</div>
                       <p className="font-bold text-lg text-emerald-600">{formatCurrency(selectedSale?.commission || 0)}</p>

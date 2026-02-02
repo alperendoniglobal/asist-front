@@ -437,7 +437,7 @@ export default function PerformanceReport() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Performans Raporu</h1>
           <p className="text-muted-foreground mt-1">
-            Broker, şube ve kullanıcı bazlı detaylı performans analizi
+            Broker, acente ve kullanıcı bazlı detaylı performans analizi
           </p>
         </div>
         <Button onClick={fetchReport} variant="outline" size="sm" disabled={loading}>
@@ -618,10 +618,10 @@ export default function PerformanceReport() {
               <CardContent className="relative p-6 text-white">
                 <div className="flex items-start justify-between">
                   <div className="space-y-3">
-                    <p className="text-sm font-medium text-orange-100/80 uppercase tracking-wider">Şube Sayısı</p>
+                    <p className="text-sm font-medium text-orange-100/80 uppercase tracking-wider">Acente Sayısı</p>
                     <div className="flex items-baseline gap-1">
                       <p className="text-4xl font-black tracking-tight">{selectedAgency.branches.length}</p>
-                      <span className="text-lg text-orange-200">şube</span>
+                      <span className="text-lg text-orange-200">acente</span>
                     </div>
                   </div>
                   <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
@@ -678,7 +678,7 @@ export default function PerformanceReport() {
                 <TabsTrigger value="overview">Genel Bakış</TabsTrigger>
                 <TabsTrigger value="packages">Paketler</TabsTrigger>
                 <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
-                <TabsTrigger value="branches">Şubeler</TabsTrigger>
+                <TabsTrigger value="branches">Acenteler</TabsTrigger>
               </TabsList>
 
               {/* Genel Bakış Tab */}
@@ -1075,15 +1075,15 @@ export default function PerformanceReport() {
                 )}
               </TabsContent>
 
-              {/* Şubeler Tab */}
+              {/* Acenteler Tab */}
               <TabsContent value="branches" className="space-y-5">
-                {/* Şubeler Listesi */}
+                {/* Acenteler Listesi */}
                 {selectedAgency.branches.length > 0 && (
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base flex items-center gap-2">
                         <GitBranch className="h-4 w-4 text-primary" />
-                        Şubeler ({selectedAgency.branches.length})
+                        Acenteler ({selectedAgency.branches.length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">

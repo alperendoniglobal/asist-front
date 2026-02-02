@@ -10,6 +10,7 @@ import TurkeyMap from 'turkey-map-react';
 import { cities as turkeyCities } from 'turkey-map-react/lib/data';
 import React from 'react';
 import { toast } from 'sonner';
+import { useTheme } from '@/contexts/ThemeContext';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -20,10 +21,15 @@ import {
  * SUPER_ADMIN için - En çok satılan marka, model, model yılı ve şehir bazlı dağılım
  */
 export default function SalesDistributionReport() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const [loading, setLoading] = useState(true);
   const [reportData, setReportData] = useState<any>(null);
   const [selectedCity, setSelectedCity] = useState<any>(null);
   const [isCityDetailOpen, setIsCityDetailOpen] = useState(false);
+  // Dark mode: harita stroke rengi (light'ta beyaz, dark'ta slate ki koyu arka planda görünsün)
+  const mapStrokeColor = isDark ? '#475569' : '#fff';
+  const mapNoDataFill = isDark ? '#334155' : '#e5e7eb';
 
   useEffect(() => {
     loadReport();
@@ -110,7 +116,7 @@ export default function SalesDistributionReport() {
             // Path'i renklendir - hem attribute hem style ile
             pathEl.setAttribute('fill', color);
             pathEl.style.setProperty('fill', color, 'important');
-            pathEl.setAttribute('stroke', '#fff');
+            pathEl.setAttribute('stroke', mapStrokeColor);
             pathEl.setAttribute('stroke-width', '1.5');
             pathEl.style.cursor = 'pointer';
 
@@ -154,7 +160,7 @@ export default function SalesDistributionReport() {
     };
 
     setTimeout(tryColorize, 500);
-  }, [reportData]);
+  }, [reportData, mapStrokeColor]);
 
 
   const loadReport = async () => {
@@ -207,10 +213,10 @@ export default function SalesDistributionReport() {
   const citiesWithData = reportData.cityDistribution.filter((c: any) => c.plateNumber);
   const maxSales = Math.max(...citiesWithData.map((c: any) => c.saleCount), 1);
 
-  // Şehir renklerini hesapla - satış sayısına göre canlı gradient (Yeşil -> Sarı -> Turuncu -> Kırmızı)
+  // Şehir renklerini hesapla - satış sayısına göre canlı gradient (Yeşil -> Sarı -> Turuncu -> Kırmızı). Dark modda veri yok rengi koyu.
   const getCityColor = (plateNumber: number) => {
     const cityInfo = cityData[plateNumber];
-    if (!cityInfo) return '#e5e7eb'; // Gri - veri yok
+    if (!cityInfo) return mapNoDataFill; // Tema uyumlu gri - veri yok
 
     const intensity = cityInfo.saleCount / maxSales;
 
@@ -262,10 +268,10 @@ export default function SalesDistributionReport() {
     }
   };
 
-  // City wrapper - şehirleri renklendir ve satış sayılarını göster
+  // City wrapper - şehirleri renklendir ve satış sayılarını göster (dark modda stroke tema uyumlu)
   const renderCity = (cityComponent: React.ReactElement, cityDataItem: any) => {
     const cityInfo = cityData[cityDataItem.plateNumber];
-    const color = cityInfo ? getCityColor(cityDataItem.plateNumber) : '#e5e7eb';
+    const color = cityInfo ? getCityColor(cityDataItem.plateNumber) : mapNoDataFill;
     const center = cityDataItem.path ? getPathCenter(cityDataItem.path) : null;
 
     const existingProps = (cityComponent as any).props || {};
@@ -274,7 +280,7 @@ export default function SalesDistributionReport() {
         Object.entries(existingProps).filter(([key]) => key !== 'fill')
       ),
       fill: color,
-      stroke: cityInfo ? '#fff' : 'transparent',
+      stroke: cityInfo ? mapStrokeColor : 'transparent',
       strokeWidth: cityInfo ? 1.5 : 0,
       style: {
         ...(existingProps.style || {}),
@@ -293,6 +299,7 @@ export default function SalesDistributionReport() {
         target.setAttribute('fill', color);
         target.style.fill = color;
         target.setAttribute('stroke-width', cityInfo ? '1.5' : '0');
+        target.setAttribute('stroke', cityInfo ? mapStrokeColor : 'transparent');
       },
       onClick: () => {
         if (cityInfo) {
@@ -382,11 +389,11 @@ export default function SalesDistributionReport() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Türkiye Haritası */}
-            <div className="border rounded-lg p-4 bg-white relative">
+            {/* Türkiye Haritası - light/dark mod uyumlu arka plan ve stroke */}
+            <div className="border rounded-lg p-4 bg-white dark:bg-slate-900 relative">
               <TurkeyMap
                 hoverable={true}
-                customStyle={{ idleColor: '#e5e7eb', hoverColor: '#dc2626' }}
+                customStyle={{ idleColor: mapNoDataFill, hoverColor: '#dc2626' }}
                 cityWrapper={renderCity}
                 showTooltip={false}
                 onClick={({ plateNumber, name }: any) => {
@@ -423,8 +430,8 @@ export default function SalesDistributionReport() {
                             height: '28px',
                             backgroundColor: color,
                             borderRadius: '6px',
-                            border: '2px solid white',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            border: isDark ? '2px solid #475569' : '2px solid white',
+                            boxShadow: isDark ? '0 2px 4px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
                           }}
                         />
                       );
