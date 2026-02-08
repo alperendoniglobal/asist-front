@@ -133,7 +133,7 @@ export default function PublicPackages() {
                 <img 
                   src="/cozumasistanlog.svg" 
                   alt="Çözüm Net A.Ş Logo" 
-                  className="h-5 sm:h-6"
+                  className="h-7 sm:h-8"
                 />
               </div>
               <span className="font-bold text-gray-900 text-sm sm:text-base hidden sm:block">Çözüm Net A.Ş</span>
@@ -442,7 +442,7 @@ export default function PublicPackages() {
           <div className="container mx-auto px-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
               <div className="flex items-center gap-3">
-                <img src="/cozumasistanlog.svg" alt="Logo" className="h-5 sm:h-6" />
+                <img src="/cozumasistanlog.svg" alt="Logo" className="h-6 sm:h-7" />
                 <span className="text-gray-500 text-xs sm:text-sm">© 2023 Çözüm Net A.Ş</span>
               </div>
               <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-400">

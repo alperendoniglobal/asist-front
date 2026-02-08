@@ -176,7 +176,7 @@ export function PublicFooter() {
                 <img 
                   src="/cozumasistanlog.svg" 
                   alt={landingContent?.company_name || "Çözüm Net A.Ş"} 
-                  className="h-7 sm:h-8"
+                  className="h-9 sm:h-10"
                 />
                 <p className="text-gray-400 text-xs sm:text-sm">
                   © 2023 {landingContent?.company_name || 'Çözüm Net A.Ş'}. Tüm hakları saklıdır.

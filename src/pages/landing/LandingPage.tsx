@@ -225,18 +225,18 @@ export default function LandingPage() {
           <div className="container mx-auto px-4">
             {/* Desktop: 3 Sütun Düzeni */}
             <div className="hidden lg:grid grid-cols-3 items-center h-20">
-              {/* Sol: Logo */}
-              <Link to="/" className="flex items-center gap-3">
-                <div className="w-16 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-3">
+              {/* Sol: Logo - landing’de daha belirgin */}
+              <Link to="/" className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg flex-shrink-0">
                   <img 
-                    src="/cozumasistanlog.svg" 
-                    alt={landingContent?.company_name || "Çözüm Net A.Ş"} 
-                    className="h-8 w-auto"
+                    src="/iconlogo.svg" 
+                    alt="" 
+                    className="h-9 w-9 object-contain"
                   />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">Çözüm Net A.Ş</h1>
-                  <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
+                  <h1 className="text-2xl font-bold text-gray-900">Çözüm Net A.Ş</h1>
+                  <p className="text-sm text-gray-500">Yol Yardım Hizmetleri</p>
                 </div>
               </Link>
 
@@ -278,19 +278,18 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Mobile: Flex Düzeni */}
+            {/* Mobile: Flex Düzeni - Aynı mantık: ikon kutu içinde, metin yanında */}
             <div className="lg:hidden flex items-center justify-between h-16">
-              {/* Sol: Logo */}
-              <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-                <div className="w-14 h-10 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg px-2.5">
+              <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg flex-shrink-0">
                   <img 
-                    src="/cozumasistanlog.svg" 
-                    alt={landingContent?.company_name || "Çözüm Net A.Ş"} 
-                    className="h-6 w-auto"
+                    src="/iconlogo.svg" 
+                    alt="" 
+                    className="h-7 w-7 object-contain"
                   />
                 </div>
                 <div className="hidden sm:block">
-                  <h1 className="text-base font-bold text-gray-900">Çözüm Net A.Ş</h1>
+                  <h1 className="text-lg font-bold text-gray-900">Çözüm Net A.Ş</h1>
                   <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
                 </div>
               </Link>
@@ -341,14 +340,14 @@ export default function LandingPage() {
               }`}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Menu Header */}
+              {/* Menu Header - ikon + metin */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-[#019242] to-[#017A35]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                  <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
                     <img 
-                      src="/cozumasistanlog.svg" 
-                      alt="Çözüm Net A.Ş" 
-                      className="h-6 filter brightness-0 invert"
+                      src="/iconlogo.svg" 
+                      alt="" 
+                      className="h-8 w-8 object-contain filter brightness-0 invert"
                     />
                   </div>
                   <div>
