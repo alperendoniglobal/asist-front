@@ -114,7 +114,7 @@ export function MainLayout() {
             <img 
               src="/cozumasistanlog.svg" 
                 alt="Cozum Yol Asistan Logo" 
-              className="h-7 logo-primary"
+              className="h-10 logo-primary"
             />
             </div>
           </Link>

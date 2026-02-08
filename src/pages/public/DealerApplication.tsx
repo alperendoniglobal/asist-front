@@ -210,7 +210,7 @@ export default function DealerApplication() {
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
-                <img src="/cozumasistanlog.svg" alt="Logo" className="h-5" />
+                <img src="/cozumasistanlog.svg" alt="Logo" className="h-7" />
               </div>
               <span className="font-bold text-sm">Çözüm Net A.Ş</span>
             </Link>
@@ -276,7 +276,7 @@ export default function DealerApplication() {
               <div className="hidden lg:flex items-center justify-between mb-12">
                 <Link to="/" className="flex items-center gap-3 group">
                   <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                    <img src="/cozumasistanlog.svg" alt="Logo" className="h-7" />
+                    <img src="/cozumasistanlog.svg" alt="Logo" className="h-9" />
                   </div>
                   <span className="font-bold text-xl">Çözüm Net A.Ş</span>
                 </Link>
@@ -630,7 +630,7 @@ export default function DealerApplication() {
           <div className="container mx-auto px-4">
             <div className="flex flex-col items-center gap-4">
               <div className="flex items-center gap-3">
-                <img src="/cozumasistanlog.svg" alt="Logo" className="h-5" />
+                <img src="/cozumasistanlog.svg" alt="Logo" className="h-7" />
                 <span className="text-gray-400 text-xs">© 2023 Çözüm Net A.Ş</span>
               </div>
               <div className="flex items-center gap-4 text-xs text-gray-400">

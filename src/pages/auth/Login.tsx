@@ -98,12 +98,12 @@ export default function Login() {
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-primary/15 to-transparent rounded-full blur-3xl"></div>
 
         <div className="relative z-10">
-          {/* Logo */}
+          {/* Logo - çözüm.net markası (sol panel) */}
           <Link to="/" className="flex items-center gap-3 mb-4">
             <img 
               src="/cozumasistanlog.svg" 
               alt="Çözüm Net A.Ş" 
-              className="h-10 w-auto cursor-pointer"
+              className="h-14 w-auto cursor-pointer"
             />
           </Link>
           <p className="text-slate-400 text-lg">Yol Yardım Hizmetleri</p>

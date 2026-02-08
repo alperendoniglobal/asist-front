@@ -149,7 +149,7 @@ export default function UserRegister() {
             <img 
               src="/cozumasistanlog.svg" 
               alt="Çözüm Net A.Ş" 
-              className="h-10 w-auto cursor-pointer"
+              className="h-14 w-auto cursor-pointer"
             />
           </Link>
           <p className="text-white/80 text-lg">Yol Yardım Hizmetleri</p>

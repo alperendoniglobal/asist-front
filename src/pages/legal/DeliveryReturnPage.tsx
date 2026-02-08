@@ -93,7 +93,7 @@ export default function DeliveryReturnPage() {
                   <img 
                     src="/cozumasistanlog.svg" 
                     alt="Çözüm Net A.Ş" 
-                    className="h-8 w-auto"
+                    className="h-10 w-auto"
                   />
                 </div>
                 <div className="hidden sm:block">

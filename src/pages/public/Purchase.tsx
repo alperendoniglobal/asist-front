@@ -319,7 +319,7 @@ export default function Purchase() {
           <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 sm:gap-3">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <img src="/cozumasistanlog.svg" alt="Logo" className="h-5 sm:h-6" />
+                <img src="/cozumasistanlog.svg" alt="Logo" className="h-7 sm:h-8" />
               </div>
               <span className="font-bold text-sm sm:text-base hidden sm:block">Çözüm Net A.Ş</span>
             </Link>

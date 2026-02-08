@@ -211,7 +211,7 @@ export default function UserDashboard() {
               <img 
                 src="/cozumasistanlog.svg" 
                 alt="Çözüm Net A.Ş" 
-                className="h-8 w-auto"
+                className="h-10 w-auto"
                   onError={(e) => {
                     // Logo yüklenemezse iconlogo kullan
                     const target = e.target as HTMLImageElement;

@@ -44,7 +44,7 @@ export function SupportLayout() {
               <img 
                 src="/cozumasistanlog.svg" 
                 alt="Çözüm Yol Asistan Logo" 
-                className="h-7 logo-primary"
+                className="h-10 logo-primary"
               />
             </div>
           </Link>
