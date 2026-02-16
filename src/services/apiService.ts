@@ -599,3 +599,43 @@ export const supportFileService = {
     return response.data.data;
   },
 };
+
+// Yağmurlu gün SMS sonuç özeti (backend RainyDaySmsResult ile uyumlu)
+export interface RainyDaySmsResult {
+  citiesChecked: number;
+  rainyCitiesCount: number;
+  smsSent: number;
+  rainyCities: string[];
+  errors: string[];
+}
+
+// SMS Service - Yağmurlu gün + manuel toplu SMS
+export const smsService = {
+  /**
+   * Bugün yağmurlu tahmin edilen illerdeki müşterilere bilgilendirme SMS'i gönderir.
+   * Manuel tetikleme (cron her gün 07:00'da otomatik çalışır).
+   */
+  async sendRainyDaySms(): Promise<RainyDaySmsResult> {
+    const response = await apiClient.post<ApiResponse<RainyDaySmsResult>>('/sms/rainy-day');
+    return response.data.data;
+  },
+
+  /**
+   * Seçilen telefon numaralarına aynı mesajı gönderir (manuel toplu SMS).
+   */
+  async sendToMultiple(phoneNumbers: string[], message: string): Promise<void> {
+    await apiClient.post('/sms/send-multiple', { phoneNumbers, message });
+  },
+
+  /**
+   * Seçilen müşterilere, kayıtlı illerinin hava durumunu içeren kişiselleştirilmiş SMS gönderir.
+   * Her kişiye kendi ilinin hava durumu gider (manuel tetikleme).
+   */
+  async sendWeatherToSelected(customerIds: string[]): Promise<{ sent: number; errors: string[] }> {
+    const response = await apiClient.post<ApiResponse<{ sent: number; errors: string[] }>>(
+      '/sms/send-weather-selected',
+      { customerIds }
+    );
+    return response.data.data;
+  },
+};
