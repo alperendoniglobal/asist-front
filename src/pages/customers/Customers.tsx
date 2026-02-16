@@ -17,12 +17,14 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataPagination } from '@/components/ui/pagination';
-import { customerService, vehicleService, saleService } from '@/services/apiService';
+import { customerService, vehicleService, saleService, smsService } from '@/services/apiService';
 import type { Customer, Vehicle, Sale } from '@/types';
 import { 
   Plus, Search, Edit, Trash2, Eye, Users, Car, ShoppingCart, 
-  Phone, Mail, MapPin, FileText, Calendar, RefreshCcw, Building2
+  Phone, Mail, MapPin, FileText, Calendar, RefreshCcw, Building2, Send, CloudRain
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from 'sonner';
 // Şehir ve ilçe verilerini import et
 import cityData from '@/data/city.json';
 
@@ -50,6 +52,12 @@ export default function Customers() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerVehicles, setCustomerVehicles] = useState<Vehicle[]>([]);
   const [customerSales, setCustomerSales] = useState<Sale[]>([]);
+  // Seçili müşteri id'leri (manuel SMS için)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isSmsOpen, setIsSmsOpen] = useState(false);
+  const [smsMessage, setSmsMessage] = useState('');
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [weatherSmsLoading, setWeatherSmsLoading] = useState(false);
   const [formData, setFormData] = useState({
     is_corporate: false,
     tc_vkn: '',
@@ -202,6 +210,83 @@ export default function Customers() {
     }).format(value);
   };
 
+  // Seçili müşteri id'sini tek tıkla aç/kapa
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Sayfadaki tüm müşterileri seç/kaldır
+  const toggleSelectAllPage = () => {
+    const pageIds = paginatedCustomers.map((c) => c.id);
+    const allSelected = pageIds.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
+  // Seçilenlere SMS gönder
+  const handleSendSms = async () => {
+    const phones = customers
+      .filter((c) => selectedIds.has(c.id) && c.phone?.trim())
+      .map((c) => c.phone!.trim());
+    const uniquePhones = Array.from(new Set(phones));
+    if (uniquePhones.length === 0) {
+      toast.error('Seçilen müşterilerde geçerli telefon numarası yok.');
+      return;
+    }
+    if (!smsMessage.trim()) {
+      toast.error('Mesaj yazın.');
+      return;
+    }
+    try {
+      setSmsLoading(true);
+      await smsService.sendToMultiple(uniquePhones, smsMessage.trim());
+      toast.success(`${uniquePhones.length} kişiye SMS gönderildi.`);
+      setIsSmsOpen(false);
+      setSmsMessage('');
+      setSelectedIds(new Set());
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'SMS gönderilemedi';
+      toast.error(msg);
+    } finally {
+      setSmsLoading(false);
+    }
+  };
+
+  // Seçilenlere hava durumlu SMS (her kişiye kendi ilinin hava durumu)
+  const handleSendWeatherSms = async () => {
+    const ids = Array.from(selectedIds);
+    const withCityAndPhone = customers.filter(
+      (c) => selectedIds.has(c.id) && c.city?.trim() && c.phone?.trim()
+    );
+    if (withCityAndPhone.length === 0) {
+      toast.error('Seçilen müşterilerde il ve telefon dolu olan yok.');
+      return;
+    }
+    try {
+      setWeatherSmsLoading(true);
+      const result = await smsService.sendWeatherToSelected(ids);
+      toast.success(`${result.sent} kişiye hava durumlu SMS gönderildi.`);
+      if (result.errors.length > 0) {
+        toast.warning(`${result.errors.length} hata oluştu.`);
+      }
+      setSelectedIds(new Set());
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'SMS gönderilemedi';
+      toast.error(msg);
+    } finally {
+      setWeatherSmsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -252,10 +337,44 @@ export default function Customers() {
       {/* Müşteri Listesi */}
       <Card>
         <CardHeader>
-          <CardTitle>Müşteri Listesi</CardTitle>
-          <CardDescription>
-            Toplam {customers.length} müşteri bulundu
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <CardTitle>Müşteri Listesi</CardTitle>
+              <CardDescription>
+                Toplam {customers.length} müşteri bulundu
+                {selectedIds.size > 0 && (
+                  <span className="ml-2 text-primary font-medium"> • {selectedIds.size} seçili</span>
+                )}
+              </CardDescription>
+            </div>
+            {selectedIds.size > 0 && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="default"
+                  className="gap-2 bg-sky-600 hover:bg-sky-700"
+                  onClick={handleSendWeatherSms}
+                  disabled={weatherSmsLoading}
+                >
+                  {weatherSmsLoading ? (
+                    <>Gönderiliyor...</>
+                  ) : (
+                    <>
+                      <CloudRain className="h-4 w-4" />
+                      Hava durumlu SMS gönder ({selectedIds.size})
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="default"
+                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => setIsSmsOpen(true)}
+                >
+                  <Send className="h-4 w-4" />
+                  Aynı mesajı gönder ({selectedIds.size})
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -273,6 +392,16 @@ export default function Customers() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={
+                            paginatedCustomers.length > 0 &&
+                            paginatedCustomers.every((c) => selectedIds.has(c.id))
+                          }
+                          onCheckedChange={toggleSelectAllPage}
+                          aria-label="Tümünü seç"
+                        />
+                      </TableHead>
                       <TableHead>Tip</TableHead>
                       <TableHead>TC/VKN</TableHead>
                       <TableHead>Ad Soyad / Unvan</TableHead>
@@ -285,6 +414,13 @@ export default function Customers() {
                   <TableBody>
                     {paginatedCustomers.map((customer) => (
                       <TableRow key={customer.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedIds.has(customer.id)}
+                            onCheckedChange={() => toggleSelected(customer.id)}
+                            aria-label={`${customer.name} seç`}
+                          />
+                        </TableCell>
                         <TableCell>
                           {customer.is_corporate ? (
                             <Badge variant="secondary" className="gap-1">
@@ -799,6 +935,53 @@ export default function Customers() {
               )}
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Seçilenlere SMS Gönder Modal */}
+      <Dialog open={isSmsOpen} onOpenChange={setIsSmsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Seçilenlere SMS gönder
+            </DialogTitle>
+            <DialogDescription>
+              {selectedIds.size} kişiye aynı mesaj gidecek. Telefonu olmayan müşteriler otomatik atlanır.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="sms-message">Mesaj *</Label>
+              <Textarea
+                id="sms-message"
+                value={smsMessage}
+                onChange={(e) => setSmsMessage(e.target.value)}
+                placeholder="Örn: Sayın müşterimiz, yol yardım paketiniz aktif..."
+                rows={4}
+                maxLength={160}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                {smsMessage.length}/160 karakter (tek SMS)
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSmsOpen(false)} disabled={smsLoading}>
+              İptal
+            </Button>
+            <Button onClick={handleSendSms} disabled={smsLoading} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+              {smsLoading ? (
+                <>Gönderiliyor...</>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  {customers.filter((c) => selectedIds.has(c.id) && c.phone?.trim()).length} kişiye gönder
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

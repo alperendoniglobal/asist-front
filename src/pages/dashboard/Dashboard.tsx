@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { statsService, saleService, customerService, agencyService, branchService, supportFileService } from '@/services/apiService';
+import { statsService, saleService, customerService, agencyService, branchService, supportFileService, smsService, type RainyDaySmsResult } from '@/services/apiService';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -17,8 +17,9 @@ import {
   Building2, GitBranch, Activity, Plus, Search, Car, 
   UserPlus, Clock, CheckCircle, FileText, Zap, 
   Sparkles, Eye, RotateCcw, XCircle, AlertTriangle, Phone, MapPin,
-  Banknote
+  Banknote, CloudRain, Send
 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { DashboardStats, Sale, Customer, Agency, Branch } from '@/types';
 import { UserRole } from '@/types';
 import ActiveUsers from '@/components/dashboard/ActiveUsers';
@@ -63,6 +64,9 @@ export default function Dashboard() {
   const [supportFiles, setSupportFiles] = useState<any[]>([]);
   // Super Admin için satış dağılım raporu (Türkiye haritası verisi)
   const [salesDistributionReport, setSalesDistributionReport] = useState<any>(null);
+  // Yağmurlu gün SMS (manuel tetikleme sonucu)
+  const [rainyDayLoading, setRainyDayLoading] = useState(false);
+  const [rainyDayResult, setRainyDayResult] = useState<RainyDaySmsResult | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -106,6 +110,28 @@ export default function Dashboard() {
       console.error('Dashboard verileri yüklenirken hata:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Yağmurlu gün SMS manuel tetikleme (sadece SUPER_ADMIN)
+  const handleRainyDaySms = async () => {
+    try {
+      setRainyDayLoading(true);
+      setRainyDayResult(null);
+      const result = await smsService.sendRainyDaySms();
+      setRainyDayResult(result);
+      toast.success(
+        `İşlem tamamlandı: ${result.rainyCitiesCount} yağmurlu şehirde ${result.smsSent} SMS gönderildi.`
+      );
+      if (result.errors.length > 0) {
+        toast.warning(`${result.errors.length} hata oluştu (özet alanında listelenir).`);
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message || 'SMS gönderilemedi';
+      toast.error(msg);
+      setRainyDayResult(null);
+    } finally {
+      setRainyDayLoading(false);
     }
   };
 
@@ -1251,6 +1277,67 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* ===== YAĞMURLU GÜN SMS - Sadece Super Admin ===== */}
+      {user?.role === UserRole.SUPER_ADMIN && (
+        <Card className="border-sky-200 dark:border-sky-900/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-600 shadow-lg">
+                <CloudRain className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Yağmurlu Gün SMS</CardTitle>
+                <CardDescription>
+                  Bugün yağmurlu tahmin edilen illerdeki tüm müşterilere (acente müşterileri + bireysel üyeler) bilgilendirme SMS&apos;i gönderilir.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={handleRainyDaySms}
+              disabled={rainyDayLoading}
+              className="gap-2 bg-sky-600 hover:bg-sky-700"
+            >
+              {rainyDayLoading ? (
+                <>İşleniyor...</>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Yağmurlu şehirlerdeki müşterilere SMS gönder
+                </>
+              )}
+            </Button>
+            {rainyDayResult && (
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-2 text-sm">
+                <p className="font-medium">Son çalıştırma özeti</p>
+                <ul className="grid gap-1 sm:grid-cols-2 text-muted-foreground">
+                  <li>Kontrol edilen şehir: <span className="font-medium text-foreground">{rainyDayResult.citiesChecked}</span></li>
+                  <li>Yağmurlu şehir: <span className="font-medium text-foreground">{rainyDayResult.rainyCitiesCount}</span></li>
+                  <li>Gönderilen SMS: <span className="font-medium text-foreground">{rainyDayResult.smsSent}</span></li>
+                  {rainyDayResult.rainyCities.length > 0 && (
+                    <li className="sm:col-span-2">Şehirler: {rainyDayResult.rainyCities.join(', ')}</li>
+                  )}
+                </ul>
+                {rainyDayResult.errors.length > 0 && (
+                  <div className="mt-2">
+                    <p className="font-medium text-amber-600 dark:text-amber-400">Hatalar ({rainyDayResult.errors.length})</p>
+                    <ul className="mt-1 max-h-24 overflow-y-auto text-xs text-muted-foreground list-disc list-inside">
+                      {rainyDayResult.errors.slice(0, 10).map((e, i) => (
+                        <li key={i}>{e}</li>
+                      ))}
+                      {rainyDayResult.errors.length > 10 && (
+                        <li>... ve {rainyDayResult.errors.length - 10} hata daha</li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* ===== İADE BİLGİLERİ - Sadece Agency Admin için (tam genişlik) ===== */}
