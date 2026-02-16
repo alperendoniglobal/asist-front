@@ -15,7 +15,6 @@ import {
   Car,
   ShoppingCart,
   ArrowRight,
-  Shield,
   Activity,
   Star,
   ChevronLeft,
@@ -28,8 +27,7 @@ import {
   Mail,
   Menu,
   X,
-  Play,
-  Award,
+  // Play removed – no longer used
   Headphones,
   Send,
   Heart,
@@ -85,10 +83,10 @@ export default function LandingPage() {
   const packageCarouselRef = useRef<HTMLDivElement>(null);
   const [currentPackageIndex, setCurrentPackageIndex] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-  
+
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   // Contact form state
   const [contactForm, setContactForm] = useState({
     name: '',
@@ -108,26 +106,26 @@ export default function LandingPage() {
 
   // Müşteri yorumları - Türkçe isimler
   const testimonials = [
-    { 
-      name: 'Alperen Y.', 
-      location: 'İstanbul', 
-      text: 'Gece geç saatte aracım arıza yaptı, 25 dakika içinde yardım geldi. Profesyonel ve güler yüzlü ekip için teşekkürler!', 
-      rating: 5 
+    {
+      name: 'Alperen Y.',
+      location: 'İstanbul',
+      text: 'Gece geç saatte aracım arıza yaptı, 25 dakika içinde yardım geldi. Profesyonel ve güler yüzlü ekip için teşekkürler!',
+      rating: 5
     },
-    { 
-      name: 'Serkan K.', 
-      location: 'Ankara', 
-      text: 'İkinci kez hizmet aldım, her seferinde aynı kalitede. Fiyatlar makul, hizmet kusursuz.', 
-      rating: 5 
+    {
+      name: 'Serkan K.',
+      location: 'Ankara',
+      text: 'İkinci kez hizmet aldım, her seferinde aynı kalitede. Fiyatlar makul, hizmet kusursuz.',
+      rating: 5
     },
-    { 
-      name: 'Fatih Ö.', 
-      location: 'İzmir', 
-      text: 'Tatil dönüşü lastik patladı. Çağrı merkezinin ilgisi ve hızlı müdahale için tam not!', 
-      rating: 5 
+    {
+      name: 'Fatih Ö.',
+      location: 'İzmir',
+      text: 'Tatil dönüşü lastik patladı. Çağrı merkezinin ilgisi ve hızlı müdahale için tam not!',
+      rating: 5
     },
   ];
-  
+
   // Backend'den veri çek
   useEffect(() => {
     const fetchData = async () => {
@@ -138,7 +136,7 @@ export default function LandingPage() {
           contentService.getActiveStats().catch(() => []),
           publicService.getPackages().catch(() => []),
         ]);
-        
+
         if (contentData) setLandingContent(contentData);
         if (statsData.length > 0) setStats(statsData);
         if (packagesData.length > 0) setPackages(packagesData);
@@ -148,14 +146,14 @@ export default function LandingPage() {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
   // Otomatik carousel kaydırma - Optimize edilmiş
   useEffect(() => {
     if (!isAutoScrolling || packages.length === 0) return;
-    
+
     const interval = setInterval(() => {
       setCurrentPackageIndex((prev) => {
         const next = (prev + 1) % packages.length;
@@ -222,21 +220,21 @@ export default function LandingPage() {
 
       {/* Dark mode'dan korumalı wrapper */}
       <div className="light public-page bg-white text-gray-900 overflow-x-hidden" style={{ colorScheme: 'light' }}>
-        
+
         {/* ===== TOP BAR ===== */}
         <div className="bg-[#019242] text-white py-2.5 hidden md:block">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-6">
-                <a 
-                  href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '08503045440'}`} 
+                <a
+                  href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '08503045440'}`}
                   className="flex items-center gap-2 hover:text-blue-200 transition-colors"
                 >
                   <Phone className="h-4 w-4" />
                   <span className="font-medium">{landingContent?.support_phone || '+90 (850) 304 54 40'}</span>
                 </a>
-                <a 
-                  href={`mailto:${landingContent?.support_email || 'info@cozum.net'}`} 
+                <a
+                  href={`mailto:${landingContent?.support_email || 'info@cozum.net'}`}
                   className="flex items-center gap-2 hover:text-blue-200 transition-colors"
                 >
                   <Mail className="h-4 w-4" />
@@ -250,7 +248,7 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-      </div>
+        </div>
 
         {/* ===== HEADER - Responsive Düzen ===== */}
         <header className="sticky top-0 z-50 bg-white shadow-md border-b border-gray-100">
@@ -260,9 +258,9 @@ export default function LandingPage() {
               {/* Sol: Logo - landing’de daha belirgin */}
               <Link to="/" className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg flex-shrink-0">
-                  <img 
-                    src="/iconlogo.svg" 
-                    alt="" 
+                  <img
+                    src="/iconlogo.svg"
+                    alt=""
                     className="h-9 w-9 object-contain"
                   />
                 </div>
@@ -314,9 +312,9 @@ export default function LandingPage() {
             <div className="lg:hidden flex items-center justify-between h-16">
               <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
                 <div className="w-12 h-12 rounded-xl bg-[#019242] flex items-center justify-center shadow-lg flex-shrink-0">
-                  <img 
-                    src="/iconlogo.svg" 
-                    alt="" 
+                  <img
+                    src="/iconlogo.svg"
+                    alt=""
                     className="h-7 w-7 object-contain"
                   />
                 </div>
@@ -327,22 +325,20 @@ export default function LandingPage() {
               </Link>
 
               {/* Sağ: Mobile Menu Button */}
-              <button 
+              <button
                 className="relative z-[60] p-2.5 text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200 active:scale-95"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Menü"
                 aria-expanded={isMobileMenuOpen}
               >
                 <div className="relative w-6 h-6">
-                  <Menu 
-                    className={`absolute inset-0 h-6 w-6 transition-all duration-300 ${
-                      isMobileMenuOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
-                    }`}
+                  <Menu
+                    className={`absolute inset-0 h-6 w-6 transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0 rotate-90 scale-0' : 'opacity-100 rotate-0 scale-100'
+                      }`}
                   />
-                  <X 
-                    className={`absolute inset-0 h-6 w-6 transition-all duration-300 ${
-                      isMobileMenuOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
-                    }`}
+                  <X
+                    className={`absolute inset-0 h-6 w-6 transition-all duration-300 ${isMobileMenuOpen ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
+                      }`}
                   />
                 </div>
               </button>
@@ -351,34 +347,31 @@ export default function LandingPage() {
 
           {/* Mobile Menu Overlay - Full Screen Modern Tasarım */}
           <div
-            className={`lg:hidden fixed inset-0 z-[55] transition-all duration-300 ease-out ${
-              isMobileMenuOpen
-                ? 'opacity-100 pointer-events-auto'
-                : 'opacity-0 pointer-events-none'
-            }`}
+            className={`lg:hidden fixed inset-0 z-[55] transition-all duration-300 ease-out ${isMobileMenuOpen
+              ? 'opacity-100 pointer-events-auto'
+              : 'opacity-0 pointer-events-none'
+              }`}
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {/* Backdrop */}
-            <div 
-              className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
-                isMobileMenuOpen ? 'opacity-100' : 'opacity-0'
-              }`}
+            <div
+              className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0'
+                }`}
             />
 
             {/* Menu Panel - Sağdan Slide In */}
             <div
-              className={`absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out ${
-                isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-              }`}
+              className={`absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl transform transition-transform duration-300 ease-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Menu Header - ikon + metin */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-[#019242] to-[#017A35]">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
-                    <img 
-                      src="/iconlogo.svg" 
-                      alt="" 
+                    <img
+                      src="/iconlogo.svg"
+                      alt=""
                       className="h-8 w-8 object-contain filter brightness-0 invert"
                     />
                   </div>
@@ -400,44 +393,44 @@ export default function LandingPage() {
               <div className="h-[calc(100vh-80px)] overflow-y-auto">
                 <nav className="flex flex-col p-4 gap-1">
                   {/* Ana Menü Linkleri */}
-                  <Link 
-                    to="/" 
+                  <Link
+                    to="/"
                     className="group flex items-center gap-3 text-gray-700 hover:text-[#019242] hover:bg-green-50 font-medium py-3.5 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <div className="w-1.5 h-1.5 rounded-full bg-[#019242] opacity-0 group-hover:opacity-100 transition-opacity" />
                     <span>Anasayfa</span>
                   </Link>
-                  
-                  <a 
-                    href="#about" 
+
+                  <a
+                    href="#about"
                     className="group flex items-center gap-3 text-gray-700 hover:text-[#019242] hover:bg-green-50 font-medium py-3.5 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <div className="w-1.5 h-1.5 rounded-full bg-[#019242] opacity-0 group-hover:opacity-100 transition-opacity" />
                     <span>Hakkımızda</span>
                   </a>
-                  
-                  <Link 
-                    to="/packages" 
+
+                  <Link
+                    to="/packages"
                     className="group flex items-center gap-3 text-gray-700 hover:text-[#019242] hover:bg-green-50 font-medium py-3.5 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <div className="w-1.5 h-1.5 rounded-full bg-[#019242] opacity-0 group-hover:opacity-100 transition-opacity" />
                     <span>Paketler</span>
                   </Link>
-                  
-                  <a 
-                    href="#packages" 
+
+                  <a
+                    href="#packages"
                     className="group flex items-center gap-3 text-gray-700 hover:text-[#019242] hover:bg-green-50 font-medium py-3.5 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <div className="w-1.5 h-1.5 rounded-full bg-[#019242] opacity-0 group-hover:opacity-100 transition-opacity" />
                     <span>Hizmetlerimiz</span>
                   </a>
-                  
-                  <a 
-                    href="#contact" 
+
+                  <a
+                    href="#contact"
                     className="group flex items-center gap-3 text-gray-700 hover:text-[#019242] hover:bg-green-50 font-medium py-3.5 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -449,17 +442,17 @@ export default function LandingPage() {
                   <div className="my-2 border-t border-gray-200" />
 
                   {/* Ek Linkler */}
-                  <Link 
-                    to="/bayilik-basvurusu" 
+                  <Link
+                    to="/bayilik-basvurusu"
                     className="group flex items-center gap-3 text-gray-600 hover:text-[#019242] hover:bg-green-50 font-medium py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <div className="w-1.5 h-1.5 rounded-full bg-[#019242] opacity-0 group-hover:opacity-100 transition-opacity" />
                     <span className="text-sm">Bayilik Başvurusu</span>
                   </Link>
-                  
-                  <Link 
-                    to="/privacy-policy" 
+
+                  <Link
+                    to="/privacy-policy"
                     className="group flex items-center gap-3 text-gray-600 hover:text-[#019242] hover:bg-green-50 font-medium py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
@@ -471,8 +464,8 @@ export default function LandingPage() {
                   <div className="mt-4 px-4 pb-4">
                     {isAuthenticated && userCustomer ? (
                       <Link to="/user/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-[#019242] rounded-xl py-6 text-base font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                         >
                           <User className="h-5 w-5 mr-2" />
@@ -481,7 +474,7 @@ export default function LandingPage() {
                       </Link>
                     ) : (
                       <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Button 
+                        <Button
                           className="w-full bg-gradient-to-r from-[#019242] to-[#017A35] hover:from-[#017A35] hover:to-[#015A28] text-white rounded-xl py-6 text-base font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
                         >
                           Giriş Yap
@@ -495,25 +488,44 @@ export default function LandingPage() {
           </div>
         </header>
 
-        {/* ===== HİZMET ARA (Armut tarzı) – en üst section ===== */}
-        <section id="hizmet-ara" className="pt-0 pb-12 md:pb-16 bg-gradient-to-b from-gray-50 to-white">
-          <div className="container mx-auto px-4">
-            {/* Hero şeridi: konuya uygun arka plan fotoğrafı + yeşil overlay + başlık + arama */}
-            <div
-              className="relative rounded-2xl md:rounded-3xl overflow-hidden min-h-[200px] md:min-h-[260px] flex flex-col justify-center items-center text-center px-4 py-8 md:py-12 mb-8 bg-cover bg-center"
-              style={{ backgroundImage: 'url(/images/pexels-fauxels-3183197.jpg)' }}
-            >
-              {/* Yeşil overlay – metin okunaklı, görsel hissedilir */}
-              <div className="absolute inset-0 bg-[#019242]/85" aria-hidden />
-              <div className="absolute inset-0 bg-[#017A35]/40" aria-hidden />
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.06\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-60" aria-hidden />
-              <div className="relative z-10 w-full max-w-2xl mx-auto">
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-sm">
-                  İhtiyacın olan hizmete kolayca ulaş
-                </h2>
-                <p className="text-white/95 text-sm md:text-base mb-6 max-w-xl mx-auto">
-                  Bekleyen işlerini hallet; temizlik, tadilat, tesisat, yol yardım ve daha fazlası.
+        {/* ===== HİZMET ARA – Premium Hero Banner + Kartlar ===== */}
+        <section id="hizmet-ara" className="relative">
+          {/* Hero Banner – Arka plan görseli + overlay */}
+          <div className="relative min-h-[340px] md:min-h-[420px] flex items-center overflow-hidden">
+            {/* Background Image */}
+            <img
+              src="/images/pexels-fauxels-3183197.jpg"
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="eager"
+              aria-hidden
+            />
+            {/* Dark green gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#012A15]/90 via-[#019242]/75 to-[#017A35]/85" aria-hidden />
+            {/* Subtle pattern overlay */}
+            <div className="absolute inset-0 opacity-[0.04]" style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+            }} aria-hidden />
+            {/* Bottom fade to white */}
+            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" aria-hidden />
+
+            <div className="relative z-10 container mx-auto px-4 py-12 md:py-16">
+              <div className="max-w-3xl mx-auto text-center">
+                {/* Badge */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-medium mb-5 border border-white/20">
+                  <Search className="h-4 w-4" />
+                  <span>Hizmet Bul</span>
+                </div>
+
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-4 drop-shadow-lg">
+                  İhtiyacın Olan <br className="hidden sm:block" />
+                  <span className="text-green-300">Hizmete</span> Kolayca Ulaş
+                </h1>
+                <p className="text-white/90 text-base md:text-lg max-w-xl mx-auto mb-8 leading-relaxed">
+                  Temizlik, tadilat, tesisat, yol yardım ve daha fazlası — en iyi ustalar burada.
                 </p>
+
+                {/* Glassmorphism arama kutusu */}
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -522,53 +534,60 @@ export default function LandingPage() {
                     if (value) navigate(`/hizmet-ara?q=${encodeURIComponent(value)}`);
                     else navigate('/hizmet-ara');
                   }}
-                  className="flex flex-col sm:flex-row gap-2 bg-white rounded-xl shadow-lg p-2 sm:p-2"
+                  className="flex flex-col sm:flex-row gap-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-2.5 max-w-2xl mx-auto border border-white/50"
                 >
                   <Input
                     name="hizmet-q"
                     type="search"
-                    placeholder="Hangi hizmeti arıyorsun?"
-                    className="flex-1 h-12 rounded-lg border-2 border-gray-200 focus:border-[#019242]"
+                    placeholder="Hangi hizmeti arıyorsun? (ör: tesisat, temizlik, boya)"
+                    className="flex-1 h-13 rounded-xl border-2 border-gray-200 focus:border-[#019242] text-base bg-white"
                     aria-label="Hizmet ara"
                   />
-                  <Button type="submit" className="bg-[#019242] hover:bg-[#017A35] h-12 px-6 rounded-lg gap-2" aria-label="Ara">
+                  <Button type="submit" className="bg-[#019242] hover:bg-[#017A35] h-13 px-8 rounded-xl gap-2 shadow-lg text-base font-semibold" aria-label="Ara">
                     <Search className="h-5 w-5" />
-                    Ara
+                    Hizmet Ara
                   </Button>
                 </form>
+
+                {/* Kategori chip'leri – banner içinde */}
+                <div className="flex flex-wrap justify-center gap-2 mt-6">
+                  {HIZMET_KATEGORILERI.map((k) => (
+                    <Link
+                      key={k.id}
+                      to={`/hizmet-ara?kategori=${encodeURIComponent(k.slug)}`}
+                      className="px-4 py-2 rounded-full text-sm font-medium bg-white/15 backdrop-blur-sm border border-white/25 text-white hover:bg-white hover:text-[#019242] transition-all duration-200"
+                    >
+                      {k.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
+
             </div>
-            <div className="flex flex-wrap justify-center gap-2 mb-10">
-              {HIZMET_KATEGORILERI.map((k) => (
-                <Link
-                  key={k.id}
-                  to={`/hizmet-ara?kategori=${encodeURIComponent(k.slug)}`}
-                  className="px-4 py-2 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-[#019242] hover:text-white hover:border-[#019242] transition-colors"
-                >
-                  {k.label}
-                </Link>
-              ))}
-            </div>
+          </div>
+
+          {/* Trend hizmet kartları – banner altında */}
+          <div className="container mx-auto px-4 py-12 md:py-16">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">Haftanın Trend Hizmetleri</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Haftanın Trend Hizmetleri</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {TREND_HIZMETLER.map((h) => {
                   const Icon = getHizmetIcon(h);
                   return (
                     <Link
                       key={h.id}
-                      to={`/hizmet-ara?q=${encodeURIComponent(h.slug)}`}
+                      to={`/hizmet/${h.slug}`}
                       className="block group"
                     >
-                      <Card className="border border-gray-200 overflow-hidden h-full transition-all duration-300 hover:shadow-xl hover:border-[#019242]/40">
-                        {/* Üstte hizmetle alakalı fotoğraf (yüklenmezse ikon gösterilir) */}
-                        <div className="aspect-[4/3] relative bg-gray-100 overflow-hidden">
+                      <Card className="border border-gray-200/80 overflow-hidden h-full transition-all duration-300 hover:shadow-2xl hover:border-[#019242]/30 hover:-translate-y-1 bg-white">
+                        {/* Hizmet fotoğrafı */}
+                        <div className="aspect-[16/10] relative bg-gray-100 overflow-hidden">
                           {h.imageUrl ? (
                             <>
                               <img
                                 src={h.imageUrl}
-                                alt=""
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 hizmet-card-img"
+                                alt={h.name}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 loading="lazy"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
@@ -576,135 +595,58 @@ export default function LandingPage() {
                                   if (fallback) fallback.classList.remove('hidden');
                                 }}
                               />
-                              <div className="hidden absolute inset-0 bg-gradient-to-br from-[#019242]/20 to-[#017A35]/20 flex items-center justify-center hizmet-card-fallback">
+                              <div className="hidden absolute inset-0 bg-gradient-to-br from-[#019242]/20 to-[#017A35]/20 flex items-center justify-center">
                                 <Icon className="h-12 w-12 text-[#019242]" />
                               </div>
                             </>
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-[#019242]/20 to-[#017A35]/20 flex items-center justify-center">
+                            <div className="w-full h-full bg-gradient-to-br from-[#019242]/10 to-[#017A35]/10 flex items-center justify-center">
                               <Icon className="h-12 w-12 text-[#019242]" />
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
+                          {/* Gradient overlay – alt kısımda metin okunabilirliği */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden />
+                          {/* Kategori etiketi */}
+                          <div className="absolute top-3 left-3">
+                            <span className="px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-sm text-xs font-semibold text-[#019242] shadow-sm">
+                              {HIZMET_KATEGORILERI.find(k => k.slug === h.kategoriSlug)?.label || 'Hizmet'}
+                            </span>
+                          </div>
+                          {/* Ikon rozeti */}
+                          <div className="absolute bottom-3 right-3 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md group-hover:bg-[#019242] group-hover:text-white transition-colors duration-300">
+                            <Icon className="h-5 w-5 text-[#019242] group-hover:text-white transition-colors duration-300" />
+                          </div>
                         </div>
                         <CardContent className="p-4">
-                          <h4 className="font-semibold text-gray-900">{h.name}</h4>
-                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{h.description}</p>
-                          <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-[#019242]">
-                            Teklif al <ArrowRight className="h-4 w-4" />
-                          </span>
+                          <h4 className="font-bold text-gray-900 text-base">{h.name}</h4>
+                          <p className="text-sm text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">{h.description}</p>
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map(i => (
+                                <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                              ))}
+                              <span className="text-xs text-gray-400 ml-1">5.0</span>
+                            </div>
+                            <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#019242] group-hover:gap-2 transition-all duration-200">
+                              Detaylar <ArrowRight className="h-4 w-4" />
+                            </span>
+                          </div>
                         </CardContent>
                       </Card>
                     </Link>
                   );
                 })}
               </div>
-              <div className="text-center mt-8">
+              <div className="text-center mt-10">
                 <Link
                   to="/hizmet-ara"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-base font-medium bg-[#019242] text-white hover:bg-[#017A35] transition-colors shadow-md hover:shadow-lg"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-base font-semibold bg-[#019242] text-white hover:bg-[#017A35] transition-all duration-200 shadow-lg hover:shadow-xl hover:gap-3"
                 >
                   Tüm hizmetlere göz at
                   <ArrowRight className="h-5 w-5" />
                 </Link>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* ===== HERO SECTION ===== */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-gray-50">
-          {/* Decorative shapes */}
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-[#019242]/5 rounded-bl-[100px] hidden lg:block" />
-          <div className="absolute top-20 right-20 w-64 h-64 bg-[#019242]/10 rounded-full blur-3xl hidden lg:block" />
-          
-          <div className="container mx-auto px-4 py-10 md:py-16 lg:py-20">
-            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              {/* Left Content */}
-              <div className="space-y-5 md:space-y-6 relative z-10 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#019242]/10 text-[#019242] text-sm font-medium">
-                  <Shield className="h-4 w-4" />
-                  <span>7/24 Profesyonel Yol Yardım</span>
-                            </div>
-                
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 leading-tight">
-                  <span className="text-[#019242]">Her Yolculukta</span>
-                  <br />
-                  Yanınızdayız
-                </h1>
-                
-                <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-lg mx-auto lg:mx-0">
-                  Türkiye genelinde profesyonel çekici, ikame araç, konaklama ve acil yol yardım hizmetleri. 
-                  Tek arama ile güvenli ellerde olun.
-                </p>
-                
-                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 justify-center lg:justify-start">
-                  <Link to="/login">
-                    <Button size="lg" className="bg-[#019242] hover:bg-[#017A35] text-white px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full gap-2 shadow-lg shadow-green-500/25 w-full sm:w-auto">
-                      Sisteme Giriş
-                      <ArrowRight className="h-5 w-5" />
-                    </Button>
-                  </Link>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full gap-2 border-2 border-[#019242] text-[#019242] hover:bg-[#019242] hover:text-white w-full sm:w-auto"
-                    onClick={() => document.getElementById('hizmet-ara')?.scrollIntoView({ behavior: 'smooth' })}
-                    aria-label="Hizmet arama bölümüne git"
-                  >
-                    <Search className="h-5 w-5" />
-                    Hizmet Ara
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full gap-2 border-2 border-[#019242] text-[#019242] hover:bg-[#019242] hover:text-white w-full sm:w-auto"
-                    onClick={() => document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })}
-                  >
-                    <Play className="h-5 w-5" />
-                    Paketleri İncele
-                  </Button>
-                </div>
-                      </div>
-
-              {/* Right Content - Image Collage */}
-              <div className="relative w-full max-w-md lg:max-w-none mx-auto">
-                <div className="relative">
-                  {/* Main Image - Çekici Hizmeti */}
-                  <div className="relative rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl">
-                    <img 
-                      src="/images/pexels-mart-production-7709278.jpg" 
-                      alt="Profesyonel Çekici Hizmeti"
-                      className="w-full h-[250px] sm:h-[300px] lg:h-[350px] object-cover"
-                      loading="eager"
-                    />
-                              </div>
-                  
-                  {/* Floating Image - Canlı Destek Ekibi */}
-                  <div className="absolute -bottom-4 sm:-bottom-8 -left-4 sm:-left-8 rounded-xl sm:rounded-2xl overflow-hidden shadow-xl border-4 border-white hidden sm:block">
-                    <img 
-                      src="/images/pexels-fauxels-3183197.jpg" 
-                      alt="7/24 Canlı Destek Ekibi"
-                      className="w-[140px] sm:w-[180px] h-[100px] sm:h-[130px] object-cover"
-                      loading="lazy"
-                    />
-                              </div>
-
-                  {/* Stats Badge */}
-                  <div className="absolute -right-2 sm:-right-4 top-1/2 -translate-y-1/2 bg-white rounded-xl sm:rounded-2xl shadow-xl p-3 sm:p-5 border border-gray-100">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-[#019242] flex items-center justify-center">
-                        <Award className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
-                            </div>
-                      <div>
-                        <p className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900">3400+</p>
-                        <p className="text-[10px] sm:text-xs text-gray-500">Mutlu Müşteri</p>
-                              </div>
-                              </div>
-                            </div>
-                          </div>
-                          </div>
-                        </div>
           </div>
         </section>
 
@@ -717,66 +659,66 @@ export default function LandingPage() {
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <div className="space-y-3 sm:space-y-4">
                     <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg">
-                      <img 
-                        src="/images/about-office.jpg" 
+                      <img
+                        src="/images/about-office.jpg"
                         alt="Ofis Ortamı"
                         className="w-full h-[140px] sm:h-[200px] object-cover"
                         loading="lazy"
                       />
-                                    </div>
+                    </div>
                     <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg">
-                      <img 
-                        src="/images/about-team.jpg" 
+                      <img
+                        src="/images/about-team.jpg"
                         alt="Takım Çalışması"
                         className="w-full h-[110px] sm:h-[160px] object-cover"
                         loading="lazy"
                       />
-                                  </div>
-                                </div>
+                    </div>
+                  </div>
                   <div className="pt-6 sm:pt-8">
                     <div className="rounded-xl sm:rounded-2xl overflow-hidden shadow-lg">
-                      <img 
-                        src="/images/about-collab.jpg" 
+                      <img
+                        src="/images/about-collab.jpg"
                         alt="Profesyonel Ekip"
                         className="w-full h-[260px] sm:h-[350px] object-cover"
                         loading="lazy"
                       />
-                          </div>
-                        </div>
-                      </div>
                     </div>
-                        
+                  </div>
+                </div>
+              </div>
+
               {/* Right Content - Text (çapraz düzen için sağda) */}
               <div className="space-y-5 sm:space-y-6 text-center lg:text-left order-2 lg:order-2">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-sm font-medium">
                   <Star className="h-4 w-4 text-amber-500" />
                   <span>Neden Biz?</span>
-                  </div>
-                
+                </div>
+
                 <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 leading-tight">
                   <span className="text-[#019242]">Güvenilir</span>
                   <br />
                   Yol Arkadaşınız
                 </h2>
-                
+
                 <div className="space-y-4 text-left">
                   <div className="flex items-start gap-4">
                     <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-1">
                       <Check className="h-4 w-4 text-white" />
-                </div>
+                    </div>
                     <div>
                       <h3 className="text-base sm:text-lg font-bold text-gray-900">Profesyonel Hizmet</h3>
                       <p className="text-sm sm:text-base text-gray-600">
-                        Deneyimli ekibimiz ve modern araç filomuzla, aracınız ne zaman arıza yapsa yanınızdayız. 
+                        Deneyimli ekibimiz ve modern araç filomuzla, aracınız ne zaman arıza yapsa yanınızdayız.
                         Hızlı müdahale garantisi sunuyoruz.
                       </p>
-              </div>
-        </div>
-        
+                    </div>
+                  </div>
+
                   <div className="flex items-start gap-4">
                     <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-1">
                       <Check className="h-4 w-4 text-white" />
-        </div>
+                    </div>
                     <div>
                       <h3 className="text-base sm:text-lg font-bold text-gray-900">Türkiye Geneli Kapsama</h3>
                       <p className="text-sm sm:text-base text-gray-600">
@@ -788,35 +730,35 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-      </section>
+        </section>
 
         {/* ===== PACKAGES SECTION - Shopping Cart Style ===== */}
         <section id="packages" className="py-12 md:py-20 bg-gradient-to-br from-gray-50 via-white to-green-50 relative overflow-visible">
           {/* Decorative Background Elements */}
           <div className="absolute top-0 right-0 w-96 h-96 bg-[#019242]/5 rounded-full blur-3xl hidden lg:block" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl hidden lg:block" />
-          
+
           <div className="container mx-auto px-4 relative z-10 overflow-visible">
             <div className="text-center mb-10 sm:mb-16">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#019242]/10 text-[#019242] text-sm font-medium mb-4 animate-fadeIn">
                 <ShoppingCart className="h-4 w-4" />
                 <span>Hizmetlerimiz</span>
-            </div>
+              </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 animate-fadeIn">
                 Size Özel <span className="text-[#019242]">Paketler</span>
-            </h2>
+              </h2>
               <p className="text-gray-600 mt-3 max-w-2xl mx-auto text-sm sm:text-base">
                 İhtiyacınıza en uygun yol yardım paketini seçin, güvende kalın
-            </p>
-          </div>
+              </p>
+            </div>
 
             {/* Package Cards Carousel - Shopping Cart Style */}
-            <div 
+            <div
               className="relative py-8 -mx-4 md:-mx-8 lg:-mx-12 overflow-visible"
               onMouseEnter={() => setIsAutoScrolling(false)}
               onMouseLeave={() => setIsAutoScrolling(true)}
             >
-              <div 
+              <div
                 ref={packageCarouselRef}
                 className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-8 px-20 md:px-24 lg:px-28 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                 style={{ scrollBehavior: 'smooth', overflowY: 'visible' }}
@@ -838,7 +780,7 @@ export default function LandingPage() {
                     'Minibüs': Bus,
                   };
                   const VehicleIcon = vehicleIcons[pkg.vehicle_type] || Car;
-                  
+
                   // Yeşil tonlarında renk paleti - tasarıma uyumlu
                   const colors = [
                     { bg: 'bg-[#019242]', light: 'bg-green-50', text: 'text-[#019242]', border: 'border-green-200', hover: 'hover:bg-[#017A35]' },
@@ -848,33 +790,32 @@ export default function LandingPage() {
                   ];
                   const color = colors[index % colors.length];
                   const isActive = index === currentPackageIndex;
-              
-              return (
+
+                  return (
                     <div
                       key={pkg.id}
                       className="flex-shrink-0 w-[300px] sm:w-[320px] md:w-[340px] snap-center py-6 px-2"
                     >
-                      <Card className={`h-full border transition-all duration-500 group bg-white flex flex-col ${
-                        isActive 
-                          ? `border-2 ${color.border} shadow-2xl` 
-                          : 'border-gray-200 shadow-lg hover:shadow-xl'
-                      }`}>
+                      <Card className={`h-full border transition-all duration-500 group bg-white flex flex-col ${isActive
+                        ? `border-2 ${color.border} shadow-2xl`
+                        : 'border-gray-200 shadow-lg hover:shadow-xl'
+                        }`}>
                         {/* Package Header - Minimal & Professional */}
                         <div className={`${color.light} p-5 border-b ${color.border} relative overflow-hidden`}>
                           <div className="relative z-10">
                             <div className="flex items-center justify-between mb-3">
                               <div className={`w-12 h-12 rounded-xl ${color.bg} flex items-center justify-center shadow-md transition-transform duration-500 ${isActive ? 'scale-105' : ''}`}>
                                 <VehicleIcon className="h-5 w-5 text-white" />
-                      </div>
+                              </div>
                               <span className={`px-3 py-1 rounded-lg ${color.bg} text-white text-xs font-semibold uppercase tracking-wide`}>
-                              {pkg.vehicle_type}
-                            </span>
-                          </div>
+                                {pkg.vehicle_type}
+                              </span>
+                            </div>
                             <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.name}</h3>
-                          {pkg.description && (
+                            {pkg.description && (
                               <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{pkg.description}</p>
-                          )}
-                            
+                            )}
+
                             {/* Price Badge - Minimal Style */}
                             {pkg.price && (
                               <div className="mt-3 flex items-baseline gap-1.5">
@@ -886,14 +827,14 @@ export default function LandingPage() {
                               </div>
                             )}
                           </div>
-                    </div>
-                    
+                        </div>
+
                         {/* Package Features - Clean & Minimal */}
                         <CardContent className="p-5 flex flex-col flex-grow bg-white">
                           <ul className="space-y-2.5 min-h-[180px] flex-grow">
                             {pkg.covers.slice(0, 6).map((cover) => (
-                              <li 
-                                key={cover.id} 
+                              <li
+                                key={cover.id}
                                 className="flex items-start gap-2.5"
                               >
                                 <div className={`w-5 h-5 rounded-md ${color.bg} flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm`}>
@@ -917,7 +858,7 @@ export default function LandingPage() {
                               <ArrowRight className="h-4 w-4 ml-2 group-hover/btn:translate-x-0.5 transition-transform" />
                             </Button>
                           </Link>
-                          
+
                         </CardContent>
                       </Card>
                     </div>
@@ -937,7 +878,7 @@ export default function LandingPage() {
                       'Kamyonet': Truck,
                     };
                     const VehicleIcon = vehicleIcons[pkg.type] || Car;
-                    
+
                     // Yeşil tonlarında renk paleti - tasarıma uyumlu
                     const colors = [
                       { bg: 'bg-[#019242]', light: 'bg-green-50', border: 'border-green-200', hover: 'hover:bg-[#017A35]' },
@@ -981,13 +922,13 @@ export default function LandingPage() {
                                 <ArrowRight className="h-4 w-4 ml-2" />
                               </Button>
                             </Link>
-                  </CardContent>
-                </Card>
+                          </CardContent>
+                        </Card>
                       </div>
-              );
+                    );
                   })
                 )}
-          </div>
+              </div>
 
               {/* Carousel Navigation - Desktop only */}
               <button
@@ -1004,7 +945,7 @@ export default function LandingPage() {
               >
                 <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
-        </div>
+            </div>
 
             {/* View All Link */}
             <div className="text-center mt-8 sm:mt-10">
@@ -1032,27 +973,27 @@ export default function LandingPage() {
               {/* Left - Image - Canlı Destek Ekibi - Hidden on mobile */}
               <div className="relative hidden lg:block">
                 <div className="relative">
-                  <img 
-                    src="/images/pexels-fauxels-3183197.jpg" 
+                  <img
+                    src="/images/pexels-fauxels-3183197.jpg"
                     alt="7/24 Canlı Destek Ekibi"
                     className="rounded-3xl shadow-2xl max-h-[500px] object-cover"
                     loading="lazy"
                   />
-                  
+
                   {/* Floating Badge */}
                   <div className="absolute -right-6 top-1/4 bg-white rounded-2xl shadow-xl p-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center">
                         <Headphones className="h-6 w-6 text-white" />
-                        </div>
+                      </div>
                       <div>
                         <p className="text-2xl font-black text-gray-900">7/24</p>
                         <p className="text-xs text-gray-500">Çağrı Merkezi</p>
-                        </div>
                       </div>
+                    </div>
+                  </div>
                 </div>
-          </div>
-        </div>
+              </div>
 
               {/* Right - Stats */}
               <div className="text-white space-y-6 sm:space-y-8">
@@ -1060,40 +1001,40 @@ export default function LandingPage() {
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium">
                     <Activity className="h-4 w-4" />
                     <span>Hizmet Kalitesi</span>
-            </div>
+                  </div>
                   <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black leading-tight">
                     Müşterilerimizin
                     <br />
                     Güveni
-            </h2>
+                  </h2>
                   <p className="text-base sm:text-lg text-blue-100 max-w-lg mx-auto lg:mx-0">
                     Binlerce müşterimize kesintisiz hizmet sunarak güvenlerini kazandık. Siz de ailemize katılın.
-            </p>
-          </div>
+                  </p>
+                </div>
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
-            {displayStats.slice(0, 4).map((stat: any, index: number) => {
-              const Icon = stat.icon_name 
-                ? (LucideIcons as any)[stat.icon_name] || Activity
-                : stat.icon || Activity;
-                    
-              return (
+                  {displayStats.slice(0, 4).map((stat: any, index: number) => {
+                    const Icon = stat.icon_name
+                      ? (LucideIcons as any)[stat.icon_name] || Activity
+                      : stat.icon || Activity;
+
+                    return (
                       <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-white/20">
                         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4">
                           <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
                             <Icon className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
-                      </div>
+                          </div>
                           <div className="text-center sm:text-left">
                             <p className="text-2xl sm:text-3xl md:text-4xl font-black">
                               {stat.value.toLocaleString()}{stat.suffix || ''}
                             </p>
                             <p className="text-xs sm:text-sm text-blue-100">{stat.label}</p>
-                    </div>
+                          </div>
                         </div>
                       </div>
-              );
-            })}
+                    );
+                  })}
                 </div>
 
                 <div className="text-center lg:text-left">
@@ -1105,31 +1046,31 @@ export default function LandingPage() {
                   </Link>
                 </div>
               </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
         {/* ===== TESTIMONIALS SECTION ===== */}
         <section className="py-12 md:py-20 bg-white relative overflow-hidden">
           {/* Background Image - Müşteri Görseli */}
           <div className="absolute inset-0 opacity-5">
-            <img 
+            <img
               src="/images/pexels-jonathan-reynaga-861774-17429097.jpg"
               alt=""
               className="w-full h-full object-cover"
             />
-              </div>
-              
+          </div>
+
           <div className="container mx-auto px-4 relative z-10">
             <div className="text-center mb-8 sm:mb-12">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 text-amber-700 text-sm font-medium mb-4">
                 <Star className="h-4 w-4" />
                 <span>Müşteri Deneyimleri</span>
-                    </div>
+              </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-gray-900">
                 Müşterilerimiz Ne Diyor?
               </h2>
-                  </div>
+            </div>
 
             {/* Testimonials Grid - Hizalanmış kartlar */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -1141,29 +1082,29 @@ export default function LandingPage() {
                       {[...Array(testimonial.rating)].map((_, i) => (
                         <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-amber-400 text-amber-400" />
                       ))}
-            </div>
+                    </div>
 
                     {/* Yorum - min-height ile hizalama */}
                     <p className="text-sm sm:text-base text-gray-600 italic flex-grow min-h-[80px]">
                       "{testimonial.text}"
                     </p>
-                    
+
                     {/* Kişi bilgisi - her zaman altta */}
                     <div className="flex items-center gap-3 mt-5 sm:mt-6 pt-4 border-t border-gray-100">
                       {/* Profil ikonu - kullanıcı avatarı */}
                       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#019242] to-green-600 flex items-center justify-center text-white font-bold text-sm sm:text-base">
                         {testimonial.name.charAt(0)}
-                    </div>
+                      </div>
                       <div>
                         <p className="font-bold text-gray-900 text-sm sm:text-base">{testimonial.name}</p>
                         <p className="text-xs sm:text-sm text-gray-500">{testimonial.location}</p>
-                    </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
-                    </div>
-              </div>
+            </div>
+          </div>
         </section>
 
         {/* ===== CONTACT SECTION ===== */}
@@ -1173,40 +1114,40 @@ export default function LandingPage() {
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 text-white text-sm font-medium mb-4">
                 <Phone className="h-4 w-4" />
                 <span>İletişime Geçin</span>
-            </div>
+              </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white">
                 Bize Ulaşın
               </h2>
-          </div>
-              
+            </div>
+
             {/* Contact Info Cards */}
             <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-8 sm:mb-12">
-              <a 
+              <a
                 href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '4446250'}`}
                 className="flex items-center gap-3 bg-white rounded-full px-5 sm:px-6 py-3 shadow-lg hover:shadow-xl transition-shadow"
               >
                 <div className="w-10 h-10 rounded-full bg-[#019242] flex items-center justify-center flex-shrink-0">
                   <Phone className="h-5 w-5 text-white" />
-        </div>
+                </div>
                 <div>
                   <p className="text-xs text-gray-500">Telefon</p>
                   <p className="font-bold text-gray-900 text-sm sm:text-base">{landingContent?.support_phone || '+90 (850) 304 54 40'}</p>
-                    </div>
+                </div>
               </a>
-              
-              <a 
+
+              <a
                 href={`mailto:${landingContent?.support_email || 'info@cozumasistan.com'}`}
                 className="flex items-center gap-3 bg-white rounded-full px-5 sm:px-6 py-3 shadow-lg hover:shadow-xl transition-shadow"
               >
                 <div className="w-10 h-10 rounded-full bg-[#019242] flex items-center justify-center flex-shrink-0">
                   <Mail className="h-5 w-5 text-white" />
-              </div>
+                </div>
                 <div>
                   <p className="text-xs text-gray-500">E-Posta</p>
                   <p className="font-bold text-gray-900 text-sm sm:text-base">{landingContent?.support_email || 'info@cozumasistan.com'}</p>
-        </div>
+                </div>
               </a>
-              </div>
+            </div>
 
             {/* Contact Form + Map */}
             <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden">
@@ -1219,43 +1160,43 @@ export default function LandingPage() {
                         <Input
                           placeholder="İsminiz"
                           value={contactForm.name}
-                          onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
+                          onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
                           className="rounded-xl border-gray-200 focus:border-[#019242] h-11 sm:h-12 bg-white text-gray-900"
                         />
-            </div>
+                      </div>
                       <div>
                         <Input
                           placeholder="Telefon"
                           value={contactForm.phone}
-                          onChange={(e) => setContactForm({...contactForm, phone: e.target.value})}
+                          onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
                           className="rounded-xl border-gray-200 focus:border-[#019242] h-11 sm:h-12 bg-white text-gray-900"
                         />
-          </div>
-        </div>
+                      </div>
+                    </div>
                     <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <Input
                           placeholder="E-posta adresiniz"
                           type="email"
                           value={contactForm.email}
-                          onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
+                          onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
                           className="rounded-xl border-gray-200 focus:border-[#019242] h-11 sm:h-12 bg-white text-gray-900"
                         />
-              </div>
+                      </div>
                       <div>
                         <Input
                           placeholder="Konu"
                           value={contactForm.subject}
-                          onChange={(e) => setContactForm({...contactForm, subject: e.target.value})}
+                          onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
                           className="rounded-xl border-gray-200 focus:border-[#019242] h-11 sm:h-12 bg-white text-gray-900"
                         />
-        </div>
+                      </div>
                     </div>
                     <div>
                       <Textarea
                         placeholder="Mesajınız"
                         value={contactForm.message}
-                        onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
+                        onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                         className="rounded-xl border-gray-200 focus:border-[#019242] min-h-[100px] sm:min-h-[120px] bg-white text-gray-900"
                       />
                     </div>
@@ -1280,13 +1221,13 @@ export default function LandingPage() {
                   />
                 </div>
               </div>
-                </div>
             </div>
+          </div>
         </section>
 
         {/* ===== FOOTER ===== */}
         <PublicFooter />
-    </div>
+      </div>
     </>
   );
 }
