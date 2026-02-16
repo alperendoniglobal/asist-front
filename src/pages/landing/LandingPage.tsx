@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,15 +33,47 @@ import {
   Headphones,
   Send,
   Heart,
-  User
+  User,
+  Search,
+  Home,
+  PaintBucket,
+  Wrench,
+  Sparkles,
+  Wind,
+  Zap,
+  Bath,
+  BookOpen,
+  Thermometer,
 } from 'lucide-react';
+import { HIZMET_KATEGORILERI, TREND_HIZMETLER } from '@/data/landingHizmetler';
+import type { HizmetItem } from '@/data/landingHizmetler';
 
 /**
  * Landing Page - Public Ana Sayfa
  * Dark mode'dan etkilenmeyen, responsive tasarım
  * Yerel görseller kullanılır
  */
+/** Hizmet kartı ikon map (landing trend hizmetler için) */
+const HIZMET_ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Car,
+  Home,
+  PaintBucket,
+  Wrench,
+  Sparkles,
+  Truck,
+  Wind,
+  Zap,
+  Bath,
+  BookOpen,
+  Thermometer,
+};
+
+function getHizmetIcon(item: HizmetItem) {
+  return HIZMET_ICON_MAP[item.icon || ''] || Wrench;
+}
+
 export default function LandingPage() {
+  const navigate = useNavigate();
   const { userCustomer, isAuthenticated } = useUserCustomer();
   // Backend'den çekilen veriler
   const [landingContent, setLandingContent] = useState<LandingPageContent | null>(null);
@@ -463,6 +495,123 @@ export default function LandingPage() {
           </div>
         </header>
 
+        {/* ===== HİZMET ARA (Armut tarzı) – en üst section ===== */}
+        <section id="hizmet-ara" className="pt-0 pb-12 md:pb-16 bg-gradient-to-b from-gray-50 to-white">
+          <div className="container mx-auto px-4">
+            {/* Hero şeridi: konuya uygun arka plan fotoğrafı + yeşil overlay + başlık + arama */}
+            <div
+              className="relative rounded-2xl md:rounded-3xl overflow-hidden min-h-[200px] md:min-h-[260px] flex flex-col justify-center items-center text-center px-4 py-8 md:py-12 mb-8 bg-cover bg-center"
+              style={{ backgroundImage: 'url(/images/pexels-fauxels-3183197.jpg)' }}
+            >
+              {/* Yeşil overlay – metin okunaklı, görsel hissedilir */}
+              <div className="absolute inset-0 bg-[#019242]/85" aria-hidden />
+              <div className="absolute inset-0 bg-[#017A35]/40" aria-hidden />
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.06\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-60" aria-hidden />
+              <div className="relative z-10 w-full max-w-2xl mx-auto">
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-sm">
+                  İhtiyacın olan hizmete kolayca ulaş
+                </h2>
+                <p className="text-white/95 text-sm md:text-base mb-6 max-w-xl mx-auto">
+                  Bekleyen işlerini hallet; temizlik, tadilat, tesisat, yol yardım ve daha fazlası.
+                </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const input = e.currentTarget.querySelector<HTMLInputElement>('input[name="hizmet-q"]');
+                    const value = (input?.value || '').trim();
+                    if (value) navigate(`/hizmet-ara?q=${encodeURIComponent(value)}`);
+                    else navigate('/hizmet-ara');
+                  }}
+                  className="flex flex-col sm:flex-row gap-2 bg-white rounded-xl shadow-lg p-2 sm:p-2"
+                >
+                  <Input
+                    name="hizmet-q"
+                    type="search"
+                    placeholder="Hangi hizmeti arıyorsun?"
+                    className="flex-1 h-12 rounded-lg border-2 border-gray-200 focus:border-[#019242]"
+                    aria-label="Hizmet ara"
+                  />
+                  <Button type="submit" className="bg-[#019242] hover:bg-[#017A35] h-12 px-6 rounded-lg gap-2" aria-label="Ara">
+                    <Search className="h-5 w-5" />
+                    Ara
+                  </Button>
+                </form>
+              </div>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2 mb-10">
+              {HIZMET_KATEGORILERI.map((k) => (
+                <Link
+                  key={k.id}
+                  to={`/hizmet-ara?kategori=${encodeURIComponent(k.slug)}`}
+                  className="px-4 py-2 rounded-full text-sm font-medium bg-white border border-gray-200 text-gray-700 hover:bg-[#019242] hover:text-white hover:border-[#019242] transition-colors"
+                >
+                  {k.label}
+                </Link>
+              ))}
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 text-center">Haftanın Trend Hizmetleri</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {TREND_HIZMETLER.map((h) => {
+                  const Icon = getHizmetIcon(h);
+                  return (
+                    <Link
+                      key={h.id}
+                      to={`/hizmet-ara?q=${encodeURIComponent(h.slug)}`}
+                      className="block group"
+                    >
+                      <Card className="border border-gray-200 overflow-hidden h-full transition-all duration-300 hover:shadow-xl hover:border-[#019242]/40">
+                        {/* Üstte hizmetle alakalı fotoğraf (yüklenmezse ikon gösterilir) */}
+                        <div className="aspect-[4/3] relative bg-gray-100 overflow-hidden">
+                          {h.imageUrl ? (
+                            <>
+                              <img
+                                src={h.imageUrl}
+                                alt=""
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 hizmet-card-img"
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.classList.remove('hidden');
+                                }}
+                              />
+                              <div className="hidden absolute inset-0 bg-gradient-to-br from-[#019242]/20 to-[#017A35]/20 flex items-center justify-center hizmet-card-fallback">
+                                <Icon className="h-12 w-12 text-[#019242]" />
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-[#019242]/20 to-[#017A35]/20 flex items-center justify-center">
+                              <Icon className="h-12 w-12 text-[#019242]" />
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
+                        </div>
+                        <CardContent className="p-4">
+                          <h4 className="font-semibold text-gray-900">{h.name}</h4>
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{h.description}</p>
+                          <span className="inline-flex items-center gap-1 mt-3 text-sm font-medium text-[#019242]">
+                            Teklif al <ArrowRight className="h-4 w-4" />
+                          </span>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+              <div className="text-center mt-8">
+                <Link
+                  to="/hizmet-ara"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-base font-medium bg-[#019242] text-white hover:bg-[#017A35] transition-colors shadow-md hover:shadow-lg"
+                >
+                  Tüm hizmetlere göz at
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ===== HERO SECTION ===== */}
         <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-gray-50">
           {/* Decorative shapes */}
@@ -489,23 +638,33 @@ export default function LandingPage() {
                   Tek arama ile güvenli ellerde olun.
                 </p>
                 
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 justify-center lg:justify-start">
                   <Link to="/login">
                     <Button size="lg" className="bg-[#019242] hover:bg-[#017A35] text-white px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full gap-2 shadow-lg shadow-green-500/25 w-full sm:w-auto">
                       Sisteme Giriş
                       <ArrowRight className="h-5 w-5" />
-                            </Button>
-                          </Link>
-                          <Button 
-                            size="lg" 
-                            variant="outline" 
+                    </Button>
+                  </Link>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full gap-2 border-2 border-[#019242] text-[#019242] hover:bg-[#019242] hover:text-white w-full sm:w-auto"
+                    onClick={() => document.getElementById('hizmet-ara')?.scrollIntoView({ behavior: 'smooth' })}
+                    aria-label="Hizmet arama bölümüne git"
+                  >
+                    <Search className="h-5 w-5" />
+                    Hizmet Ara
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
                     className="px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg rounded-full gap-2 border-2 border-[#019242] text-[#019242] hover:bg-[#019242] hover:text-white w-full sm:w-auto"
                     onClick={() => document.getElementById('packages')?.scrollIntoView({ behavior: 'smooth' })}
                   >
                     <Play className="h-5 w-5" />
                     Paketleri İncele
-                          </Button>
-                        </div>
+                  </Button>
+                </div>
                       </div>
 
               {/* Right Content - Image Collage */}

@@ -49,6 +49,7 @@ import DeliveryReturnPage from "./pages/legal/DeliveryReturnPage"
 import PublicPackages from "./pages/public/PublicPackages"
 import Purchase from "./pages/public/Purchase"
 import DealerApplication from "./pages/public/DealerApplication"
+import HizmetAraPage from "./pages/public/HizmetAraPage"
 import PaymentSuccess from "./pages/payments/PaymentSuccess"
 import PaymentFail from "./pages/payments/PaymentFail"
 import ViewSaleContract from "./pages/pdf/ViewSaleContract"
@@ -117,6 +118,7 @@ function App() {
               <Route path="/packages" element={<PublicPackages />} />
               <Route path="/purchase/:packageId" element={<Purchase />} />
               <Route path="/bayilik-basvurusu" element={<DealerApplication />} />
+              <Route path="/hizmet-ara" element={<HizmetAraPage />} />
               
               {/* Payment Result Pages - PayTR yönlendirmeleri için */}
               <Route path="/payment/success" element={<PaymentSuccess />} />
