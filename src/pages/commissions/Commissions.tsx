@@ -125,8 +125,13 @@ export default function Commissions() {
     }
   };
 
-  const filteredCommissions = commissions.filter(commission => {
-    const matchesSearch = commission.notes?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredCommissions = commissions.filter((commission) => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const matchesSearch =
+      normalizedQuery.length === 0 ||
+      (commission.notes ?? '').toLowerCase().includes(normalizedQuery) ||
+      (commission.agency?.name ?? '').toLowerCase().includes(normalizedQuery) ||
+      (commission.branch?.name ?? '').toLowerCase().includes(normalizedQuery);
     const matchesStatus = filterStatus === 'all' || commission.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
