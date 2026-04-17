@@ -1,6 +1,6 @@
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { LogoIcon } from '@/components/ui/LogoIcon';
 import { Helmet } from 'react-helmet-async';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PublicFooter } from '@/components/layout/PublicFooter';
@@ -25,45 +25,59 @@ import {
   ArrowLeft,
   ArrowRight,
   Star,
+  SlidersHorizontal,
+  X,
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
-/** Hizmet ikon adı -> Lucide component map */
 const HIZMET_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  Car,
-  Home,
-  PaintBucket,
-  Wrench,
-  Sparkles,
-  Truck,
-  Wind,
-  Zap,
-  Bath,
-  BookOpen,
-  Thermometer,
+  Car, Home, PaintBucket, Wrench, Sparkles, Truck, Wind, Zap, Bath, BookOpen, Thermometer,
 };
 
 function getHizmetIcon(item: HizmetItem) {
-  const Icon = (item.icon && HIZMET_ICONS[item.icon]) || Wrench;
-  return Icon;
+  return (item.icon && HIZMET_ICONS[item.icon]) || Wrench;
 }
 
-/**
- * Hizmet Ara - Public arama sayfası.
- * URL: /hizmet-ara?q=...&kategori=...
- * Statik hizmet listesinden filtreleme yapar; backend usta listesi yok.
- */
 export default function HizmetAraPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const q = searchParams.get('q') || '';
   const kategoriSlug = searchParams.get('kategori') || null;
+  const [scrolled, setScrolled] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const results = filterHizmetler(q, kategoriSlug);
+  const kategoriLabel = HIZMET_KATEGORILERI.find(k => k.slug === kategoriSlug)?.label;
+
+  const pageTitle = q
+    ? `"${q}" Hizmetleri | Çözüm Net A.Ş`
+    : kategoriSlug
+      ? `${kategoriLabel} Hizmetleri | Çözüm Net A.Ş`
+      : 'Tüm Hizmetler | Çözüm Net A.Ş';
+
+  const pageDesc = q
+    ? `"${q}" için ${results.length} hizmet bulundu. Temizlik, tadilat, tesisat, yol yardım ve daha fazlası — Çözüm Net A.Ş`
+    : kategoriSlug
+      ? `${kategoriLabel} hizmetleri: deneyimli uzmanlar, hızlı çözüm. Çözüm Net A.Ş`
+      : 'İhtiyacın olan hizmete kolayca ulaş: temizlik, tadilat, tesisat, yol yardım ve daha fazlası.';
+
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": "https://cozum.net/hizmet-ara"
+  };
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = e.currentTarget;
-    const input = form.querySelector<HTMLInputElement>('input[name="q"]');
+    const input = e.currentTarget.querySelector<HTMLInputElement>('input[name="q"]');
     const value = (input?.value || '').trim();
     const params = new URLSearchParams();
     if (value) params.set('q', value);
@@ -81,28 +95,59 @@ export default function HizmetAraPage() {
   return (
     <>
       <Helmet>
-        <title>Hizmet Ara | Çözüm Net A.Ş</title>
-        <meta name="description" content="İhtiyacın olan hizmete kolayca ulaş: temizlik, tadilat, tesisat, yol yardım ve daha fazlası." />
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        <link rel="canonical" href="https://cozum.net/hizmet-ara" />
+        {q && <meta name="robots" content="noindex, nofollow" />}
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="tr_TR" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
+        <meta property="og:url" content="https://cozum.net/hizmet-ara" />
+        <meta property="og:image" content="https://cozum.net/images/pexels-fauxels-3183197.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDesc} />
+        <script type="application/ld+json">{JSON.stringify(collectionSchema)}</script>
       </Helmet>
 
-      <div className="light public-page bg-gray-50 text-gray-900 min-h-screen flex flex-col" style={{ colorScheme: 'light' }}>
-        {/* Header */}
-        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
-          <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 text-gray-600 hover:text-[#019242] transition-colors">
-              <ArrowLeft className="h-5 w-5" />
-              <span className="font-medium text-sm">Anasayfaya Dön</span>
+      <div className="light public-page bg-white text-gray-900 min-h-screen flex flex-col" style={{ colorScheme: 'light' }}>
+
+        {/* ===== HEADER ===== */}
+        <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled ? 'bg-white border-b border-gray-200' : 'bg-transparent border-b border-transparent'
+        }`}>
+          <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+            <Link
+              to="/"
+              className={`flex items-center gap-2 text-sm font-medium transition-colors duration-300 ${
+                scrolled ? 'text-gray-600 hover:text-[#019242]' : 'text-white/85 hover:text-white'
+              }`}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Anasayfa
             </Link>
-            <Link to="/" className="flex items-center gap-2">
-              <img src="/iconlogo.svg" alt="" className="h-8 w-8" />
-              <span className="font-bold text-gray-900">Çözüm Net A.Ş</span>
+
+            <Link to="/" className="flex items-center gap-2.5">
+              <LogoIcon className={`h-8 w-8 transition-colors duration-300 ${scrolled ? 'text-[#019242]' : 'text-white'}`} />
+              <span className={`font-bold text-sm transition-colors duration-300 ${scrolled ? 'text-gray-900' : 'text-white'}`}>
+                Çözüm Net A.Ş
+              </span>
+            </Link>
+
+            <Link
+              to="/hizmet-ara"
+              className={`text-sm font-medium transition-colors duration-300 hidden sm:block ${
+                scrolled ? 'text-gray-600 hover:text-[#019242]' : 'text-white/85 hover:text-white'
+              }`}
+            >
+              Tüm Hizmetler
             </Link>
           </div>
         </header>
 
-        {/* Hero Banner – Ana sayfa ile aynı stil */}
-        <section className="relative overflow-hidden">
-          {/* Background Image */}
+        {/* ===== HERO ===== */}
+        <section className="relative min-h-[55vh] flex items-center overflow-hidden">
           <img
             src="/images/pexels-fauxels-3183197.jpg"
             alt=""
@@ -110,157 +155,211 @@ export default function HizmetAraPage() {
             loading="eager"
             aria-hidden
           />
-          {/* Dark green gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#012A15]/90 via-[#019242]/75 to-[#017A35]/85" aria-hidden />
-          {/* Subtle pattern overlay */}
-          <div className="absolute inset-0 opacity-[0.04]" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }} aria-hidden />
-          {/* Bottom fade to gray-50 */}
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-gray-50 to-transparent" aria-hidden />
+          <div className="absolute inset-0 bg-black/55" aria-hidden />
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#019242]" aria-hidden />
 
-          <div className="relative z-10 container mx-auto px-4 py-12 md:py-16">
-            <div className="max-w-3xl mx-auto text-center">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-sm text-white text-sm font-medium mb-5 border border-white/20">
-                <Search className="h-4 w-4" />
-                <span>Hizmet Bul</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-4 drop-shadow-lg">
-                İhtiyacın Olan <br className="hidden sm:block" />
-                <span className="text-green-300">Hizmete</span> Kolayca Ulaş
+          <div className="relative z-10 container mx-auto px-6 pt-20 pb-14">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-widest text-green-400 mb-4">
+                Hizmet Ara
+              </p>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.05] mb-5">
+                İhtiyacın Olan<br />
+                <span className="text-[#2dd67b]">Hizmeti</span> Bul
               </h1>
-              <p className="text-white/90 text-base md:text-lg max-w-xl mx-auto mb-8 leading-relaxed">
-                Temizlik, tadilat, tesisat, yol yardım ve daha fazlası — en iyi ustalar burada.
+              <p className="text-sm md:text-base text-white/70 mb-8 leading-relaxed max-w-lg">
+                Temizlik, tadilat, tesisat, yol yardım ve daha fazlası — deneyimli ustalar, hızlı çözüm.
               </p>
 
-              {/* Glassmorphism arama kutusu */}
               <form
                 onSubmit={handleSearch}
-                className="flex flex-col sm:flex-row gap-2 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-2.5 max-w-2xl mx-auto border border-white/50"
+                className="flex flex-col sm:flex-row gap-2 bg-white rounded-xl p-1.5 max-w-xl shadow-lg"
               >
                 <Input
                   name="q"
                   type="search"
-                  placeholder="Hangi hizmeti arıyorsun? (ör: tesisat, temizlik, boya)"
+                  placeholder="Hangi hizmeti arıyorsun?"
                   defaultValue={q}
-                  className="flex-1 h-13 rounded-xl border-2 border-gray-200 focus:border-[#019242] text-base bg-white"
+                  className="flex-1 border-0 shadow-none focus-visible:ring-0 text-sm h-11 bg-transparent text-gray-900 placeholder:text-gray-400"
                   aria-label="Hizmet ara"
                 />
-                <Button type="submit" className="bg-[#019242] hover:bg-[#017A35] h-13 px-8 rounded-xl gap-2 shadow-lg text-base font-semibold" aria-label="Ara">
-                  <Search className="h-5 w-5" />
-                  Hizmet Ara
+                <Button
+                  type="submit"
+                  className="bg-[#019242] hover:bg-[#017A35] text-white px-6 h-11 rounded-lg text-sm font-semibold gap-2 flex-shrink-0 transition-colors"
+                >
+                  <Search className="h-4 w-4" />
+                  Ara
                 </Button>
               </form>
+            </div>
+          </div>
+        </section>
 
-              {/* Kategori chip'leri – banner içinde */}
-              <div className="flex flex-wrap justify-center gap-2 mt-6">
+        {/* ===== FİLTRE + SONUÇLAR ===== */}
+        <main className="flex-1 bg-white">
+          <div className="container mx-auto px-6 py-10 md:py-14">
+
+            {/* Filtre bar */}
+            <div className="flex items-center justify-between mb-8 gap-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => setKategori(null)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    !kategoriSlug
+                      ? 'bg-[#019242] text-white'
+                      : 'border border-gray-200 text-gray-600 hover:border-[#019242] hover:text-[#019242]'
+                  }`}
+                >
+                  Tümü
+                </button>
+                {/* Desktop: tüm kategori butonları */}
+                <div className="hidden md:flex items-center gap-2 flex-wrap">
+                  {HIZMET_KATEGORILERI.map((k) => (
+                    <button
+                      key={k.id}
+                      onClick={() => setKategori(k.slug === kategoriSlug ? null : k.slug)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        kategoriSlug === k.slug
+                          ? 'bg-[#019242] text-white'
+                          : 'border border-gray-200 text-gray-600 hover:border-[#019242] hover:text-[#019242]'
+                      }`}
+                    >
+                      {k.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Mobile: filtre toggle */}
+                <button
+                  className="md:hidden flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600"
+                  onClick={() => setFilterOpen(!filterOpen)}
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Kategori
+                  {kategoriSlug && <span className="w-2 h-2 rounded-full bg-[#019242] ml-0.5" />}
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {(q || kategoriSlug) && (
+                  <button
+                    onClick={() => navigate('/hizmet-ara')}
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Temizle
+                  </button>
+                )}
+                <span className="text-sm text-gray-400 font-medium">{results.length} hizmet</span>
+              </div>
+            </div>
+
+            {/* Mobile kategori paneli */}
+            {filterOpen && (
+              <div className="md:hidden flex flex-wrap gap-2 mb-6 pb-6 border-b border-gray-100">
                 {HIZMET_KATEGORILERI.map((k) => (
                   <button
                     key={k.id}
-                    type="button"
-                    onClick={() => setKategori(k.slug === kategoriSlug ? null : k.slug)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${kategoriSlug === k.slug
-                        ? 'bg-white text-[#019242] shadow-lg'
-                        : 'bg-white/15 backdrop-blur-sm border border-white/25 text-white hover:bg-white hover:text-[#019242]'
-                      }`}
+                    onClick={() => { setKategori(k.slug === kategoriSlug ? null : k.slug); setFilterOpen(false); }}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      kategoriSlug === k.slug
+                        ? 'bg-[#019242] text-white'
+                        : 'border border-gray-200 text-gray-600'
+                    }`}
                   >
                     {k.label}
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
-        </section>
+            )}
 
-        <main className="flex-1 container mx-auto px-4 py-8 md:py-10">
-          {/* Sonuç başlığı */}
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-bold text-gray-900">
-              {q || kategoriSlug ? `Sonuçlar` : 'Popüler Hizmetler'}
-            </h2>
-            <span className="text-sm text-gray-500 font-medium">{results.length} hizmet</span>
-          </div>
-
-          {/* Sonuçlar */}
-          {results.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                <Search className="h-8 w-8 text-gray-400" />
+            {/* Aktif filtre göstergesi */}
+            {(q || kategoriSlug) && (
+              <div className="mb-6">
+                <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-1">
+                  {q || kategoriSlug ? 'Arama Sonuçları' : 'Popüler Hizmetler'}
+                </p>
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                  {q ? `"${q}" için sonuçlar` : HIZMET_KATEGORILERI.find(k => k.slug === kategoriSlug)?.label || 'Sonuçlar'}
+                </h2>
               </div>
-              <p className="text-gray-600 font-medium">Arama kriterlerine uygun hizmet bulunamadı.</p>
-              <p className="text-sm text-gray-400 mt-1">Farklı bir anahtar kelime veya kategori deneyin.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {results.map((h) => {
-                const Icon = getHizmetIcon(h);
-                return (
-                  <Link
-                    key={h.id}
-                    to={`/hizmet/${h.slug}`}
-                    className="block group"
-                  >
-                    <Card className="border border-gray-200/80 overflow-hidden h-full hover:shadow-2xl hover:border-[#019242]/30 hover:-translate-y-1 transition-all duration-300 bg-white">
-                      {/* Hizmet fotoğrafı */}
-                      <div className="aspect-[16/10] relative bg-gray-100 overflow-hidden">
-                        {h.imageUrl ? (
-                          <>
-                            <img
-                              src={h.imageUrl}
-                              alt={h.name}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                              loading="lazy"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                                if (fallback) fallback.classList.remove('hidden');
-                              }}
-                            />
-                            <div className="hidden absolute inset-0 bg-gradient-to-br from-[#019242]/20 to-[#017A35]/20 flex items-center justify-center">
-                              <Icon className="h-12 w-12 text-[#019242]" />
+            )}
+
+            {/* Sonuçlar */}
+            {results.length === 0 ? (
+              <div className="text-center py-24">
+                <div className="w-14 h-14 rounded-xl border border-gray-100 flex items-center justify-center mx-auto mb-4">
+                  <Search className="h-6 w-6 text-gray-300" />
+                </div>
+                <p className="text-gray-900 font-semibold mb-1">Sonuç bulunamadı</p>
+                <p className="text-sm text-gray-400">Farklı bir anahtar kelime veya kategori deneyin.</p>
+                <button
+                  onClick={() => navigate('/hizmet-ara')}
+                  className="mt-5 text-sm font-medium text-[#019242] hover:text-[#017A35] transition-colors"
+                >
+                  Tüm hizmetleri gör
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {results.map((h) => {
+                  const Icon = getHizmetIcon(h);
+                  return (
+                    <Link key={h.id} to={`/hizmet/${h.slug}`} className="block group">
+                      <div className="border border-gray-100 rounded-xl overflow-hidden bg-white hover:border-green-200 hover:shadow-md transition-all duration-200 h-full flex flex-col">
+                        <div className="aspect-[16/10] relative bg-gray-50 overflow-hidden">
+                          {h.imageUrl ? (
+                            <>
+                              <img
+                                src={h.imageUrl}
+                                alt={h.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                loading="lazy"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  const fb = e.currentTarget.nextElementSibling as HTMLElement;
+                                  if (fb) fb.classList.remove('hidden');
+                                }}
+                              />
+                              <div className="hidden absolute inset-0 flex items-center justify-center">
+                                <Icon className="h-10 w-10 text-[#019242]/40" />
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Icon className="h-10 w-10 text-[#019242]/40" />
                             </div>
-                          </>
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-[#019242]/10 to-[#017A35]/10 flex items-center justify-center">
-                            <Icon className="h-12 w-12 text-[#019242]" />
+                          )}
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="px-2 py-0.5 rounded-md bg-white text-xs font-semibold text-[#019242]">
+                              {HIZMET_KATEGORILERI.find(k => k.slug === h.kategoriSlug)?.label || 'Hizmet'}
+                            </span>
                           </div>
-                        )}
-                        {/* Hover overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" aria-hidden />
-                        {/* Kategori etiketi */}
-                        <div className="absolute top-3 left-3">
-                          <span className="px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-sm text-xs font-semibold text-[#019242] shadow-sm">
-                            {HIZMET_KATEGORILERI.find(k => k.slug === h.kategoriSlug)?.label || 'Hizmet'}
-                          </span>
                         </div>
-                        {/* Ikon rozeti */}
-                        <div className="absolute bottom-3 right-3 w-10 h-10 rounded-xl bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md group-hover:bg-[#019242] transition-colors duration-300">
-                          <Icon className="h-5 w-5 text-[#019242] group-hover:text-white transition-colors duration-300" />
+
+                        <div className="p-4 flex flex-col flex-grow">
+                          <div className="flex items-start gap-2 mb-1.5">
+                            <Icon className="h-4 w-4 text-[#019242] flex-shrink-0 mt-0.5" />
+                            <h3 className="font-semibold text-gray-900 text-sm leading-snug">{h.name}</h3>
+                          </div>
+                          <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed flex-grow">{h.description}</p>
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                            <div className="flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map(i => (
+                                <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
+                              ))}
+                            </div>
+                            <span className="text-xs font-semibold text-[#019242] flex items-center gap-1 group-hover:gap-1.5 transition-all">
+                              Detaylar <ArrowRight className="h-3.5 w-3.5" />
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-bold text-gray-900 text-base">{h.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">{h.description}</p>
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                          <div className="flex items-center gap-1">
-                            {[1, 2, 3, 4, 5].map(i => (
-                              <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                            ))}
-                            <span className="text-xs text-gray-400 ml-1">5.0</span>
-                          </div>
-                          <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#019242] group-hover:gap-2 transition-all duration-200">
-                            Detaylar <ArrowRight className="h-4 w-4" />
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </main>
 
         <PublicFooter />
