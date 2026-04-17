@@ -1,45 +1,33 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserCustomer } from '@/contexts/UserCustomerContext';
 import { UserRole } from '@/types';
-import { 
-  Mail, Lock, LogIn, AlertTriangle, 
+import { motion } from 'framer-motion';
+import {
+  Mail, Lock, LogIn, AlertTriangle,
   Car, Users, CreditCard, TrendingUp,
-  User, Building2, UserPlus
+  User, Building2, UserPlus, Check,
 } from 'lucide-react';
 
-/**
- * Login Page
- * Hem yetkili (admin/acente) hem de bireysel kullanıcı girişi için
- * Tab yapısı ile ayrılmış iki farklı giriş formu
- */
 export default function Login() {
   const navigate = useNavigate();
   const { login: adminLogin } = useAuth();
   const { login: userLogin } = useUserCustomer();
-  
-  // State'ler
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'user' | 'admin'>('admin'); // Default olarak Kurumsal (admin)
-  
-  // Form verileri
+  const [activeTab, setActiveTab] = useState<'user' | 'admin'>('admin');
   const [userFormData, setUserFormData] = useState({ email: '', password: '' });
   const [adminFormData, setAdminFormData] = useState({ email: '', password: '' });
 
-  // Kullanıcı girişi
   const handleUserLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
       await userLogin(userFormData.email, userFormData.password);
       navigate('/user/dashboard');
@@ -50,15 +38,12 @@ export default function Login() {
     }
   };
 
-  // Yetkili girişi
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
       await adminLogin(adminFormData.email, adminFormData.password);
-      // SUPPORT rolü için özel yönlendirme
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       if (storedUser.role === UserRole.SUPPORT) {
         navigate('/dashboard/support/sales');
@@ -72,13 +57,11 @@ export default function Login() {
     }
   };
 
-  // Tab değiştiğinde hata temizle
   const handleTabChange = (value: string) => {
     setActiveTab(value as 'user' | 'admin');
     setError(null);
   };
 
-  // Özellik kartları (yetkili girişi için)
   const features = [
     { icon: Users, title: 'Müşteri Yönetimi', description: 'Müşterilerinizi kolayca yönetin' },
     { icon: Car, title: 'Araç Takibi', description: 'Araç kayıtlarını düzenleyin' },
@@ -87,312 +70,343 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen flex public-page light" style={{ colorScheme: 'light' }}>
-      {/* Sol Panel - Özellikler */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-12 flex-col justify-between relative overflow-hidden">
-        {/* Dekoratif arka plan deseni */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%239C92AC%22%20fill-opacity%3D%220.05%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-40"></div>
-        
-        {/* Gradient overlay efektleri */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-primary/15 to-transparent rounded-full blur-3xl"></div>
+    <div className="min-h-screen flex public-page light bg-white" style={{ colorScheme: 'light' }}>
 
-        <div className="relative z-10">
-          {/* Logo - çözüm.net markası (sol panel) */}
-          <Link to="/" className="flex items-center gap-3 mb-4">
-            <img 
-              src="/cozumasistanlog.svg" 
-              alt="Çözüm Net A.Ş" 
-              className="h-14 w-auto cursor-pointer"
-            />
-          </Link>
-          <p className="text-slate-400 text-lg">Yol Yardım Hizmetleri</p>
+      {/* ===== SOL PANEL ===== */}
+      <div className="hidden lg:flex lg:w-[52%] bg-[#019242] text-white flex-col justify-between relative overflow-hidden p-12">
+
+        {/* Dekoratif şekiller */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-white/5 translate-x-1/3 -translate-y-1/4" />
+          <div className="absolute bottom-0 left-0 w-[350px] h-[350px] rounded-full bg-black/10 -translate-x-1/4 translate-y-1/4" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full border border-white/10" />
         </div>
 
-        <div className="relative z-10 space-y-6">
-          <h2 className="text-2xl font-semibold mb-8">
-            {activeTab === 'user' ? 'Üye Avantajları' : 'Neden Yol Asistan?'}
-          </h2>
-          <div className="grid grid-cols-2 gap-6">
+        {/* Logo */}
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative z-10"
+        >
+          <Link to="/" className="flex items-center gap-3">
+            <img
+              src="/iconlogo.svg"
+              alt="Çözüm Net A.Ş"
+              className="h-10 w-10 object-contain filter brightness-0 invert"
+            />
+            <div>
+              <p className="font-bold text-white text-lg leading-tight">Çözüm Net A.Ş</p>
+              <p className="text-white/60 text-xs">Yol Yardım Hizmetleri</p>
+            </div>
+          </Link>
+        </motion.div>
+
+        {/* Orta içerik */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="relative z-10 space-y-8"
+        >
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/50 mb-3">
+              {activeTab === 'user' ? 'Üye Avantajları' : 'Neden Çözüm Net?'}
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold leading-tight">
+              Türkiye'nin Her<br />
+              Noktasında<br />
+              <span className="text-white/70">Yanınızdayız</span>
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             {features.map((feature, index) => (
-              <div 
-                key={index} 
-                className="p-4 rounded-xl bg-white/5 backdrop-blur border border-white/10 hover:bg-white/10 hover:border-primary/30 transition-all duration-300 group cursor-default"
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.25 + index * 0.07 }}
+                className="p-4 rounded-xl bg-white/10 border border-white/15 hover:bg-white/15 transition-colors"
               >
-                <feature.icon className="h-8 w-8 mb-3 text-primary group-hover:scale-110 transition-transform" />
-                <h3 className="font-semibold mb-1">{feature.title}</h3>
-                <p className="text-sm text-slate-400">{feature.description}</p>
+                <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center mb-3">
+                  <feature.icon className="h-4 w-4 text-white" />
+                </div>
+                <h3 className="font-semibold text-sm mb-0.5">{feature.title}</h3>
+                <p className="text-xs text-white/55 leading-relaxed">{feature.description}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div className="flex items-center gap-8 pt-2">
+            {[
+              { val: '3.400+', label: 'Mutlu Müşteri' },
+              { val: '81 İl', label: 'Kapsama Alanı' },
+              { val: '7/24', label: 'Destek' },
+            ].map((s) => (
+              <div key={s.label}>
+                <p className="text-xl font-bold text-white leading-none">{s.val}</p>
+                <p className="text-xs text-white/50 mt-0.5">{s.label}</p>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
+        {/* Alt */}
         <div className="relative z-10">
-          <p className="text-slate-500 text-sm">
-            © 2023 Çözüm Net A.Ş. Tüm hakları saklıdır.
-          </p>
+          <p className="text-white/35 text-xs">© 2025 Çözüm Net A.Ş. Tüm hakları saklıdır.</p>
         </div>
       </div>
 
-      {/* Sağ Panel - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-br from-background to-muted/50">
-        <Card className="w-full max-w-md shadow-2xl border-0">
-          <CardHeader className="space-y-1 text-center pb-4">
-            {/* Icon Logo */}
-            <Link to="/" className="mx-auto block">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/60 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-primary/25">
-                <img 
-                  src="/iconlogo.svg" 
-                  alt="Çözüm Net A.Ş" 
-                  className="h-10 w-10"
-                />
+      {/* ===== SAĞ PANEL — FORM ===== */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          {/* Mobilde logo */}
+          <div className="lg:hidden mb-8 flex items-center gap-2.5">
+            <img
+              src="/iconlogo.svg"
+              alt=""
+              className="h-8 w-8 object-contain"
+              style={{ filter: 'invert(35%) sepia(98%) saturate(600%) hue-rotate(120deg) brightness(0.9)' }}
+            />
+            <span className="font-bold text-gray-900">Çözüm Net A.Ş</span>
+          </div>
+
+          {/* Başlık */}
+          <div className="mb-8">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#019242] mb-2">Hoş Geldiniz</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Hesabınıza Giriş Yapın</h1>
+            <p className="text-sm text-gray-500 mt-2">Devam etmek için giriş türünüzü seçin.</p>
+          </div>
+
+          {/* Tab seçici */}
+          <div className="grid grid-cols-2 gap-2.5 mb-7">
+            <button
+              type="button"
+              onClick={() => handleTabChange('user')}
+              className={`p-3.5 rounded-xl border-2 transition-all text-left ${
+                activeTab === 'user'
+                  ? 'border-[#019242] bg-green-50'
+                  : 'border-gray-100 hover:border-gray-200 bg-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  activeTab === 'user' ? 'bg-[#019242]' : 'bg-gray-100'
+                }`}>
+                  <User className={`h-4 w-4 ${activeTab === 'user' ? 'text-white' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className={`font-semibold text-sm ${activeTab === 'user' ? 'text-[#019242]' : 'text-gray-900'}`}>
+                    Bireysel
+                  </p>
+                  <p className="text-xs text-gray-400">Müşteri Girişi</p>
+                </div>
               </div>
-            </Link>
-            <CardTitle className="text-2xl font-bold">Hoş Geldiniz</CardTitle>
-            <CardDescription>
-              Hesabınıza giriş yapın
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            {/* Kullanıcı Tipi Seçimi - Card Tabanlı */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => handleTabChange('user')}
-                className={`p-4 rounded-lg border-2 transition-all text-left ${
-                  activeTab === 'user'
-                    ? 'border-primary bg-primary/5 shadow-md'
-                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    activeTab === 'user' ? 'bg-primary/10' : 'bg-muted'
-                  }`}>
-                    <User className={`h-5 w-5 ${
-                      activeTab === 'user' ? 'text-primary' : 'text-muted-foreground'
-                    }`} />
-                  </div>
-                  <div>
-                    <div className={`font-semibold text-sm ${
-                      activeTab === 'user' ? 'text-primary' : 'text-foreground'
-                    }`}>
-                      Bireysel
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Müşteri Girişi
-                    </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleTabChange('admin')}
+              className={`p-3.5 rounded-xl border-2 transition-all text-left ${
+                activeTab === 'admin'
+                  ? 'border-[#019242] bg-green-50'
+                  : 'border-gray-100 hover:border-gray-200 bg-white'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  activeTab === 'admin' ? 'bg-[#019242]' : 'bg-gray-100'
+                }`}>
+                  <Building2 className={`h-4 w-4 ${activeTab === 'admin' ? 'text-white' : 'text-gray-500'}`} />
+                </div>
+                <div>
+                  <p className={`font-semibold text-sm ${activeTab === 'admin' ? 'text-[#019242]' : 'text-gray-900'}`}>
+                    Kurumsal
+                  </p>
+                  <p className="text-xs text-gray-400">Yetkili Girişi</p>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          {/* Hata */}
+          {error && (
+            <div className="flex items-center gap-2.5 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-5">
+              <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {/* Formlar */}
+          <Tabs value={activeTab} onValueChange={handleTabChange}>
+
+            {/* Bireysel */}
+            <TabsContent value="user">
+              <form onSubmit={handleUserLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="user-email" className="text-sm font-medium text-gray-700">E-posta</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="user-email"
+                      type="email"
+                      placeholder="ornek@email.com"
+                      value={userFormData.email}
+                      onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
+                      className="pl-10 h-11 border-gray-200 rounded-xl focus:border-[#019242] focus:ring-0 bg-white text-gray-900"
+                      required
+                    />
                   </div>
                 </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTabChange('admin')}
-                className={`p-4 rounded-lg border-2 transition-all text-left ${
-                  activeTab === 'admin'
-                    ? 'border-primary bg-primary/5 shadow-md'
-                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    activeTab === 'admin' ? 'bg-primary/10' : 'bg-muted'
-                  }`}>
-                    <Building2 className={`h-5 w-5 ${
-                      activeTab === 'admin' ? 'text-primary' : 'text-muted-foreground'
-                    }`} />
+
+                <div className="space-y-1.5">
+                  <label htmlFor="user-password" className="text-sm font-medium text-gray-700">Şifre</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="user-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={userFormData.password}
+                      onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
+                      className="pl-10 h-11 border-gray-200 rounded-xl focus:border-[#019242] focus:ring-0 bg-white text-gray-900"
+                      required
+                    />
                   </div>
-                  <div>
-                    <div className={`font-semibold text-sm ${
-                      activeTab === 'admin' ? 'text-primary' : 'text-foreground'
-                    }`}>
-                      Kurumsal
+                </div>
+
+                <div className="flex justify-end">
+                  <Link to="/forgot-password-user" className="text-xs text-[#019242] hover:text-[#017A35] font-medium transition-colors">
+                    Şifremi Unuttum
+                  </Link>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-11 bg-[#019242] hover:bg-[#017A35] text-white rounded-xl text-sm font-semibold transition-colors"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Giriş yapılıyor...
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <LogIn className="h-4 w-4" />
+                      Giriş Yap
+                    </div>
+                  )}
+                </Button>
+
+                <p className="text-center text-sm text-gray-500 pt-1">
+                  Hesabınız yok mu?{' '}
+                  <Link to="/user-register" className="text-[#019242] hover:text-[#017A35] font-semibold inline-flex items-center gap-1 transition-colors">
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Üye Ol
+                  </Link>
+                </p>
+              </form>
+            </TabsContent>
+
+            {/* Kurumsal */}
+            <TabsContent value="admin">
+              <form onSubmit={handleAdminLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="admin-email" className="text-sm font-medium text-gray-700">E-posta</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      placeholder="yetkili@email.com"
+                      value={adminFormData.email}
+                      onChange={(e) => setAdminFormData({ ...adminFormData, email: e.target.value })}
+                      className="pl-10 h-11 border-gray-200 rounded-xl focus:border-[#019242] focus:ring-0 bg-white text-gray-900"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="admin-password" className="text-sm font-medium text-gray-700">Şifre</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="admin-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={adminFormData.password}
+                      onChange={(e) => setAdminFormData({ ...adminFormData, password: e.target.value })}
+                      className="pl-10 h-11 border-gray-200 rounded-xl focus:border-[#019242] focus:ring-0 bg-white text-gray-900"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Link to="/forgot-password" className="text-xs text-[#019242] hover:text-[#017A35] font-medium transition-colors">
+                    Şifremi Unuttum
+                  </Link>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-11 bg-[#019242] hover:bg-[#017A35] text-white rounded-xl text-sm font-semibold transition-colors"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Giriş yapılıyor...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <LogIn className="h-4 w-4" />
                       Yetkili Girişi
                     </div>
-                  </div>
-                </div>
-              </button>
-            </div>
+                  )}
+                </Button>
 
-            {/* Tab yapısı */}
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+                <p className="text-center text-sm text-gray-500 pt-1">
+                  Bayimiz olmak ister misiniz?{' '}
+                  <Link to="/bayilik-basvurusu" className="text-[#019242] hover:text-[#017A35] font-semibold transition-colors">
+                    Başvuru Yap
+                  </Link>
+                </p>
+              </form>
+            </TabsContent>
+          </Tabs>
 
-              {/* Hata mesajı */}
-              {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {/* Kullanıcı Girişi */}
-              <TabsContent value="user">
-                <form onSubmit={handleUserLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="user-email">E-posta</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="user-email"
-                        type="email"
-                        placeholder="ornek@email.com"
-                        value={userFormData.email}
-                        onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="user-password">Şifre</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="user-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={userFormData.password}
-                        onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full h-11" disabled={loading}>
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Giriş yapılıyor...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <LogIn className="h-4 w-4" />
-                        Giriş Yap
-                      </div>
-                    )}
-                  </Button>
-
-                  {/* Şifremi unuttum linki */}
-                  <div className="text-center">
-                    <Link
-                      to="/forgot-password-user"
-                      className="text-sm text-primary hover:underline"
-                    >
-                      Şifremi Unuttum
-                    </Link>
-                  </div>
-
-                  {/* Kayıt linki */}
-                  <div className="text-center text-sm text-muted-foreground pt-2">
-                    Hesabınız yok mu?{' '}
-                    <Link to="/user-register" className="text-primary hover:underline font-medium inline-flex items-center gap-1">
-                      <UserPlus className="h-3 w-3" />
-                      Üye Ol
-                    </Link>
-                  </div>
-                </form>
-              </TabsContent>
-
-              {/* Yetkili Girişi */}
-              <TabsContent value="admin">
-                <form onSubmit={handleAdminLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-email">E-posta</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="admin-email"
-                        type="email"
-                        placeholder="yetkili@email.com"
-                        value={adminFormData.email}
-                        onChange={(e) => setAdminFormData({ ...adminFormData, email: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="admin-password">Şifre</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="admin-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={adminFormData.password}
-                        onChange={(e) => setAdminFormData({ ...adminFormData, password: e.target.value })}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full h-11" disabled={loading}>
-                    {loading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Giriş yapılıyor...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <LogIn className="h-4 w-4" />
-                        Yetkili Girişi
-                      </div>
-                    )}
-                  </Button>
-
-                  {/* Şifremi unuttum linki */}
-                  <div className="text-center">
-                    <Link
-                      to="/forgot-password"
-                      className="text-sm text-primary hover:underline"
-                    >
-                      Şifremi Unuttum
-                    </Link>
-                  </div>
-
-                  {/* Bayilik başvurusu linki */}
-                  <div className="text-center text-sm text-muted-foreground pt-2">
-                    Bayimiz olmak ister misiniz?{' '}
-                    <Link to="/bayilik-basvurusu" className="text-primary hover:underline font-medium">
-                      Başvuru Yap
-                    </Link>
-                  </div>
-                </form>
-              </TabsContent>
-            </Tabs>
-
-            {/* Ödeme Logoları */}
-            <div className="mt-6 pt-4 border-t">
-              <div className="flex flex-col items-center gap-3">
-                <p className="text-xs text-muted-foreground">Güvenli Ödeme</p>
-                <div className="flex items-center justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
-                  <img 
-                    src="/PayTR---2025-New-Logo-Color.png" 
-                    alt="PayTR" 
-                    className="h-7 w-auto object-contain"
-                  />
-                  <img 
-                    src="/visalogo.png" 
-                    alt="Visa" 
-                    className="h-7 w-auto object-contain"
-                  />
-                  <img 
-                    src="/mastercardlogo.png" 
-                    alt="Mastercard" 
-                    className="h-7 w-auto object-contain"
-                  />
-                </div>
+          {/* Güvenli ödeme */}
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-[#019242]" />
+                <p className="text-xs text-gray-400 font-medium">Güvenli Ödeme</p>
+              </div>
+              <div className="flex items-center justify-center gap-4 opacity-60 hover:opacity-90 transition-opacity">
+                <img src="/PayTR---2025-New-Logo-Color.png" alt="PayTR" className="h-6 w-auto object-contain" />
+                <img src="/visalogo.png" alt="Visa" className="h-6 w-auto object-contain" />
+                <img src="/mastercardlogo.png" alt="Mastercard" className="h-6 w-auto object-contain" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Anasayfaya dön */}
+          <div className="mt-5 text-center">
+            <Link to="/" className="text-xs text-gray-400 hover:text-[#019242] transition-colors">
+              ← Anasayfaya Dön
+            </Link>
+          </div>
+        </motion.div>
       </div>
     </div>
   );
