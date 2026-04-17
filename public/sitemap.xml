@@ -3,54 +3,129 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-  
+
   <!-- Ana Sayfa -->
   <url>
     <loc>https://cozum.net/</loc>
-    <lastmod>2025-01-21</lastmod>
+    <lastmod>2026-04-17</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
-  
-  <!-- Landing Page -->
+
+  <!-- Hizmet Ara -->
   <url>
-    <loc>https://cozum.net/landing</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://cozum.net/hizmet-ara</loc>
+    <lastmod>2026-04-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-  
-  <!-- Hakkımızda -->
+
+  <!-- Paketler -->
   <url>
-    <loc>https://cozum.net/about</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://cozum.net/packages</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+
+  <!-- Hizmet Detay Sayfaları -->
+  <url>
+    <loc>https://cozum.net/hizmet/yol-yardimi</loc>
+    <lastmod>2026-04-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  
-  <!-- Mesafeli Satış Sözleşmesi -->
   <url>
-    <loc>https://cozum.net/distance-sales-contract</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://cozum.net/hizmet/ev-temizligi</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/boya-badana</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/tesisat</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/cam-cilalama</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/evden-eve-nakliyat</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/klima-montaj</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/elektrikci</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/banyo-tadilat</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/bos-ev-temizligi</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/ozel-ders</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cozum.net/hizmet/kombi-servisi</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Kurumsal Sayfalar -->
+  <url>
+    <loc>https://cozum.net/about</loc>
+    <lastmod>2026-04-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
-  
-  <!-- Gizlilik ve Güvenlik Politikası -->
   <url>
     <loc>https://cozum.net/privacy-policy</loc>
-    <lastmod>2025-01-21</lastmod>
+    <lastmod>2026-04-17</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.5</priority>
   </url>
-  
-  <!-- Teslimat ve İade -->
+  <url>
+    <loc>https://cozum.net/distance-sales-contract</loc>
+    <lastmod>2026-04-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
   <url>
     <loc>https://cozum.net/delivery-return</loc>
-    <lastmod>2025-01-21</lastmod>
+    <lastmod>2026-04-17</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.5</priority>
   </url>
-  
-</urlset>
 
+</urlset>

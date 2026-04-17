@@ -1,4 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { LogoIcon } from '@/components/ui/LogoIcon';
 import { Helmet } from 'react-helmet-async';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,10 @@ import {
   BookOpen,
   Thermometer,
   MapPin,
+  Clock,
+  CreditCard,
+  ClipboardList,
+  CheckCircle2,
 } from 'lucide-react';
 import { HIZMET_KATEGORILERI, TREND_HIZMETLER } from '@/data/landingHizmetler';
 import type { HizmetItem } from '@/data/landingHizmetler';
@@ -66,6 +71,7 @@ function getHizmetIcon(item: HizmetItem) {
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userCustomer, isAuthenticated } = useUserCustomer();
   const [landingContent, setLandingContent] = useState<LandingPageContent | null>(null);
   const [stats, setStats] = useState<LandingPageStat[]>([]);
@@ -75,6 +81,8 @@ export default function LandingPage() {
   const [currentPackageIndex, setCurrentPackageIndex] = useState(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [showStickyPhone, setShowStickyPhone] = useState(false);
   const [contactForm, setContactForm] = useState({
     name: '',
     phone: '',
@@ -155,6 +163,16 @@ export default function LandingPage() {
     return () => clearInterval(interval);
   }, [isAutoScrolling, packages.length]);
 
+  useEffect(() => {
+    const onScroll = () => {
+      const total = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(total > 0 ? (window.scrollY / total) * 100 : 0);
+      setShowStickyPhone(window.scrollY > 500);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const displayStats = useMemo(() => {
     if (stats.length > 0) {
       return stats.map(stat => ({
@@ -166,20 +184,42 @@ export default function LandingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stats]);
 
-  const structuredData = {
+  const localBusinessSchema = {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": landingContent?.company_name || "Çözüm Net A.Ş - Yol Yardım Hizmetleri",
-    "url": window.location.origin,
-    "logo": `${window.location.origin}/cozumasistanlog.svg`,
-    "description": "Profesyonel yol yardım hizmetleri. 7/24 çekici, tamirci ve acil durum desteği.",
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "telephone": landingContent?.support_phone || "+90-850-304-54-40",
-      "contactType": "Müşteri Hizmetleri",
-      "availableLanguage": ["Turkish"],
-      "areaServed": "TR"
+    "@type": "LocalBusiness",
+    "name": landingContent?.company_name || "Çözüm Net A.Ş",
+    "url": "https://cozum.net",
+    "logo": "https://cozum.net/iconlogo.svg",
+    "image": "https://cozum.net/images/pexels-fauxels-3183197.jpg",
+    "description": "Türkiye genelinde 7/24 yol yardım ve ev hizmetleri",
+    "telephone": landingContent?.support_phone || "+90-850-304-54-40",
+    "email": landingContent?.support_email || "info@cozum.net",
+    "areaServed": { "@type": "Country", "name": "Turkey" },
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+      "opens": "00:00",
+      "closes": "23:59"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "reviewCount": "3400",
+      "bestRating": "5"
     }
+  };
+
+  const serviceListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Hizmetlerimiz",
+    "url": "https://cozum.net/hizmet-ara",
+    "itemListElement": TREND_HIZMETLER.map((h, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "name": h.name,
+      "url": `https://cozum.net/hizmet/${h.slug}`
+    }))
   };
 
   const handleContactSubmit = (e: React.FormEvent) => {
@@ -191,13 +231,76 @@ export default function LandingPage() {
     <>
       <Helmet>
         <html lang="tr" />
-        <title>Yol Yardım | 7/24 Çekici Hizmeti | {landingContent?.company_name || 'Çözüm Net A.Ş'}</title>
-        <meta name="description" content={`Profesyonel yol yardım hizmetleri. 7/24 çekici ve acil durum desteği. ${landingContent?.support_phone || '+90 (850) 304 54 40'}`} />
-        <meta name="keywords" content="yol yardım, çekici hizmeti, 7/24 yol yardım, araç kurtarma" />
-        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <title>7/24 Yol Yardım & Ev Hizmetleri | {landingContent?.company_name || 'Çözüm Net A.Ş'}</title>
+        <meta name="description" content="Türkiye genelinde 7/24 yol yardım, ev temizliği, tadilat, tesisat ve nakliyat hizmetleri. Hızlı çözüm, güvenilir ekip. 0850 304 54 40" />
+        <meta name="keywords" content="yol yardım, çekici hizmeti, 7/24 yol yardım, araç kurtarma, ev temizliği, tadilat, tesisat, nakliyat, İstanbul, Ankara, İzmir, Türkiye" />
+        <link rel="canonical" href="https://cozum.net/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="tr_TR" />
+        <meta property="og:title" content="7/24 Yol Yardım & Ev Hizmetleri | Çözüm Net A.Ş" />
+        <meta property="og:description" content="Türkiye genelinde 7/24 yol yardım, ev temizliği, tadilat, tesisat ve nakliyat hizmetleri." />
+        <meta property="og:url" content="https://cozum.net/" />
+        <meta property="og:image" content="https://cozum.net/images/pexels-fauxels-3183197.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="7/24 Yol Yardım & Ev Hizmetleri | Çözüm Net A.Ş" />
+        <meta name="twitter:description" content="Türkiye genelinde 7/24 yol yardım ve ev hizmetleri." />
+        <meta name="twitter:image" content="https://cozum.net/images/pexels-fauxels-3183197.jpg" />
+        <script type="application/ld+json">{JSON.stringify(localBusinessSchema)}</script>
+        <script type="application/ld+json">{JSON.stringify(serviceListSchema)}</script>
       </Helmet>
 
       <div className="light public-page bg-white text-gray-900 overflow-x-hidden" style={{ colorScheme: 'light' }}>
+
+        {/* ===== SCROLL PROGRESS BAR ===== */}
+        <div
+          className="fixed top-0 left-0 z-[70] h-0.5 bg-[#019242] transition-all duration-75 pointer-events-none"
+          style={{ width: `${scrollProgress}%` }}
+        />
+
+        {/* ===== DESKTOP FLOATING CTA ===== */}
+        <motion.a
+          href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '08503045440'}`}
+          initial={{ opacity: 0, y: 16, scale: 0.95 }}
+          animate={showStickyPhone ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 16, scale: 0.95 }}
+          transition={{ duration: 0.25 }}
+          className="fixed bottom-8 right-8 z-40 hidden lg:flex items-center gap-2.5 bg-[#019242] hover:bg-[#017A35] text-white font-semibold px-5 py-3 rounded-xl text-sm transition-colors pointer-events-auto"
+          style={{ boxShadow: '0 8px 28px rgba(1,146,66,0.35)', pointerEvents: showStickyPhone ? 'auto' : 'none' }}
+        >
+          <Phone className="h-4 w-4" />
+          Ücretsiz Teklif Al
+        </motion.a>
+
+        {/* ===== MOBİL BOTTOM NAV ===== */}
+        <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-white border-t border-gray-100 pb-safe">
+          <div className="flex items-stretch h-16">
+            {[
+              { label: 'Anasayfa', icon: Home, to: '/', match: '/' },
+              { label: 'Hizmetler', icon: Search, to: '/hizmet-ara', match: '/hizmet' },
+              { label: 'Paketler', icon: CreditCard, to: '/packages', match: '/packages' },
+            ].map(({ label, icon: Icon, to, match }) => {
+              const isActive = location.pathname === match || (match !== '/' && location.pathname.startsWith(match));
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition-colors ${
+                    isActive ? 'text-[#019242]' : 'text-gray-400 hover:text-gray-600'
+                  }`}
+                >
+                  <Icon className={`h-5 w-5 ${isActive ? 'text-[#019242]' : ''}`} />
+                  {label}
+                </Link>
+              );
+            })}
+            <a
+              href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '08503045440'}`}
+              className="flex-1 flex flex-col items-center justify-center gap-1 text-[10px] font-semibold text-white bg-[#019242]"
+            >
+              <Phone className="h-5 w-5" />
+              Ara
+            </a>
+          </div>
+        </nav>
 
         {/* ===== TOP BAR ===== */}
         <div className="fixed top-0 left-0 right-0 z-[60] bg-[#019242] text-white py-2 hidden md:block">
@@ -232,11 +335,7 @@ export default function LandingPage() {
             {/* Desktop */}
             <div className="hidden lg:grid grid-cols-3 items-center h-18 py-3">
               <Link to="/" className="flex items-center gap-3">
-                <img
-                  src="/iconlogo.svg"
-                  alt=""
-                  className="h-10 w-10 object-contain flex-shrink-0"
-                />
+                <LogoIcon className="h-10 w-10 text-[#019242] flex-shrink-0" />
                 <div>
                   <h1 className="text-xl font-bold leading-tight text-gray-900">Çözüm Net A.Ş</h1>
                   <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
@@ -254,7 +353,14 @@ export default function LandingPage() {
                 })}
               </nav>
 
-              <div className="flex items-center justify-end">
+              <div className="flex items-center justify-end gap-3">
+                <a
+                  href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '08503045440'}`}
+                  className="flex items-center gap-1.5 text-sm font-semibold text-[#019242] hover:text-[#017A35] transition-colors"
+                >
+                  <Phone className="h-4 w-4" />
+                  {landingContent?.support_phone || '0850 304 54 40'}
+                </a>
                 {isAuthenticated && userCustomer ? (
                   <Link to="/user/dashboard">
                     <Button variant="outline" className="border-gray-200 text-gray-700 hover:border-[#019242] hover:text-[#019242] px-5 py-2 rounded-lg text-sm transition-colors">
@@ -275,11 +381,7 @@ export default function LandingPage() {
             {/* Mobile */}
             <div className="lg:hidden flex items-center justify-between h-16">
               <Link to="/" className="flex items-center gap-2.5">
-                <img
-                  src="/iconlogo.svg"
-                  alt=""
-                  className="h-9 w-9 object-contain flex-shrink-0"
-                />
+                <LogoIcon className="h-9 w-9 text-[#019242] flex-shrink-0" />
                 <div className="hidden sm:block">
                   <h1 className="text-base font-bold leading-tight text-gray-900">Çözüm Net A.Ş</h1>
                   <p className="text-xs text-gray-500">Yol Yardım Hizmetleri</p>
@@ -311,7 +413,7 @@ export default function LandingPage() {
             >
               <div className="flex items-center justify-between p-6 border-b border-white/20 bg-[#019242]">
                 <div className="flex items-center gap-3">
-                  <img src="/iconlogo.svg" alt="" className="h-9 w-9 object-contain flex-shrink-0 filter brightness-0 invert" />
+                  <LogoIcon className="h-9 w-9 text-white flex-shrink-0" />
                   <div>
                     <h2 className="text-base font-bold text-white">Menü</h2>
                     <p className="text-xs text-white/70">Yol Yardım Hizmetleri</p>
@@ -470,12 +572,34 @@ export default function LandingPage() {
                   ))}
                 </motion.div>
 
+                {/* Mini 3 adım */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.38 }}
+                  className="flex items-center gap-3 mt-7 p-4 bg-gray-50 rounded-xl border border-gray-100"
+                >
+                  {[
+                    { num: '1', label: 'Hizmeti Seç' },
+                    { num: '2', label: 'Teklif Al' },
+                    { num: '3', label: 'Profesyonel Gelir' },
+                  ].map((step, i) => (
+                    <div key={i} className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-[#019242] flex items-center justify-center flex-shrink-0">
+                        <span className="text-[10px] font-bold text-white">{step.num}</span>
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 truncate">{step.label}</span>
+                      {i < 2 && <ChevronRight className="h-3 w-3 text-gray-300 flex-shrink-0 ml-auto" />}
+                    </div>
+                  ))}
+                </motion.div>
+
                 {/* Küçük stat satırı */}
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.42 }}
-                  className="flex items-center gap-6 mt-10 pt-8 border-t border-gray-100"
+                  transition={{ duration: 0.5, delay: 0.46 }}
+                  className="flex items-center gap-4 mt-8 pt-7 border-t border-gray-100 flex-wrap"
                 >
                   {[
                     { val: '3.400+', label: 'Müşteri' },
@@ -488,6 +612,11 @@ export default function LandingPage() {
                       <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
                     </div>
                   ))}
+                  <div className="ml-auto flex items-center gap-1.5 bg-white border border-gray-100 rounded-full px-3 py-1.5">
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    <span className="text-xs font-semibold text-gray-700">4.9</span>
+                    <span className="text-xs text-gray-400">Google</span>
+                  </div>
                 </motion.div>
               </div>
 
@@ -633,6 +762,12 @@ export default function LandingPage() {
                               {HIZMET_KATEGORILERI.find(k => k.slug === h.kategoriSlug)?.label || 'Hizmet'}
                             </span>
                           </div>
+                          <div className="absolute top-2.5 right-2.5">
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/50 text-white text-[10px] font-medium">
+                              <Clock className="h-2.5 w-2.5" />
+                              Ort. 25 dk
+                            </span>
+                          </div>
                         </div>
 
                         <div className="p-4 flex flex-col flex-grow">
@@ -753,6 +888,72 @@ export default function LandingPage() {
                 </div>
               </motion.div>
             </div>
+          </div>
+        </section>
+
+        {/* ===== NASIL ÇALIŞIR ===== */}
+        <section className="py-16 md:py-20 bg-white">
+          <div className="container mx-auto px-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="text-center mb-12"
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#019242] mb-2">Süreç</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">Nasıl Çalışır?</h2>
+              <p className="text-sm text-gray-500 mt-3 max-w-md mx-auto">
+                4 basit adımda profesyonel hizmet alın — hızlı, güvenli, garantili.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+              {/* Bağlantı çizgisi — desktop */}
+              <div className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px bg-gray-100 z-0" />
+
+              {[
+                { num: '01', icon: Search, title: 'Hizmeti Seçin', desc: 'İhtiyacınıza uygun hizmeti arayın veya kategoriye göre filtreleyin.' },
+                { num: '02', icon: ClipboardList, title: 'Bilgilerinizi Girin', desc: 'Adres ve iletişim bilgilerinizi girerek talebinizi oluşturun.' },
+                { num: '03', icon: Users, title: 'Uzman Atanır', desc: 'En yakın deneyimli uzman ekibimiz size atanır ve bilgilendirme yapılır.' },
+                { num: '04', icon: CheckCircle2, title: 'İş Tamamlanır', desc: 'Uzmanımız gelir, işi tamamlar. Memnuniyetiniz garantilenmiştir.' },
+              ].map((step, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.45, delay: i * 0.1 }}
+                  className="relative z-10 flex flex-col items-center text-center"
+                >
+                  <div className="w-20 h-20 rounded-2xl bg-green-50 border border-green-100 flex items-center justify-center mb-5 relative">
+                    <step.icon className="h-8 w-8 text-[#019242]" />
+                    <div className="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-[#019242] flex items-center justify-center">
+                      <span className="text-[10px] font-bold text-white">{step.num}</span>
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-gray-900 mb-2">{step.title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{step.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+              className="text-center mt-10"
+            >
+              <a
+                href={`tel:${landingContent?.support_phone?.replace(/\s/g, '') || '08503045440'}`}
+                className="inline-flex items-center gap-2 bg-[#019242] hover:bg-[#017A35] text-white font-semibold px-7 py-3 rounded-xl text-sm transition-colors"
+              >
+                <Phone className="h-4 w-4" />
+                Hemen Başlayın
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </motion.div>
           </div>
         </section>
 
@@ -932,6 +1133,53 @@ export default function LandingPage() {
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
+
+            {/* Karşılaştırma tablosu */}
+            {packages.length >= 2 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="mt-12 overflow-x-auto"
+              >
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#019242] mb-4 text-center">Paket Karşılaştırması</p>
+                <table className="w-full max-w-3xl mx-auto text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left py-3 pr-4 text-gray-500 font-medium w-1/3">Teminat</th>
+                      {packages.slice(0, 3).map((pkg) => (
+                        <th key={pkg.id} className="py-3 px-4 text-center">
+                          <span className="font-bold text-gray-900 text-sm">{pkg.name}</span>
+                          {pkg.price && (
+                            <div className="text-xs text-gray-400 font-normal mt-0.5">
+                              {Number(pkg.price).toLocaleString('tr-TR')} ₺/yıl
+                            </div>
+                          )}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from(
+                      new Set(packages.flatMap(p => p.covers.map(c => c.title))).values()
+                    ).slice(0, 6).map((coverTitle) => (
+                      <tr key={coverTitle} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                        <td className="py-2.5 pr-4 text-gray-600 text-xs">{coverTitle}</td>
+                        {packages.slice(0, 3).map((pkg) => (
+                          <td key={pkg.id} className="py-2.5 px-4 text-center">
+                            {pkg.covers.some(c => c.title === coverTitle)
+                              ? <Check className="h-4 w-4 text-[#019242] mx-auto" />
+                              : <X className="h-4 w-4 text-gray-200 mx-auto" />
+                            }
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </motion.div>
+            )}
 
             <div className="text-center mt-8">
               <Link to="/packages">
@@ -1197,6 +1445,7 @@ export default function LandingPage() {
         </section>
 
         {/* ===== FOOTER ===== */}
+        <div className="lg:hidden h-16" aria-hidden />
         <PublicFooter />
       </div>
     </>

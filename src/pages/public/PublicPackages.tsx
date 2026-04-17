@@ -1,45 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { LogoIcon } from '@/components/ui/LogoIcon';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { publicService, type PublicPackage } from '@/services/publicService';
 import { useUserCustomer } from '@/contexts/UserCustomerContext';
-import { 
-  ArrowRight, 
+import { PublicFooter } from '@/components/layout/PublicFooter';
+import { motion } from 'framer-motion';
+import {
+  ArrowRight,
   ArrowLeft,
-  Car, 
-  Bike, 
-  Truck, 
-  Bus, 
+  Car,
+  Bike,
+  Truck,
+  Bus,
   Check,
   Shield,
   Phone,
   Clock,
   Loader2,
   Sparkles,
-  Zap,
-  Star,
   Menu,
   X,
-  User
+  User,
+  Zap,
+  SlidersHorizontal,
 } from 'lucide-react';
 
-/**
- * Public Paketler Sayfası
- * Dark mode'dan etkilenmeyen, responsive tasarım
- * Tüm aktif paketleri fiyatsız olarak görüntüler
- */
 export default function PublicPackages() {
   const { userCustomer, isAuthenticated } = useUserCustomer();
   const [packages, setPackages] = useState<PublicPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>('all');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Paketleri yükle
   useEffect(() => {
     const fetchPackages = async () => {
       try {
@@ -52,122 +47,135 @@ export default function PublicPackages() {
         setLoading(false);
       }
     };
-
     fetchPackages();
   }, []);
 
-  // Araç türüne göre ikon
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const getVehicleIcon = (vehicleType: string) => {
     const icons: Record<string, any> = {
-      'Otomobil': Car,
-      'Motosiklet': Bike,
-      'Kamyonet': Truck,
-      'Minibüs': Bus,
-      'Midibüs': Bus,
-      'Taksi': Car,
-      'Kamyon': Truck,
-      'Çekici': Truck,
+      'Otomobil': Car, 'Motosiklet': Bike, 'Kamyonet': Truck,
+      'Minibüs': Bus, 'Midibüs': Bus, 'Taksi': Car, 'Kamyon': Truck, 'Çekici': Truck,
     };
     return icons[vehicleType] || Car;
   };
 
-  // Unique araç türleri
-  const vehicleTypes = ['all', ...new Set(packages.map(p => p.vehicle_type))];
+  const getPackageTier = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes('ultra') || n.includes('premium') || n.includes('plus'))
+      return { label: 'Premium', icon: Sparkles, highlighted: true };
+    if (n.includes('standart') || n.includes('standard'))
+      return { label: 'Standart', icon: Shield, highlighted: false };
+    return { label: 'Temel', icon: Zap, highlighted: false };
+  };
 
-  // Filtrelenmiş paketler
+  const vehicleTypes = ['all', ...new Set(packages.map(p => p.vehicle_type))];
   const filteredPackages = selectedVehicleType === 'all'
     ? packages
     : packages.filter(p => p.vehicle_type === selectedVehicleType);
 
-  // Paket tier'ına göre stil - Yeşil tonlarında
-  const getPackageTier = (name: string) => {
-    const nameLower = name.toLowerCase();
-    if (nameLower.includes('ultra') || nameLower.includes('premium') || nameLower.includes('plus')) {
-      return {
-        tier: 'premium',
-        accent: 'bg-[#017A35]',
-        accentLight: 'bg-emerald-50',
-        accentText: 'text-[#017A35]',
-        accentBorder: 'border-emerald-200',
-        badge: 'bg-[#017A35]',
-        icon: Sparkles
-      };
-    }
-    if (nameLower.includes('standart') || nameLower.includes('standard')) {
-      return {
-        tier: 'standard',
-        accent: 'bg-[#019242]',
-        accentLight: 'bg-green-50',
-        accentText: 'text-[#019242]',
-        accentBorder: 'border-green-200',
-        badge: 'bg-[#019242]',
-        icon: Shield
-      };
-    }
-    // Default - basic
-    return {
-      tier: 'basic',
-      accent: 'bg-[#019242]',
-      accentLight: 'bg-green-50',
-      accentText: 'text-[#019242]',
-      accentBorder: 'border-green-200',
-      badge: 'bg-[#019242]',
-      icon: Zap
-    };
-  };
+  const packageListSchema = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Yol Yardım Paketleri",
+    "url": "https://cozum.net/packages",
+    "itemListElement": packages.map((p, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "item": {
+        "@type": "Product",
+        "name": p.name,
+        "description": p.description || p.name,
+        "offers": {
+          "@type": "Offer",
+          "price": p.price?.toString() || "0",
+          "priceCurrency": "TRY",
+          "availability": "https://schema.org/InStock",
+          "seller": { "@type": "Organization", "name": "Çözüm Net A.Ş" }
+        }
+      }
+    }))
+  }), [packages]);
 
   return (
     <>
       <Helmet>
-        <title>Yol Yardım Paketleri | Çözüm Net A.Ş</title>
-        <meta name="description" content="Yol yardım paketlerimizi inceleyin. Otomobil, motosiklet, kamyonet ve daha fazlası için 7/24 yol yardım hizmeti." />
+        <title>Yol Yardım Paketleri & Fiyatları | Çözüm Net A.Ş</title>
+        <meta name="description" content="Yol yardım paket fiyatları: otomobil, motosiklet, kamyonet ve ticari araçlar için uygun paketler. 7/24 destek, hızlı müdahale. Hemen incele." />
+        <link rel="canonical" href="https://cozum.net/packages" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="tr_TR" />
+        <meta property="og:title" content="Yol Yardım Paketleri & Fiyatları | Çözüm Net A.Ş" />
+        <meta property="og:description" content="Yol yardım paket fiyatları: otomobil, motosiklet, kamyonet ve ticari araçlar için uygun paketler. 7/24 destek." />
+        <meta property="og:url" content="https://cozum.net/packages" />
+        <meta property="og:image" content="https://cozum.net/images/pexels-fauxels-3183197.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Yol Yardım Paketleri | Çözüm Net A.Ş" />
+        <meta name="twitter:description" content="Yol yardım paket fiyatları ve uygun seçenekler. 7/24 destek." />
+        <meta name="twitter:image" content="https://cozum.net/images/pexels-fauxels-3183197.jpg" />
+        {packages.length > 0 && (
+          <script type="application/ld+json">{JSON.stringify(packageListSchema)}</script>
+        )}
       </Helmet>
 
-      {/* Dark mode'dan korumalı wrapper */}
-      <div className="light public-page min-h-screen bg-gray-50 text-gray-900" style={{ colorScheme: 'light' }}>
-        {/* Header */}
-        <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-          <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 sm:gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#019242] flex items-center justify-center">
-                <img 
-                  src="/cozumasistanlog.svg" 
-                  alt="Çözüm Net A.Ş Logo" 
-                  className="h-7 sm:h-8"
-                />
-              </div>
-              <span className="font-bold text-gray-900 text-sm sm:text-base hidden sm:block">Çözüm Net A.Ş</span>
+      <div className="light public-page min-h-screen bg-white text-gray-900" style={{ colorScheme: 'light' }}>
+
+        {/* ===== HEADER ===== */}
+        <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled ? 'bg-white border-b border-gray-200' : 'bg-transparent border-b border-transparent'
+        }`}>
+          <div className="container mx-auto px-6 h-16 flex items-center justify-between">
+            <Link
+              to="/"
+              className={`flex items-center gap-2 text-sm font-medium transition-colors duration-300 ${
+                scrolled ? 'text-gray-600 hover:text-[#019242]' : 'text-white/85 hover:text-white'
+              }`}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Anasayfa
             </Link>
-            
-            {/* Desktop Nav */}
+
+            <Link to="/" className="flex items-center gap-2.5">
+              <LogoIcon className={`h-8 w-8 transition-colors duration-300 ${scrolled ? 'text-[#019242]' : 'text-white'}`} />
+              <span className={`font-bold text-sm transition-colors duration-300 ${scrolled ? 'text-gray-900' : 'text-white'}`}>
+                Çözüm Net A.Ş
+              </span>
+            </Link>
+
             <div className="hidden md:flex items-center gap-4">
-              <Link to="/" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-                Ana Sayfa
-              </Link>
-              <Link to="/bayilik-basvurusu" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-                Bayilik Başvurusu
-              </Link>
-              {/* Giriş yapmış kullanıcı için dashboard linki, yoksa giriş butonu */}
+              <a
+                href="tel:08503045440"
+                className={`flex items-center gap-1.5 text-sm font-semibold transition-colors duration-300 ${
+                  scrolled ? 'text-[#019242] hover:text-[#017A35]' : 'text-white/85 hover:text-white'
+                }`}
+              >
+                <Phone className="h-4 w-4" />
+                0850 304 54 40
+              </a>
               {isAuthenticated && userCustomer ? (
                 <Link to="/user/dashboard">
-                  <Button size="sm" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full">
-                    <User className="h-4 w-4 mr-2" />
+                  <Button variant="outline" size="sm" className={`rounded-lg transition-colors ${
+                    scrolled ? 'border-gray-200 text-gray-700 hover:border-[#019242] hover:text-[#019242]' : 'border-white/40 text-white hover:bg-white/10'
+                  }`}>
+                    <User className="h-4 w-4 mr-1.5" />
                     {userCustomer.name}
                   </Button>
                 </Link>
               ) : (
                 <Link to="/login">
-                  <Button size="sm" className="bg-[#019242] hover:bg-[#017A35] text-white rounded-full">
+                  <Button size="sm" className="bg-[#019242] hover:bg-[#017A35] text-white rounded-lg text-sm font-semibold">
                     Giriş Yap
-                    <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </Link>
               )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <button 
-              className="md:hidden p-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+            <button
+              className={`md:hidden p-2 rounded-lg transition-colors ${scrolled ? 'text-gray-700 hover:bg-gray-100' : 'text-white hover:bg-white/10'}`}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Menü"
             >
@@ -175,237 +183,230 @@ export default function PublicPackages() {
             </button>
           </div>
 
-          {/* Mobile Menu */}
+          {/* Mobile menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4">
-              <nav className="flex flex-col gap-2">
-                <Link 
-                  to="/" 
-                  className="text-gray-700 hover:bg-gray-50 py-2 px-3 rounded-lg"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Ana Sayfa
+            <div className="md:hidden bg-white border-t border-gray-100 px-6 py-4 space-y-1">
+              <Link to="/" className="flex items-center gap-3 text-gray-700 hover:text-[#019242] hover:bg-green-50 py-2.5 px-3 rounded-xl text-sm font-medium transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                Anasayfa
+              </Link>
+              <Link to="/bayilik-basvurusu" className="flex items-center gap-3 text-gray-700 hover:text-[#019242] hover:bg-green-50 py-2.5 px-3 rounded-xl text-sm font-medium transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                Bayilik Başvurusu
+              </Link>
+              <div className="pt-2">
+                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button className="w-full bg-[#019242] hover:bg-[#017A35] text-white rounded-xl text-sm font-semibold">
+                    Giriş Yap
+                  </Button>
                 </Link>
-                <Link 
-                  to="/bayilik-basvurusu" 
-                  className="text-gray-700 hover:bg-gray-50 py-2 px-3 rounded-lg"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Bayilik Başvurusu
-                </Link>
-                {/* Giriş yapmış kullanıcı için dashboard linki, yoksa giriş butonu */}
-                {isAuthenticated && userCustomer ? (
-                  <Link to="/user/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full mt-2">
-                      <User className="h-4 w-4 mr-2" />
-                      {userCustomer.name}
-                    </Button>
-                  </Link>
-                ) : (
-                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full bg-[#019242] hover:bg-[#017A35] text-white rounded-full mt-2">
-                      Giriş Yap
-                    </Button>
-                  </Link>
-                )}
-              </nav>
+              </div>
             </div>
           )}
         </header>
 
-        {/* Hero Section */}
-        <section className="relative overflow-hidden bg-[#019242] text-white py-12 sm:py-16 md:py-20">
-          {/* Background pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-            }} />
+        {/* ===== HERO ===== */}
+        <section className="relative min-h-[58vh] flex items-end overflow-hidden">
+          <div className="absolute inset-0 bg-gray-900">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#019242]/80 via-gray-900/70 to-gray-900" />
+            {/* Dekoratif daireler */}
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-[#019242]/20 translate-x-1/3 -translate-y-1/4" />
+            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-white/5 -translate-x-1/3 translate-y-1/4" />
           </div>
-          
-          <div className="container mx-auto px-4 relative">
-            <Link to="/" className="inline-flex items-center gap-2 text-blue-200 hover:text-white mb-6 sm:mb-8 transition-colors group text-sm">
-              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-              Ana Sayfaya Dön
-            </Link>
-            <div className="max-w-3xl">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-4 sm:mb-6 leading-tight">
-                Yol Yardım <span className="text-blue-200">Paketleri</span>
-              </h1>
-              <p className="text-base sm:text-lg md:text-xl text-blue-100 mb-6 sm:mb-10 leading-relaxed">
-                Aracınız için en uygun paketi seçin, 7/24 yol yardım güvencesiyle güvenle yolculuk yapın.
-              </p>
-              <div className="flex flex-wrap items-center gap-4 sm:gap-8 text-blue-200">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-1.5 sm:p-2 rounded-lg bg-white/20">
-                    <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                  </div>
-                  <span className="text-xs sm:text-sm">Güvenli Hizmet</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-1.5 sm:p-2 rounded-lg bg-white/20">
-                    <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                  </div>
-                  <span className="text-xs sm:text-sm">7/24 Destek</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-1.5 sm:p-2 rounded-lg bg-white/20">
-                    <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                  </div>
-                  <span className="text-xs sm:text-sm">Anında Yardım</span>
-                </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#019242]" />
+
+          <div className="relative z-10 container mx-auto px-6 pt-32 pb-14">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55 }}
+              className="max-w-2xl"
+            >
+              <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-6">
+                <span className="w-2 h-2 rounded-full bg-[#2dd67b] animate-pulse" />
+                <span className="text-xs font-semibold text-white/90">7/24 Yol Yardım Güvencesi</span>
               </div>
-            </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-[1.05] mb-5">
+                Size Özel<br />
+                <span className="text-[#2dd67b]">Yol Yardım</span> Paketleri
+              </h1>
+              <p className="text-base text-white/70 leading-relaxed mb-8 max-w-xl">
+                Aracınız için en uygun paketi seçin — otomobil, motosiklet, kamyonet ve daha fazlası için 7/24 destek.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-5 text-sm text-white/70">
+                {[
+                  { icon: Shield, label: 'Güvenli Hizmet' },
+                  { icon: Clock, label: 'Ort. 25 dk Yanıt' },
+                  { icon: Phone, label: '7/24 Destek' },
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+                      <Icon className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <span className="text-xs">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* Paketler */}
-        <section className="py-10 sm:py-14 md:py-20">
-          <div className="container mx-auto px-4">
-            {/* Araç Türü Filtresi */}
-            <div className="mb-8 sm:mb-12 overflow-x-auto pb-2">
-              <Tabs value={selectedVehicleType} onValueChange={setSelectedVehicleType}>
-                <TabsList className="flex gap-2 h-auto bg-transparent p-0 justify-start sm:justify-center min-w-max">
-                  {vehicleTypes.map((type) => {
-                    const Icon = type === 'all' ? Car : getVehicleIcon(type);
-                    const count = type === 'all' ? packages.length : packages.filter(p => p.vehicle_type === type).length;
-                    return (
-                      <TabsTrigger 
-                        key={type} 
-                        value={type}
-                        className="bg-white hover:bg-gray-50 data-[state=active]:bg-[#019242] data-[state=active]:text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-full border border-gray-200 data-[state=active]:border-[#019242] shadow-sm transition-all text-sm"
-                      >
-                        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                        <span className="font-medium">{type === 'all' ? 'Tümü' : type}</span>
-                        <Badge variant="secondary" className="ml-1.5 sm:ml-2 text-xs bg-gray-100 data-[state=active]:bg-white/20">
-                          {count}
-                        </Badge>
-                      </TabsTrigger>
-                    );
-                  })}
-                </TabsList>
-              </Tabs>
-            </div>
+        {/* ===== PAKETLER ===== */}
+        <section className="py-12 md:py-20 bg-white">
+          <div className="container mx-auto px-6">
+
+            {/* Filtre */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
+              className="flex items-center justify-between mb-10 gap-4 flex-wrap"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <SlidersHorizontal className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                <button
+                  onClick={() => setSelectedVehicleType('all')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    selectedVehicleType === 'all'
+                      ? 'bg-[#019242] text-white'
+                      : 'border border-gray-200 text-gray-600 hover:border-[#019242] hover:text-[#019242]'
+                  }`}
+                >
+                  Tümü
+                  <span className="ml-1.5 text-[10px] font-semibold opacity-70">({packages.length})</span>
+                </button>
+                {vehicleTypes.filter(t => t !== 'all').map((type) => {
+                  const Icon = getVehicleIcon(type);
+                  const count = packages.filter(p => p.vehicle_type === type).length;
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedVehicleType(type)}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        selectedVehicleType === type
+                          ? 'bg-[#019242] text-white'
+                          : 'border border-gray-200 text-gray-600 hover:border-[#019242] hover:text-[#019242]'
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {type}
+                      <span className="text-[10px] font-semibold opacity-70">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="text-sm text-gray-400 font-medium flex-shrink-0">{filteredPackages.length} paket</span>
+            </motion.div>
 
             {/* Loading */}
             {loading ? (
-              <div className="flex items-center justify-center py-20 sm:py-32">
+              <div className="flex items-center justify-center py-32">
                 <div className="text-center">
-                  <Loader2 className="h-8 w-8 sm:h-10 sm:w-10 animate-spin text-[#019242] mx-auto mb-4" />
-                  <span className="text-gray-500 text-sm sm:text-base">Paketler yükleniyor...</span>
+                  <Loader2 className="h-8 w-8 animate-spin text-[#019242] mx-auto mb-3" />
+                  <p className="text-sm text-gray-400">Paketler yükleniyor...</p>
                 </div>
               </div>
             ) : filteredPackages.length === 0 ? (
-              <div className="text-center py-20 sm:py-32">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4 sm:mb-6">
-                  <Car className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
+              <div className="text-center py-28">
+                <div className="w-14 h-14 rounded-xl border border-gray-100 flex items-center justify-center mx-auto mb-4">
+                  <Car className="h-6 w-6 text-gray-300" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">Paket Bulunamadı</h3>
-                <p className="text-gray-500 text-sm sm:text-base">Seçili araç türü için paket bulunmuyor.</p>
+                <p className="font-semibold text-gray-900 mb-1">Paket bulunamadı</p>
+                <p className="text-sm text-gray-400">Farklı bir araç türü deneyin.</p>
+                <button onClick={() => setSelectedVehicleType('all')} className="mt-4 text-sm font-medium text-[#019242] hover:text-[#017A35] transition-colors">
+                  Tümünü gör
+                </button>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {filteredPackages.map((pkg) => {
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                {filteredPackages.map((pkg, index) => {
                   const VehicleIcon = getVehicleIcon(pkg.vehicle_type);
                   const tier = getPackageTier(pkg.name);
 
                   return (
-                    <Card 
-                      key={pkg.id} 
-                      className="group relative bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                    <motion.div
+                      key={pkg.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.06 }}
+                      className="relative rounded-2xl border border-gray-100 bg-white flex flex-col hover:shadow-lg transition-shadow duration-300"
                     >
-                      {/* Top accent line - Minimal */}
-                      <div className={`h-1 ${tier.accent}`} />
-                      
-                      <CardContent className="p-5">
-                        {/* Header - Minimal & Clean */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-12 h-12 rounded-xl ${tier.accent} flex items-center justify-center shadow-md`}>
-                              <VehicleIcon className="h-5 w-5 text-white" />
+                      {/* Popüler badge — sadece highlighted pakette, sade */}
+                      {tier.highlighted && (
+                        <div className="absolute -top-3 left-6">
+                          <span className="bg-[#019242] text-white text-[11px] font-semibold px-3 py-1 rounded-full">
+                            En Çok Tercih Edilen
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Kart içi */}
+                      <div className="p-7 flex flex-col flex-grow">
+
+                        {/* Üst: ikon + araç tipi + fiyat */}
+                        <div className="flex items-start justify-between mb-6">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+                              <VehicleIcon className="h-5 w-5 text-gray-500" />
                             </div>
-                            <Badge className={`${tier.badge} text-white text-xs px-3 py-1 font-semibold`}>
-                              {pkg.vehicle_type}
-                            </Badge>
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{pkg.vehicle_type}</p>
+                              <h3 className="text-base font-bold text-gray-900 leading-tight mt-0.5">{pkg.name}</h3>
+                            </div>
                           </div>
-                          {tier.tier === 'premium' && (
-                            <div className="flex items-center gap-1 text-[#019242]">
-                              <Star className="h-4 w-4 fill-current" />
+                          {pkg.price && (
+                            <div className="text-right flex-shrink-0 ml-3">
+                              <p className="text-2xl font-bold text-gray-900 leading-none">
+                                {Number(pkg.price).toLocaleString('tr-TR')}
+                                <span className="text-sm font-normal text-gray-400 ml-0.5">₺</span>
+                              </p>
+                              <p className="text-[11px] text-gray-400 mt-0.5">/ yıl</p>
                             </div>
                           )}
                         </div>
 
-                        {/* Title & Description */}
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                          {pkg.name}
-                        </h3>
+                        {/* Açıklama */}
                         {pkg.description && (
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2 leading-relaxed">
-                            {pkg.description}
-                          </p>
+                          <p className="text-sm text-gray-500 leading-relaxed mb-5 line-clamp-2">{pkg.description}</p>
                         )}
-                        
-                        {/* Vehicle age info - Minimal */}
-                        <div className={`inline-flex items-center gap-1.5 ${tier.accentLight} ${tier.accentText} text-xs font-medium px-2.5 py-1 rounded-full mb-4`}>
+
+                        {/* Araç yaşı */}
+                        <div className="flex items-center gap-1.5 mb-5 text-xs text-gray-400">
                           <Clock className="h-3 w-3" />
                           Maks. {pkg.max_vehicle_age} yaş araç
                         </div>
 
-                        {/* Divider */}
-                        <div className="border-t border-gray-100 my-4" />
+                        {/* Ayraç */}
+                        <div className="h-px bg-gray-100 mb-5" />
 
-                        {/* Covers - Clean Design */}
-                        <div className="mb-5">
-                          <ul className="space-y-2.5">
-                            {pkg.covers.slice(0, 6).map((cover) => (
-                              <li key={cover.id} className="flex items-start gap-2.5">
-                                <div className={`w-5 h-5 rounded-md ${tier.accent} flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm`}>
-                                  <Check className="h-3 w-3 text-white" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <span className="text-sm text-gray-700 leading-relaxed">{cover.title}</span>
-                                    {cover.usage_count > 1 && (
-                                    <span className="text-xs text-gray-400 ml-1">
-                                        ({cover.usage_count}x)
-                                      </span>
-                                    )}
-                                </div>
-                              </li>
-                            ))}
-                            {pkg.covers.length > 6 && (
-                              <li className="text-xs text-gray-500 pl-8 italic">
-                                +{pkg.covers.length - 6} daha fazla hizmet
-                              </li>
-                            )}
-                          </ul>
-                        </div>
-
-                        {/* Fiyat - Professional Style */}
-                        {pkg.price && (
-                          <div className="mb-5 pb-4 border-b border-gray-100">
-                            <div className="flex items-baseline justify-between">
-                              <span className="text-sm text-gray-500">Fiyat</span>
-                              <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-bold text-gray-900">
-                                  {Number(pkg.price).toLocaleString('tr-TR')}
+                        {/* Teminatlar */}
+                        <ul className="space-y-3 flex-grow mb-6">
+                          {pkg.covers.slice(0, 6).map((cover) => (
+                            <li key={cover.id} className="flex items-start gap-3">
+                              <Check className="h-3.5 w-3.5 text-[#019242] flex-shrink-0 mt-0.5" />
+                              <span className="text-sm text-gray-600 leading-snug">
+                                {cover.title}
+                                {cover.usage_count > 1 && (
+                                  <span className="text-xs text-gray-400 ml-1">({cover.usage_count}x)</span>
+                                )}
                               </span>
-                                <span className="text-base text-gray-500">₺</span>
-                              </div>
-                            </div>
-                            <p className="text-xs text-gray-400 mt-1">KDV dahil / yıl</p>
-                          </div>
-                        )}
+                            </li>
+                          ))}
+                          {pkg.covers.length > 6 && (
+                            <li className="flex items-center gap-1 text-xs text-gray-400 pl-[22px]">
+                              +{pkg.covers.length - 6} daha fazla teminat
+                            </li>
+                          )}
+                        </ul>
 
-                        {/* CTA - Professional Button */}
                         <Link to={`/purchase/${pkg.id}`} className="block">
-                          <Button 
-                            className={`w-full ${tier.accent} hover:opacity-90 text-white font-semibold h-11 rounded-lg shadow-md hover:shadow-lg transition-all text-sm`}
-                          >
-                            Detaylı Bilgi
+                          <Button className="w-full bg-[#019242] hover:bg-[#017A35] text-white h-11 rounded-xl text-sm font-semibold transition-colors group">
+                            Hemen Satın Al
                             <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
                           </Button>
                         </Link>
-                      </CardContent>
-                    </Card>
+
+                      </div>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -413,46 +414,65 @@ export default function PublicPackages() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="bg-[#019242] text-white py-12 sm:py-16 md:py-20">
-          <div className="container mx-auto px-4 text-center">
-            <div className="max-w-2xl mx-auto">
-              <div className="inline-flex items-center gap-2 bg-white/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm mb-4 sm:mb-6">
-                <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400" />
-                <span className="text-blue-100">Bayilik Fırsatı</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">
-                Bayilik Ağımıza Katılın
-              </h2>
-              <p className="text-blue-100 mb-6 sm:mb-8 text-sm sm:text-base md:text-lg">
-                Yol yardım hizmetleri sektöründe yerinizi alın. Hemen başvurun.
-              </p>
-              <Link to="/bayilik-basvurusu">
-                <Button size="lg" className="bg-white text-[#019242] hover:bg-gray-100 font-semibold px-6 sm:px-8 py-4 sm:py-6 rounded-full shadow-xl text-sm sm:text-base">
-                  Bayilik Başvurusu Yap
-                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-                </Button>
-              </Link>
+        {/* ===== TRUST BAR ===== */}
+        <section className="bg-gray-50 py-10 border-y border-gray-100">
+          <div className="container mx-auto px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+              {[
+                { val: '3.400+', label: 'Mutlu Müşteri' },
+                { val: '81 İl', label: 'Kapsama Alanı' },
+                { val: 'Ort. 25 dk', label: 'Yanıt Süresi' },
+                { val: '7/24', label: 'Kesintisiz Destek' },
+              ].map((s, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: i * 0.07 }}
+                >
+                  <p className="text-2xl font-bold text-[#019242]">{s.val}</p>
+                  <p className="text-xs text-gray-500 mt-1">{s.label}</p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="bg-gray-900 text-white py-8 sm:py-10">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
-              <div className="flex items-center gap-3">
-                <img src="/cozumasistanlog.svg" alt="Logo" className="h-6 sm:h-7" />
-                <span className="text-gray-500 text-xs sm:text-sm">© 2023 Çözüm Net A.Ş</span>
+        {/* ===== CTA ===== */}
+        <section className="bg-[#019242] py-16 md:py-20">
+          <div className="container mx-auto px-6 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="max-w-xl mx-auto"
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest text-green-300 mb-3">Fırsat</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-4">
+                Bayilik Ağımıza Katılın
+              </h2>
+              <p className="text-white/65 text-sm mb-8 leading-relaxed">
+                Yol yardım hizmetleri sektöründe yerinizi alın. Güçlü altyapı ve destek ekibimizle büyüyün.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link to="/bayilik-basvurusu">
+                  <Button className="bg-white text-[#019242] hover:bg-green-50 font-semibold px-7 py-3 rounded-xl text-sm transition-colors">
+                    Bayilik Başvurusu Yap
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
+                <a href="tel:08503045440" className="flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors">
+                  <Phone className="h-4 w-4" />
+                  0850 304 54 40
+                </a>
               </div>
-              <div className="flex items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-400">
-                <Link to="/" className="hover:text-white transition-colors">Ana Sayfa</Link>
-                <Link to="/privacy-policy" className="hover:text-white transition-colors">Gizlilik</Link>
-                <Link to="/distance-sales-contract" className="hover:text-white transition-colors">Sözleşmeler</Link>
-              </div>
-            </div>
+            </motion.div>
           </div>
-        </footer>
+        </section>
+
+        <PublicFooter />
       </div>
     </>
   );

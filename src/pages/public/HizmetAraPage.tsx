@@ -1,4 +1,5 @@
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { LogoIcon } from '@/components/ui/LogoIcon';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,6 +53,27 @@ export default function HizmetAraPage() {
   }, []);
 
   const results = filterHizmetler(q, kategoriSlug);
+  const kategoriLabel = HIZMET_KATEGORILERI.find(k => k.slug === kategoriSlug)?.label;
+
+  const pageTitle = q
+    ? `"${q}" Hizmetleri | Çözüm Net A.Ş`
+    : kategoriSlug
+      ? `${kategoriLabel} Hizmetleri | Çözüm Net A.Ş`
+      : 'Tüm Hizmetler | Çözüm Net A.Ş';
+
+  const pageDesc = q
+    ? `"${q}" için ${results.length} hizmet bulundu. Temizlik, tadilat, tesisat, yol yardım ve daha fazlası — Çözüm Net A.Ş`
+    : kategoriSlug
+      ? `${kategoriLabel} hizmetleri: deneyimli uzmanlar, hızlı çözüm. Çözüm Net A.Ş`
+      : 'İhtiyacın olan hizmete kolayca ulaş: temizlik, tadilat, tesisat, yol yardım ve daha fazlası.';
+
+  const collectionSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": "https://cozum.net/hizmet-ara"
+  };
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -73,8 +95,20 @@ export default function HizmetAraPage() {
   return (
     <>
       <Helmet>
-        <title>Hizmet Ara | Çözüm Net A.Ş</title>
-        <meta name="description" content="İhtiyacın olan hizmete kolayca ulaş: temizlik, tadilat, tesisat, yol yardım ve daha fazlası." />
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDesc} />
+        <link rel="canonical" href="https://cozum.net/hizmet-ara" />
+        {q && <meta name="robots" content="noindex, nofollow" />}
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="tr_TR" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDesc} />
+        <meta property="og:url" content="https://cozum.net/hizmet-ara" />
+        <meta property="og:image" content="https://cozum.net/images/pexels-fauxels-3183197.jpg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDesc} />
+        <script type="application/ld+json">{JSON.stringify(collectionSchema)}</script>
       </Helmet>
 
       <div className="light public-page bg-white text-gray-900 min-h-screen flex flex-col" style={{ colorScheme: 'light' }}>
@@ -95,9 +129,7 @@ export default function HizmetAraPage() {
             </Link>
 
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#019242] flex items-center justify-center">
-                <img src="/iconlogo.svg" alt="" className="h-5 w-5 object-contain" />
-              </div>
+              <LogoIcon className={`h-8 w-8 transition-colors duration-300 ${scrolled ? 'text-[#019242]' : 'text-white'}`} />
               <span className={`font-bold text-sm transition-colors duration-300 ${scrolled ? 'text-gray-900' : 'text-white'}`}>
                 Çözüm Net A.Ş
               </span>

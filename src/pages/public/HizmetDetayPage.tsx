@@ -1,4 +1,5 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
+import { LogoIcon } from '@/components/ui/LogoIcon';
 import { Helmet } from 'react-helmet-async';
 import { PublicFooter } from '@/components/layout/PublicFooter';
 import {
@@ -62,16 +63,39 @@ export default function HizmetDetayPage() {
     ? [...relatedServices, ...TREND_HIZMETLER.filter(h => h.id !== hizmet.id && h.kategoriSlug !== hizmet.kategoriSlug).slice(0, 3 - relatedServices.length)]
     : relatedServices;
 
+  const serviceSchema = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "name": hizmet.name,
+    "description": hizmet.metaDescription || hizmet.description,
+    "url": `https://cozum.net/hizmet/${hizmet.slug}`,
+    "provider": {
+      "@type": "LocalBusiness",
+      "name": "Çözüm Net A.Ş",
+      "url": "https://cozum.net",
+      "telephone": "+90-850-304-54-40"
+    },
+    "areaServed": { "@type": "Country", "name": "Turkey" }
+  };
+
   return (
     <>
       <Helmet>
         <title>{hizmet.name} Hizmeti | Çözüm Net A.Ş</title>
         <meta name="description" content={hizmet.metaDescription || hizmet.description} />
+        <meta name="keywords" content={`${hizmet.name}, ${hizmet.name.toLowerCase()} hizmeti, ${kategori?.label || ''}, Çözüm Net`} />
+        <link rel="canonical" href={`https://cozum.net/hizmet/${hizmet.slug}`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="tr_TR" />
         <meta property="og:title" content={`${hizmet.name} Hizmeti | Çözüm Net A.Ş`} />
         <meta property="og:description" content={hizmet.metaDescription || hizmet.description} />
-        {hizmet.imageUrl && <meta property="og:image" content={hizmet.imageUrl} />}
-        <meta property="og:type" content="website" />
-        <link rel="canonical" href={`https://cozumnet.com.tr/hizmet/${hizmet.slug}`} />
+        <meta property="og:url" content={`https://cozum.net/hizmet/${hizmet.slug}`} />
+        {hizmet.imageUrl && <meta property="og:image" content={`https://cozum.net${hizmet.imageUrl}`} />}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${hizmet.name} Hizmeti | Çözüm Net A.Ş`} />
+        <meta name="twitter:description" content={hizmet.metaDescription || hizmet.description} />
+        {hizmet.imageUrl && <meta name="twitter:image" content={`https://cozum.net${hizmet.imageUrl}`} />}
+        <script type="application/ld+json">{JSON.stringify(serviceSchema)}</script>
       </Helmet>
 
       <div className="light public-page bg-white text-gray-900 min-h-screen flex flex-col" style={{ colorScheme: 'light' }}>
@@ -92,9 +116,7 @@ export default function HizmetDetayPage() {
             </Link>
 
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#019242] flex items-center justify-center">
-                <img src="/iconlogo.svg" alt="" className="h-5 w-5 object-contain" />
-              </div>
+              <LogoIcon className={`h-8 w-8 transition-colors duration-300 ${scrolled ? 'text-[#019242]' : 'text-white'}`} />
               <span className={`font-bold text-sm transition-colors duration-300 ${scrolled ? 'text-gray-900' : 'text-white'}`}>
                 Çözüm Net A.Ş
               </span>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LogoIcon } from '@/components/ui/LogoIcon';
 import { useNavigate, Link } from 'react-router-dom';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -90,11 +91,7 @@ export default function Login() {
           className="relative z-10"
         >
           <Link to="/" className="flex items-center gap-3">
-            <img
-              src="/iconlogo.svg"
-              alt="Çözüm Net A.Ş"
-              className="h-10 w-10 object-contain filter brightness-0 invert"
-            />
+            <LogoIcon className="h-10 w-10 text-white flex-shrink-0" />
             <div>
               <p className="font-bold text-white text-lg leading-tight">Çözüm Net A.Ş</p>
               <p className="text-white/60 text-xs">Yol Yardım Hizmetleri</p>
@@ -169,12 +166,7 @@ export default function Login() {
         >
           {/* Mobilde logo */}
           <div className="lg:hidden mb-8 flex items-center gap-2.5">
-            <img
-              src="/iconlogo.svg"
-              alt=""
-              className="h-8 w-8 object-contain"
-              style={{ filter: 'invert(35%) sepia(98%) saturate(600%) hue-rotate(120deg) brightness(0.9)' }}
-            />
+            <LogoIcon className="h-8 w-8 text-[#019242]" />
             <span className="font-bold text-gray-900">Çözüm Net A.Ş</span>
           </div>
 
