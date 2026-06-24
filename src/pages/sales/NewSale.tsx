@@ -169,8 +169,11 @@ export default function NewSale() {
       return;
     }
     if (paymentMethod === PaymentType.PAYTR && saleForm.package_id && saleForm.price > 0) {
-      const priceWithoutVAT = saleForm.price / 1.2;
-      const commission = (priceWithoutVAT * (Number(currentAgency?.commission_rate) || 20)) / 100;
+      const commissionRate =
+        user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER
+          ? Number(currentBranch?.commission_rate ?? currentAgency?.commission_rate) || 20
+          : Number(currentAgency?.commission_rate) || 20;
+      const commission = (saleForm.price * commissionRate) / 100;
       setSaleForm((prev) => ({ ...prev, commission }));
     }
   }, [paymentMethod]);
@@ -644,12 +647,15 @@ export default function NewSale() {
     
     if (pkg) {
       const basePrice = Number(pkg.price) || 0;
-      const priceWithoutVAT = basePrice / 1.20;
-      // Bakiye ile ödemede komisyon kesilmez; sadece PayTR/kart ile ödemede hesaplanır
+      const commissionRate =
+        user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER
+          ? Number(currentBranch?.commission_rate ?? currentAgency?.commission_rate) || 20
+          : Number(currentAgency?.commission_rate) || 20;
+      // KDV dahil paket fiyatı üzerinden komisyon (ör. 1000 TL × %30 = 300 TL)
       const commission =
         paymentMethod === PaymentType.BALANCE
           ? 0
-          : (priceWithoutVAT * (Number(currentAgency?.commission_rate) || 20)) / 100;
+          : (basePrice * commissionRate) / 100;
       
       setSaleForm({
         ...saleForm,

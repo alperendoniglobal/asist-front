@@ -328,12 +328,31 @@ export interface CommissionSummaryItem {
   branchId?: string | null;
   branchName?: string | null;
   totalEarned: number;
+  /** KDV dahil satış fiyatı × oran ile hesaplanan kazanılan komisyon (panel gösterimi) */
+  totalEarnedDisplay?: number;
+  /** Kayıtlı komisyon ile KDV dahil formül uyuşmayan satış adedi */
+  legacyMismatchCount?: number;
   totalPaid: number;
   balance: number;
   /** Satırın (broker veya acente) bakiye ile ödenen satış adedi (komisyon kesilmez) */
   balancePaidCount?: number;
   /** Satırın bakiye ile ödenen satışların toplam tutarı */
   balancePaidAmount?: number;
+}
+
+export interface CommissionLegacyWarning {
+  hasLegacySales: boolean;
+  shouldShow: boolean;
+  mismatchedSaleCount: number;
+  totalSales: number;
+  storedTotal: number;
+  displayTotal: number;
+  difference: number;
+  entityName: string;
+  commissionRate?: number;
+  visibleUntil: string;
+  title: string;
+  message: string;
 }
 
 export enum TicketStatus {
@@ -386,6 +405,9 @@ export interface DashboardStats {
   totalSales: number;
   totalRevenue: number;
   totalCommission: number;
+  /** Panelde gösterilen toplam komisyon (KDV dahil fiyat × oran) */
+  totalCommissionDisplay?: number;
+  commissionLegacyWarning?: CommissionLegacyWarning;
   totalCustomers: number;
   recentSales?: Sale[];
   dailySales?: Array<{ day: string; date: string; count: number; revenue: number }>; // Son 7 gün

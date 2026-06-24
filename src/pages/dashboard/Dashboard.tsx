@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import type { DashboardStats, Sale, Customer, Agency, Branch } from '@/types';
 import { UserRole } from '@/types';
 import ActiveUsers from '@/components/dashboard/ActiveUsers';
+import { CommissionLegacyNotice } from '@/components/dashboard/CommissionLegacyNotice';
 import TurkeyMapSales from '@/components/maps/TurkeyMapSales';
 
 // Grafik renkleri - modern palette
@@ -163,6 +164,18 @@ export default function Dashboard() {
 
   // Kullanıcı admin mi kontrol et
   const isAdmin = user?.role !== UserRole.BRANCH_USER;
+  const isBranchRole = user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER;
+  const isManagerRole =
+    user?.role === UserRole.SUPER_AGENCY_ADMIN ||
+    user?.role === UserRole.AGENCY_ADMIN ||
+    user?.role === UserRole.BRANCH_ADMIN;
+  const commissionPaid = (stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.totalPaid) || 0), 0);
+  const commissionPayable = (stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.balance) || 0), 0);
+  const commissionEarned = (stats?.commissionSummary ?? []).reduce(
+    (s, i) => s + (Number(i.totalEarned) || 0),
+    0
+  ) || Number(stats?.totalCommission) || 0;
+  const commissionLegacyWarning = stats?.commissionLegacyWarning;
 
   if (loading) {
     return (
@@ -212,17 +225,18 @@ export default function Dashboard() {
                   <CardContent className="p-4">
                     <p className="text-xs text-muted-foreground">Ödenen (Komisyon)</p>
                     <p className="text-xl font-bold text-emerald-600">
-                      {formatCurrency((stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.totalPaid) || 0), 0))}
+                      {formatCurrency(commissionPaid)}
                     </p>
                     <Banknote className="h-6 w-6 text-emerald-500 mt-2 opacity-70" />
                   </CardContent>
                 </Card>
                 <Card className="bg-gradient-to-br from-violet-500/10 to-violet-500/5 border-violet-500/20">
                   <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">Ödenecek (Bakiye)</p>
+                    <p className="text-xs text-muted-foreground">Kazanılan (Toplam)</p>
                     <p className="text-xl font-bold text-violet-600">
-                      {formatCurrency((stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.balance) || 0), 0))}
+                      {formatCurrency(commissionEarned)}
                     </p>
+                    <p className="text-xs text-muted-foreground mt-1">Sistemde kayıtlı komisyon toplamı</p>
                     <Wallet className="h-6 w-6 text-violet-500 mt-2 opacity-70" />
                   </CardContent>
                 </Card>
@@ -288,7 +302,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-emerald-100 text-sm">Toplam Ciro</p>
-                    <p className="text-3xl font-bold mt-1">{formatShortCurrency(stats?.totalRevenue)}</p>
+                    <p className="text-2xl sm:text-3xl font-bold mt-1">{formatCurrency(stats?.totalRevenue)}</p>
                   </div>
                   <div className="p-3 bg-white/20 rounded-xl backdrop-blur">
                     <Wallet className="h-7 w-7" />
@@ -429,6 +443,8 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <CommissionLegacyNotice warning={commissionLegacyWarning} visible={isManagerRole} />
+
       {/* ===== ANA STATS KARTLARI - Modern Gradient Tasarım ===== */}
       <div className="grid gap-5 grid-cols-2 lg:grid-cols-4">
         {/* Toplam Satış */}
@@ -470,7 +486,7 @@ export default function Dashboard() {
               <div className="space-y-3">
                 <p className="text-sm font-medium text-emerald-100/80 uppercase tracking-wider">Toplam Ciro</p>
                 <div className="flex items-baseline gap-1">
-                  <p className="text-4xl font-black tracking-tight">{formatShortCurrency(stats?.totalRevenue)}</p>
+                  <p className="text-2xl sm:text-3xl font-black tracking-tight">{formatCurrency(stats?.totalRevenue)}</p>
               </div>
                 <div className="flex items-center gap-1.5 text-xs text-emerald-100/70">
                   <TrendingUp className="h-3.5 w-3.5" />
@@ -494,16 +510,24 @@ export default function Dashboard() {
           <CardContent className="relative p-6 text-white">
             <div className="flex items-start justify-between">
               <div className="space-y-3">
-                <p className="text-sm font-medium text-violet-100/80 uppercase tracking-wider">Komisyon</p>
+                <p className="text-sm font-medium text-violet-100/80 uppercase tracking-wider">
+                  {isBranchRole ? 'Ödenecek Komisyon' : 'Komisyon'}
+                </p>
                 <div className="flex items-baseline gap-1">
-                  <p className="text-4xl font-black tracking-tight">{formatShortCurrency(stats?.totalCommission)}</p>
+                  <p className="text-2xl sm:text-3xl font-black tracking-tight">
+                    {formatCurrency(
+                      isBranchRole
+                        ? commissionPayable
+                        : (stats?.totalCommissionDisplay ?? stats?.totalCommission)
+                    )}
+                  </p>
               </div>
                 <div className="flex items-center gap-1.5 text-xs text-violet-100/70">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER 
-                    ? 'Acente komisyonu' 
-                    : user?.role === UserRole.AGENCY_ADMIN 
-                    ? 'Broker komisyonu' 
+                  {isBranchRole
+                    ? 'Henüz ödenmemiş alacağınız'
+                    : user?.role === UserRole.AGENCY_ADMIN
+                    ? 'Broker komisyonu'
                     : 'Kazanılan komisyon'}
                 </div>
               </div>
@@ -531,7 +555,7 @@ export default function Dashboard() {
               </div>
                 <div className="flex items-center gap-1.5 text-xs text-amber-100/70">
                   <Users className="h-3.5 w-3.5" />
-                  Kayıtlı müşteri
+                  {isBranchRole ? 'Satış yapılan müşteri' : 'Kayıtlı müşteri'}
                 </div>
               </div>
               <div className="p-3.5 rounded-2xl bg-white/15 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
@@ -553,7 +577,7 @@ export default function Dashboard() {
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">Ödenen (Komisyon)</p>
                       <p className="text-2xl font-bold text-emerald-600">
-                        {formatCurrency((stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.totalPaid) || 0), 0))}
+                        {formatCurrency(commissionPaid)}
                       </p>
                       <p className="text-xs text-muted-foreground">Toplam ödenen komisyon</p>
                     </div>
@@ -574,11 +598,15 @@ export default function Dashboard() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Ödenecek (Bakiye)</p>
-                      <p className="text-2xl font-bold text-violet-600">
-                        {formatCurrency((stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.balance) || 0), 0))}
+                      <p className="text-sm text-muted-foreground">
+                        {isBranchRole ? 'Kazanılan (Toplam)' : 'Ödenecek (Bakiye)'}
                       </p>
-                      <p className="text-xs text-muted-foreground">Henüz ödenmemiş komisyon alacağı</p>
+                      <p className="text-2xl font-bold text-violet-600">
+                        {formatCurrency(isBranchRole ? commissionEarned : commissionPayable)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {isBranchRole ? 'Satışlardan kayıtlı komisyon toplamı' : 'Henüz ödenmemiş komisyon alacağı'}
+                      </p>
                     </div>
                     <div className="p-4 rounded-2xl bg-violet-500/10">
                       <Wallet className="h-8 w-8 text-violet-600" />
