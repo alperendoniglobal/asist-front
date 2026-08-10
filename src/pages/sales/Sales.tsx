@@ -25,8 +25,9 @@ import { PaymentType, UserRole } from '@/types';
 import { 
   Plus, Search, Eye, ShoppingCart, User, Car, Package as PackageIcon,
   Calendar, CreditCard, Wallet, FileText, RefreshCcw,
-  Download, ExternalLink, RotateCcw, AlertTriangle, CheckCircle, XCircle
+  Download, ExternalLink, RotateCcw, AlertTriangle, CheckCircle, XCircle, Pencil, Save
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Sayfa basina gosterilecek kayit sayisi
 const ITEMS_PER_PAGE = 10;
@@ -93,6 +94,13 @@ export default function Sales() {
   const canViewCommission = user?.role === UserRole.SUPER_ADMIN 
     || user?.role === UserRole.AGENCY_ADMIN 
     || user?.role === UserRole.BRANCH_ADMIN;
+
+  const canEditDates = user?.role === UserRole.SUPER_ADMIN;
+  const [editDatesOpen, setEditDatesOpen] = useState(false);
+  const [editDatesSale, setEditDatesSale] = useState<Sale | null>(null);
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editEndDate, setEditEndDate] = useState('');
+  const [editDatesLoading, setEditDatesLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -226,6 +234,61 @@ export default function Sales() {
   const handleView = (sale: Sale) => {
     setSelectedSale(sale);
     setIsViewOpen(true);
+  };
+
+  const toInputDate = (date: string) => {
+    if (!date) return '';
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime())) return date.slice(0, 10);
+    // Europe/Istanbul takvim günü
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Istanbul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
+  };
+
+  const addYearsYmd = (ymd: string, years: number) => {
+    const [y, m, d] = ymd.split('-').map(Number);
+    const dt = new Date(Date.UTC(y + years, m - 1, d));
+    return dt.toISOString().slice(0, 10);
+  };
+
+  const openEditDates = (sale: Sale) => {
+    setEditDatesSale(sale);
+    const start = toInputDate(sale.start_date);
+    setEditStartDate(start);
+    setEditEndDate(toInputDate(sale.end_date) || (start ? addYearsYmd(start, 1) : ''));
+    setEditDatesOpen(true);
+  };
+
+  const handleSaveDates = async () => {
+    if (!editDatesSale || !editStartDate) {
+      toast.error('Başlangıç tarihi zorunludur');
+      return;
+    }
+    if (editEndDate && editEndDate <= editStartDate) {
+      toast.error('Bitiş tarihi başlangıçtan sonra olmalıdır');
+      return;
+    }
+    setEditDatesLoading(true);
+    try {
+      const updated = await saleService.updateDates(editDatesSale.id, {
+        start_date: editStartDate,
+        end_date: editEndDate || undefined,
+      });
+      toast.success('Tarihler güncellendi');
+      setEditDatesOpen(false);
+      setSales((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)));
+      if (selectedSale?.id === updated.id) {
+        setSelectedSale({ ...selectedSale, ...updated });
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Tarih güncellenemedi');
+    } finally {
+      setEditDatesLoading(false);
+    }
   };
 
   // ===== İADE FONKSİYONLARI =====
@@ -547,6 +610,17 @@ export default function Sales() {
                           <Button variant="ghost" size="sm" onClick={() => handleView(sale)} title="Detay">
                             <Eye className="h-4 w-4" />
                           </Button>
+                          {canEditDates && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditDates(sale)}
+                              title="Tarihleri Düzenle"
+                              className="text-primary hover:text-primary"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -962,21 +1036,34 @@ export default function Sales() {
                 </div>
 
                 {/* Tarihler */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1 text-xs">
-                      <Calendar className="h-3 w-3" />
-                      Başlangıç
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1 text-xs">
+                        <Calendar className="h-3 w-3" />
+                        Başlangıç
+                      </div>
+                      <p className="font-medium">{selectedSale && formatDate(selectedSale.start_date)}</p>
                     </div>
-                    <p className="font-medium">{selectedSale && formatDate(selectedSale.start_date)}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-2 text-muted-foreground mb-1 text-xs">
-                      <Calendar className="h-3 w-3" />
-                      Bitiş
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-2 text-muted-foreground mb-1 text-xs">
+                        <Calendar className="h-3 w-3" />
+                        Bitiş
+                      </div>
+                      <p className="font-medium">{selectedSale && formatDate(selectedSale.end_date)}</p>
                     </div>
-                    <p className="font-medium">{selectedSale && formatDate(selectedSale.end_date)}</p>
                   </div>
+                  {canEditDates && selectedSale && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2"
+                      onClick={() => openEditDates(selectedSale)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Tarihleri Düzenle
+                    </Button>
+                  )}
                 </div>
 
                 {/* Fiyat ve Komisyon */}
@@ -1076,6 +1163,61 @@ export default function Sales() {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Super Admin — tarih düzenleme */}
+      <Dialog open={editDatesOpen} onOpenChange={setEditDatesOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Tarihleri Düzenle
+            </DialogTitle>
+            <DialogDescription>
+              {editDatesSale?.policy_number
+                ? `Poliçe: ${editDatesSale.policy_number}`
+                : editDatesSale
+                  ? `Satış: ${editDatesSale.id.slice(0, 8).toUpperCase()}`
+                  : 'Başlangıç / bitiş tarihlerini güncelleyin'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit_start_date">Başlangıç *</Label>
+              <Input
+                id="edit_start_date"
+                type="date"
+                value={editStartDate}
+                onChange={(e) => {
+                  const start = e.target.value;
+                  setEditStartDate(start);
+                  if (start) setEditEndDate(addYearsYmd(start, 1));
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit_end_date">Bitiş</Label>
+              <Input
+                id="edit_end_date"
+                type="date"
+                value={editEndDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Boş bırakırsanız başlangıç + 1 yıl otomatik atanır.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDatesOpen(false)} disabled={editDatesLoading}>
+              İptal
+            </Button>
+            <Button onClick={handleSaveDates} disabled={editDatesLoading || !editStartDate} className="gap-2">
+              <Save className="h-4 w-4" />
+              {editDatesLoading ? 'Kaydediliyor...' : 'Kaydet'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

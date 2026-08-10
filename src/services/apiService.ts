@@ -237,6 +237,12 @@ export const saleService = {
     return response.data.data;
   },
 
+  /** Super Admin: başlangıç/bitiş tarihlerini güncelle */
+  async updateDates(id: string, data: { start_date: string; end_date?: string }): Promise<Sale> {
+    const response = await apiClient.put<ApiResponse<Sale>>(`/sales/${id}/dates`, data);
+    return response.data.data;
+  },
+
   /**
    * Komple satış işlemi - Transaction ile tüm adımları tek seferde yapar
    * Müşteri + Araç + Satış + Ödeme hepsi birlikte işlenir

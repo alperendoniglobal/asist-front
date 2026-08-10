@@ -12,6 +12,7 @@ import {
   Mail, Lock, LogIn, AlertTriangle,
   Car, Users, CreditCard, TrendingUp,
   User, Building2, UserPlus, Check,
+  Eye, EyeOff,
 } from 'lucide-react';
 
 export default function Login() {
@@ -24,6 +25,8 @@ export default function Login() {
   const [activeTab, setActiveTab] = useState<'user' | 'admin'>('admin');
   const [userFormData, setUserFormData] = useState({ email: '', password: '' });
   const [adminFormData, setAdminFormData] = useState({ email: '', password: '' });
+  const [showUserPassword, setShowUserPassword] = useState(false);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
 
   const handleUserLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,13 +267,21 @@ export default function Login() {
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="user-password"
-                      type="password"
+                      type={showUserPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       value={userFormData.password}
                       onChange={(e) => setUserFormData({ ...userFormData, password: e.target.value })}
-                      className="pl-10 h-11 border-gray-200 rounded-xl focus:border-[#019242] focus:ring-0 bg-white text-gray-900"
+                      className="pl-10 pr-10 h-11 border-gray-200 rounded-xl focus:border-[#019242] focus:ring-0 bg-white text-gray-900"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowUserPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label={showUserPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                    >
+                      {showUserPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -333,13 +344,21 @@ export default function Login() {
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="admin-password"
-                      type="password"
+                      type={showAdminPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       value={adminFormData.password}
                       onChange={(e) => setAdminFormData({ ...adminFormData, password: e.target.value })}
-                      className="pl-10 h-11 border-gray-200 rounded-xl focus:border-[#019242] focus:ring-0 bg-white text-gray-900"
+                      className="pl-10 pr-10 h-11 border-gray-200 rounded-xl focus:border-[#019242] focus:ring-0 bg-white text-gray-900"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label={showAdminPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                    >
+                      {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
 

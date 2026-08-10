@@ -752,7 +752,7 @@ export default function Dashboard() {
                     Şehir Bazlı Satış Dağılımı
                   </CardTitle>
                   <CardDescription>
-                    Haritada şehir bazlı satış dağılımı.
+                    Müşteri iline göre satış dağılımı.
                   </CardDescription>
                 </div>
                 <Link to="/dashboard/sales-distribution">

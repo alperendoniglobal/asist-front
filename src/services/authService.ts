@@ -84,5 +84,31 @@ export const authService = {
 
   isAuthenticated(): boolean {
     return !!localStorage.getItem('accessToken');
-  }
+  },
+
+  /**
+   * Partner entegrasyonu: URL'den gelen token ile oturum kurar
+   */
+  async setSessionFromTokens(accessToken: string, refreshToken?: string): Promise<User> {
+    localStorage.setItem('accessToken', accessToken);
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
+    }
+
+    const user = await this.getCurrentUser();
+    localStorage.setItem('user', JSON.stringify(user));
+
+    if (user.role === 'SUPER_AGENCY_ADMIN' && user.agency_id) {
+      const existing = localStorage.getItem('managed_agencies');
+      if (!existing) {
+        localStorage.setItem(
+          'managed_agencies',
+          JSON.stringify([{ id: user.agency_id, name: 'Broker' }])
+        );
+        localStorage.setItem('selected_agency_id', user.agency_id);
+      }
+    }
+
+    return user;
+  },
 };

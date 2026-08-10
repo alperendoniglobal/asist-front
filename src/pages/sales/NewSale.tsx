@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,12 +52,72 @@ const getDistrictsByCity = (cityName: string): string[] => {
   return city ? city.ilceleri : [];
 };
 
+/** Türkçe karakter farklarını yok sayarak karşılaştırma (Istanbul ≈ İstanbul) */
+const normalizeTrKey = (value: string): string =>
+  value
+    .trim()
+    .toLocaleLowerCase('tr-TR')
+    .replace(/ı/g, 'i')
+    .replace(/ğ/g, 'g')
+    .replace(/ü/g, 'u')
+    .replace(/ş/g, 's')
+    .replace(/ö/g, 'o')
+    .replace(/ç/g, 'c')
+    .replace(/\s+/g, '');
+
+const matchCityName = (raw: string): string => {
+  const key = normalizeTrKey(raw);
+  return CITIES.find((c) => normalizeTrKey(c) === key) || raw.trim();
+};
+
+const matchDistrictName = (cityName: string, raw: string): string => {
+  const districts = getDistrictsByCity(cityName);
+  const key = normalizeTrKey(raw);
+  return districts.find((d) => normalizeTrKey(d) === key) || raw.trim();
+};
+
+/** Europe/Istanbul takvim günü YYYY-MM-DD */
+const todayYmdIstanbul = (): string =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Istanbul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
+const addDaysYmd = (ymd: string, days: number): string => {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+};
+
+const addYearsYmd = (ymd: string, years: number): string => {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const dt = new Date(Date.UTC(y + years, m - 1, d));
+  return dt.toISOString().slice(0, 10);
+};
+
+/** Varsayılan poliçe başlangıcı: bugün + 7 */
+const defaultPolicyStartYmd = (): string => addDaysYmd(todayYmdIstanbul(), 7);
+
+const normalizeStartDateParam = (raw: string): string | null => {
+  const trimmed = raw.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const tr = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (tr) return `${tr[3]}-${tr[2]}-${tr[1]}`;
+  return null;
+};
+
 export default function NewSale() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const queryPrefillDone = useRef(false);
   
   // State
   const [loading, setLoading] = useState(false);
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   const [searchingCustomer, setSearchingCustomer] = useState(false);
   const [existingCustomer, setExistingCustomer] = useState<Customer | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
@@ -142,17 +202,24 @@ export default function NewSale() {
     registration_number: '',  // Ruhsat No
     brand_id: '',
     model_id: '',
+    brand_name: '',
+    model_name: '',
     model_year: '',
     usage_type: 'PRIVATE',
   });
+  /** Katalogda yoksa serbest marka/model girişi */
+  const [useManualBrandModel, setUseManualBrandModel] = useState(false);
 
-  // Form Data - Paket Satış Bilgileri
-  const [saleForm, setSaleForm] = useState({
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    package_id: '',
-    price: 0,
-    commission: 0,
+  // Form Data - Paket Satış Bilgileri (varsayılan başlangıç = bugün+7)
+  const [saleForm, setSaleForm] = useState(() => {
+    const start = defaultPolicyStartYmd();
+    return {
+      start_date: start,
+      end_date: addYearsYmd(start, 1),
+      package_id: '',
+      price: 0,
+      commission: 0,
+    };
   });
 
   // Kart Bilgileri - PayTR iFrame kullanıldığı için artık gerekli değil
@@ -161,6 +228,27 @@ export default function NewSale() {
   useEffect(() => {
     fetchInitialData();
   }, [user]);
+
+  // Partner query prefill (paket hariç) — katalog yüklendikten sonra
+  useEffect(() => {
+    if (queryPrefillDone.current || !user || !initialDataLoaded) return;
+
+    const hasPrefillKeys = [
+      'tc_vkn', 'name', 'surname', 'phone', 'email', 'city', 'district', 'address',
+      'plate', 'brand', 'brand_name', 'model', 'model_name', 'brand_id', 'model_id',
+      'vehicle_type', 'model_year', 'usage_type', 'is_corporate', 'is_foreign_plate',
+      'registration_serial', 'registration_number', 'tax_office', 'birth_date',
+      'start_date',
+    ].some((k) => searchParams.has(k));
+
+    if (!hasPrefillKeys) {
+      queryPrefillDone.current = true;
+      return;
+    }
+
+    queryPrefillDone.current = true;
+    void applyQueryPrefill();
+  }, [user, initialDataLoaded, searchParams]);
 
   // Ödeme yöntemi değişince komisyonu güncelle: Bakiye = 0, PayTR = hesaplanan komisyon
   useEffect(() => {
@@ -189,6 +277,7 @@ export default function NewSale() {
       setPackages(packagesData.filter(p => p.status === 'ACTIVE'));
       setCarBrands(carBrandsData);
       setMotorBrands(motorBrandsData);
+      setInitialDataLoaded(true);
 
       // Kullanıcının acentesini çek (komisyon oranı ve acente bakiyesi için)
       if (user?.agency_id) {
@@ -224,6 +313,200 @@ export default function NewSale() {
       }
     } catch (error) {
       console.error('Veriler yüklenirken hata:', error);
+      setInitialDataLoaded(true);
+    }
+  };
+
+  const getParam = (key: string): string | null => {
+    const v = searchParams.get(key);
+    if (v == null) return null;
+    const trimmed = v.trim();
+    return trimmed === '' ? null : trimmed;
+  };
+
+  /**
+   * Partner URL query → form prefill (paket alanları hariç)
+   */
+  const applyQueryPrefill = async () => {
+    try {
+      const customerPatch: Partial<typeof customerForm> = {};
+      const corp = getParam('is_corporate');
+      if (corp != null) {
+        customerPatch.is_corporate = ['1', 'true', 'yes'].includes(corp.toLowerCase());
+      }
+      for (const key of [
+        'tc_vkn', 'name', 'surname', 'tax_office', 'birth_date',
+        'phone', 'email', 'address',
+      ] as const) {
+        const v = getParam(key);
+        if (v != null) customerPatch[key] = v;
+      }
+
+      // İl / ilçe: Select value city.json ile birebir olmalı (Istanbul → İstanbul)
+      const cityRaw = getParam('city');
+      const districtRaw = getParam('district');
+      if (cityRaw != null) {
+        const matchedCity = matchCityName(cityRaw);
+        customerPatch.city = matchedCity;
+        if (districtRaw != null) {
+          customerPatch.district = matchDistrictName(matchedCity, districtRaw);
+        }
+      } else if (districtRaw != null) {
+        customerPatch.district = districtRaw;
+      }
+
+      if (Object.keys(customerPatch).length > 0) {
+        setCustomerForm((prev) => ({ ...prev, ...customerPatch }));
+      }
+
+      // Başlangıç tarihi (opsiyonel) — geçmişse bugüne çek
+      const startRaw = getParam('start_date');
+      if (startRaw) {
+        const normalized = normalizeStartDateParam(startRaw);
+        const today = todayYmdIstanbul();
+        if (!normalized) {
+          toast.error('Geçersiz başlangıç tarihi; varsayılan (bugün+7) kullanılıyor');
+        } else if (normalized < today) {
+          toast.warning('Başlangıç tarihi bugünden önce olamaz; bugüne alındı');
+          setSaleForm((prev) => ({
+            ...prev,
+            start_date: today,
+            end_date: addYearsYmd(today, 1),
+          }));
+        } else {
+          setSaleForm((prev) => ({
+            ...prev,
+            start_date: normalized,
+            end_date: addYearsYmd(normalized, 1),
+          }));
+        }
+      }
+
+      const vehicleType = getParam('vehicle_type');
+      if (vehicleType) {
+        const matchedType = VEHICLE_TYPES.find(
+          (t) => t.value.toLocaleLowerCase('tr-TR') === vehicleType.toLocaleLowerCase('tr-TR')
+        );
+        setSelectedVehicleType(matchedType?.value || vehicleType);
+      }
+
+      const vehiclePatch: Partial<typeof vehicleForm> = {};
+      const foreign = getParam('is_foreign_plate');
+      if (foreign != null) {
+        vehiclePatch.is_foreign_plate = ['1', 'true', 'yes'].includes(foreign.toLowerCase());
+      }
+      for (const key of [
+        'plate', 'registration_serial', 'registration_number', 'model_year', 'usage_type',
+      ] as const) {
+        const v = getParam(key);
+        if (v != null) vehiclePatch[key] = key === 'plate' || key === 'registration_serial' ? v.toUpperCase() : v;
+      }
+
+      const resolvedType =
+        (vehicleType &&
+          (VEHICLE_TYPES.find(
+            (t) => t.value.toLocaleLowerCase('tr-TR') === vehicleType.toLocaleLowerCase('tr-TR')
+          )?.value ||
+            vehicleType)) ||
+        selectedVehicleType;
+      const motorcycle = resolvedType === 'Motosiklet';
+
+      const brandIdParam = getParam('brand_id') || getParam('motor_brand_id');
+      const modelIdParam = getParam('model_id') || getParam('motor_model_id');
+      const brandText = getParam('brand') || getParam('brand_name');
+      const modelText = getParam('model') || getParam('model_name');
+
+      let manual = false;
+      let brandId = '';
+      let modelId = '';
+      let brandName = brandText || '';
+      let modelName = modelText || '';
+
+      const loadModelsForBrand = async (id: number) => {
+        try {
+          const models = motorcycle
+            ? await motorModelService.getByBrandId(id)
+            : await carModelService.getByBrandId(id);
+          if (motorcycle) {
+            setMotorModels(models);
+            setCarModels([]);
+          } else {
+            setCarModels(models);
+            setMotorModels([]);
+          }
+          return models;
+        } catch {
+          setCarModels([]);
+          setMotorModels([]);
+          return [];
+        }
+      };
+
+      if (brandIdParam && /^\d+$/.test(brandIdParam)) {
+        brandId = brandIdParam;
+        setUseManualBrandModel(false);
+        await loadModelsForBrand(parseInt(brandIdParam, 10));
+        if (modelIdParam && /^\d+$/.test(modelIdParam)) {
+          modelId = modelIdParam;
+        }
+      } else if (brandText) {
+        const brands = motorcycle ? motorBrands : carBrands;
+        const matchedBrand = brands.find(
+          (b) => b.name.toLocaleLowerCase('tr-TR') === brandText.toLocaleLowerCase('tr-TR')
+        );
+        if (matchedBrand) {
+          brandId = matchedBrand.id.toString();
+          brandName = matchedBrand.name;
+          setUseManualBrandModel(false);
+          const models = await loadModelsForBrand(matchedBrand.id);
+          if (modelText) {
+            const matchedModel = models.find(
+              (m) => m.name.toLocaleLowerCase('tr-TR') === modelText.toLocaleLowerCase('tr-TR')
+            );
+            if (matchedModel) {
+              modelId = matchedModel.id.toString();
+              modelName = matchedModel.name;
+            } else {
+              manual = true;
+            }
+          }
+        } else {
+          manual = true;
+        }
+      }
+
+      if (manual || (!brandId && brandName)) {
+        setUseManualBrandModel(true);
+        vehiclePatch.brand_id = '';
+        vehiclePatch.model_id = '';
+        vehiclePatch.brand_name = brandName;
+        vehiclePatch.model_name = modelName;
+      } else {
+        if (brandId) vehiclePatch.brand_id = brandId;
+        if (modelId) vehiclePatch.model_id = modelId;
+        if (brandName) vehiclePatch.brand_name = brandName;
+        if (modelName) vehiclePatch.model_name = modelName;
+      }
+
+      if (Object.keys(vehiclePatch).length > 0) {
+        setVehicleForm((prev) => ({ ...prev, ...vehiclePatch }));
+      }
+
+      // Prefill sonrası paket filtresi (state async olduğu için lokal değerlerle)
+      const yearForFilter = vehiclePatch.model_year || getParam('model_year') || '';
+      const usageForFilter = vehiclePatch.usage_type || getParam('usage_type') || 'PRIVATE';
+      const typeForFilter = resolvedType || '';
+      if (yearForFilter && typeForFilter) {
+        filterPackagesByVehicleAndType(yearForFilter, usageForFilter, typeForFilter);
+      }
+
+      // Form query paramları URL'de kalsın → yenilemede prefill tekrar uygulanır.
+      // accessToken/refreshToken AuthProvider'da zaten query'den silindi.
+
+      toast.success('Partner verileri forma aktarıldı. Paketi seçip satışı tamamlayabilirsiniz.');
+    } catch (error) {
+      console.error('Query prefill hatası:', error);
+      toast.error('Form ön doldurma sırasında hata oluştu');
     }
   };
 
@@ -262,14 +545,14 @@ export default function NewSale() {
 
   // Araç yaşı, kullanım tarzı ve araç tipine göre paketleri filtrele
   const filterPackagesByVehicleAndType = (modelYear: string, usageType: string, vehicleType?: string) => {
-    if (!modelYear || !selectedVehicleType) {
+    const typeToFilter = vehicleType || selectedVehicleType;
+    if (!modelYear || !typeToFilter) {
       setFilteredPackages([]);
       return;
     }
 
     const currentYear = new Date().getFullYear();
     const vehicleAge = currentYear - parseInt(modelYear);
-    const typeToFilter = vehicleType || selectedVehicleType;
 
     const isMotorcycle = typeToFilter === 'Motosiklet';
 
@@ -599,14 +882,19 @@ export default function NewSale() {
   // Araç tipi seçildiğinde marka/model listesini sıfırla ve paketleri filtrele
   const handleVehicleTypeChange = (vehicleType: string) => {
     setSelectedVehicleType(vehicleType);
-    // Form verilerini sıfırla
-    setVehicleForm({ ...vehicleForm, brand_id: '', model_id: '' });
+    setUseManualBrandModel(false);
+    setVehicleForm({
+      ...vehicleForm,
+      brand_id: '',
+      model_id: '',
+      brand_name: '',
+      model_name: '',
+    });
     setCarModels([]);
     setMotorModels([]);
     setSelectedPackage(null);
     setSaleForm({ ...saleForm, package_id: '', price: 0, commission: 0 });
     
-    // Model yılı ve kullanım tarzı varsa paketleri filtrele
     if (vehicleForm.model_year && vehicleForm.usage_type) {
       filterPackagesByVehicleAndType(vehicleForm.model_year, vehicleForm.usage_type, vehicleType);
     }
@@ -614,20 +902,25 @@ export default function NewSale() {
 
   // Marka seçildiğinde modelleri getir (araç tipine göre motor veya car)
   const handleBrandChange = async (brandId: string) => {
-    setVehicleForm({ ...vehicleForm, brand_id: brandId, model_id: '' });
-    setModelSearchQuery(''); // Marka değiştiğinde arama sorgusunu temizle
+    setUseManualBrandModel(false);
+    setVehicleForm((prev) => ({
+      ...prev,
+      brand_id: brandId,
+      model_id: '',
+      brand_name: '',
+      model_name: '',
+    }));
+    setModelSearchQuery('');
     if (brandId) {
       try {
-        if (isMotorcycle) {
-          // Motosiklet için motor modellerini getir
+        if (isMotorcycle || selectedVehicleType === 'Motosiklet') {
           const models = await motorModelService.getByBrandId(parseInt(brandId));
           setMotorModels(models);
-          setCarModels([]); // Car modellerini temizle
+          setCarModels([]);
         } else {
-          // Diğer araç tipleri için car modellerini getir
           const models = await carModelService.getByBrandId(parseInt(brandId));
           setCarModels(models);
-          setMotorModels([]); // Motor modellerini temizle
+          setMotorModels([]);
         }
       } catch (error) {
         console.error('Modeller yüklenirken hata:', error);
@@ -686,6 +979,14 @@ export default function NewSale() {
   // Satışı tamamla - Transaction ile tek seferde işlenir
   // Hata olursa hiçbir kayıt oluşturulmaz (müşteri, araç dahil)
   const handleSubmit = async () => {
+    const hasCatalogBrand = !!vehicleForm.brand_id && !!vehicleForm.model_id;
+    const hasManualBrand =
+      !!vehicleForm.brand_name?.trim() && !!vehicleForm.model_name?.trim();
+    if (!hasCatalogBrand && !hasManualBrand) {
+      toast.error('Araç marka ve model bilgisini seçin veya manuel girin');
+      return;
+    }
+
     // TC/VKN validasyonu
     if (customerForm.tc_vkn) {
       const isValid = customerForm.is_corporate 
@@ -753,14 +1054,25 @@ export default function NewSale() {
         plate: vehicleForm.plate.toUpperCase(),
           registration_serial: vehicleForm.registration_serial.toUpperCase() || undefined,
           registration_number: vehicleForm.registration_number || undefined,
-          // Motosiklet için motor_brand_id ve motor_model_id, otomobil için brand_id ve model_id
-          ...(isMotorcycle ? {
-            motor_brand_id: parseInt(vehicleForm.brand_id),
-            motor_model_id: parseInt(vehicleForm.model_id),
-          } : {
-        brand_id: parseInt(vehicleForm.brand_id),
-        model_id: parseInt(vehicleForm.model_id),
-          }),
+          // Katalog ID veya serbest marka/model adı
+          ...(useManualBrandModel || (!vehicleForm.brand_id && vehicleForm.brand_name)
+            ? {
+                brand_name: vehicleForm.brand_name.trim(),
+                model_name: vehicleForm.model_name.trim(),
+              }
+            : isMotorcycle
+              ? {
+                  motor_brand_id: parseInt(vehicleForm.brand_id),
+                  motor_model_id: parseInt(vehicleForm.model_id),
+                  brand_name: vehicleForm.brand_name || undefined,
+                  model_name: vehicleForm.model_name || undefined,
+                }
+              : {
+                  brand_id: parseInt(vehicleForm.brand_id),
+                  model_id: parseInt(vehicleForm.model_id),
+                  brand_name: vehicleForm.brand_name || undefined,
+                  model_name: vehicleForm.model_name || undefined,
+                }),
         model_year: parseInt(vehicleForm.model_year),
         usage_type: vehicleForm.usage_type,
         },
@@ -1155,9 +1467,48 @@ export default function NewSale() {
               </div>
             </div>
 
-            {/* Araç Marka - Araç tipine göre motor veya car */}
+            {/* Araç Marka / Model — katalog veya manuel */}
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-sm">Araç Marka / Model <span className="text-red-500">*</span></Label>
+              <button
+                type="button"
+                className="text-xs text-primary underline-offset-2 hover:underline"
+                onClick={() => {
+                  setUseManualBrandModel((v) => !v);
+                  if (!useManualBrandModel) {
+                    setVehicleForm((prev) => ({ ...prev, brand_id: '', model_id: '' }));
+                  } else {
+                    setVehicleForm((prev) => ({ ...prev, brand_name: '', model_name: '' }));
+                  }
+                }}
+                disabled={!selectedVehicleType}
+              >
+                {useManualBrandModel ? 'Katalogdan seç' : 'Listede yok (manuel)'}
+              </button>
+            </div>
+
+            {useManualBrandModel ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Input
+                    value={vehicleForm.brand_name}
+                    onChange={(e) => setVehicleForm({ ...vehicleForm, brand_name: e.target.value })}
+                    placeholder="Marka adı"
+                    disabled={!selectedVehicleType}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    value={vehicleForm.model_name}
+                    onChange={(e) => setVehicleForm({ ...vehicleForm, model_name: e.target.value })}
+                    placeholder="Model adı"
+                    disabled={!selectedVehicleType}
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
             <div className="space-y-2">
-              <Label className="text-sm">Araç Marka <span className="text-red-500">*</span></Label>
               <Select
                 value={vehicleForm.brand_id}
                 onValueChange={handleBrandChange}
@@ -1168,14 +1519,12 @@ export default function NewSale() {
                 </SelectTrigger>
                 <SelectContent>
                   {isMotorcycle ? (
-                    // Motosiklet için motor markaları
                     motorBrands.map((brand) => (
                       <SelectItem key={brand.id} value={brand.id.toString()}>
                         {brand.name}
                       </SelectItem>
                     ))
                   ) : (
-                    // Diğer araç tipleri için car markaları
                     carBrands.map((brand) => (
                       <SelectItem key={brand.id} value={brand.id.toString()}>
                         {brand.name}
@@ -1186,14 +1535,12 @@ export default function NewSale() {
               </Select>
             </div>
 
-            {/* Araç Model */}
             <div className="space-y-2">
-              <Label className="text-sm">Araç Model <span className="text-red-500">*</span></Label>
               <Select
                 value={vehicleForm.model_id}
                 onValueChange={(value) => {
                   setVehicleForm({ ...vehicleForm, model_id: value });
-                  setModelSearchQuery(''); // Seçim yapıldığında arama sorgusunu temizle
+                  setModelSearchQuery('');
                 }}
                 disabled={!vehicleForm.brand_id}
               >
@@ -1201,7 +1548,6 @@ export default function NewSale() {
                   <SelectValue placeholder="Önce Marka Seçiniz" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Model arama input'u */}
                   <div className="sticky top-0 z-10 bg-background p-2 border-b">
                     <div className="relative">
                       <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1210,12 +1556,11 @@ export default function NewSale() {
                         value={modelSearchQuery}
                         onChange={(e) => setModelSearchQuery(e.target.value)}
                         className="pl-8"
-                        onClick={(e) => e.stopPropagation()} // Select'in kapanmasını engelle
-                        onKeyDown={(e) => e.stopPropagation()} // Select'in kapanmasını engelle
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
                       />
                     </div>
                   </div>
-                  {/* Filtrelenmiş modeller - Paket tipine göre motor veya car */}
                   <div className="max-h-[300px] overflow-y-auto">
                     {isMotorcycle ? (
                       // Motosiklet için motor modelleri
@@ -1249,6 +1594,8 @@ export default function NewSale() {
                 </SelectContent>
               </Select>
             </div>
+              </>
+            )}
 
             {/* Model Yılı ve Kullanım Tarzı */}
             <div className="grid grid-cols-2 gap-3">
@@ -1318,8 +1665,21 @@ export default function NewSale() {
                 <Label className="text-sm">Başlangıç <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
+                  min={todayYmdIstanbul()}
                   value={saleForm.start_date}
-                  onChange={(e) => setSaleForm({ ...saleForm, start_date: e.target.value })}
+                  onChange={(e) => {
+                    const start = e.target.value;
+                    const today = todayYmdIstanbul();
+                    if (start && start < today) {
+                      toast.warning('Başlangıç tarihi bugünden önce olamaz');
+                      return;
+                    }
+                    setSaleForm({
+                      ...saleForm,
+                      start_date: start,
+                      end_date: start ? addYearsYmd(start, 1) : saleForm.end_date,
+                    });
+                  }}
                 />
               </div>
               <div className="space-y-2">

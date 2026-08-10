@@ -21,6 +21,7 @@ interface AuthContextType {
   
   // Auth işlemleri
   login: (email: string, password: string) => Promise<void>;
+  loginWithTokens: (accessToken: string, refreshToken?: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -111,21 +112,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   /**
-   * İlk yüklemede kullanıcı bilgilerini al
+   * İlk yüklemede: URL token (partner) veya localStorage oturumu
    */
   useEffect(() => {
     const initAuth = async () => {
-      const storedUser = authService.getStoredUser();
-      if (storedUser && authService.isAuthenticated()) {
-        try {
-          const currentUser = await authService.getCurrentUser();
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const queryAccessToken = params.get('accessToken');
+        const queryRefreshToken = params.get('refreshToken') || undefined;
+
+        if (queryAccessToken) {
+          const currentUser = await authService.setSessionFromTokens(
+            queryAccessToken,
+            queryRefreshToken
+          );
           setUser(currentUser);
-        } catch (error) {
-          authService.logout();
-          setUser(null);
+
+          params.delete('accessToken');
+          params.delete('refreshToken');
+          const nextSearch = params.toString();
+          const nextUrl =
+            window.location.pathname +
+            (nextSearch ? `?${nextSearch}` : '') +
+            window.location.hash;
+          window.history.replaceState({}, '', nextUrl);
+        } else {
+          const storedUser = authService.getStoredUser();
+          if (storedUser && authService.isAuthenticated()) {
+            try {
+              const currentUser = await authService.getCurrentUser();
+              setUser(currentUser);
+            } catch {
+              authService.logout();
+              setUser(null);
+            }
+          }
         }
+      } catch (error) {
+        console.error('Auth init hatası:', error);
+        authService.logout();
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initAuth();
@@ -148,6 +177,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     const response = await authService.login({ email, password });
     setUser(response.user);
+  };
+
+  /**
+   * Partner entegrasyonu: hazır token ile oturum
+   */
+  const loginWithTokens = async (accessToken: string, refreshToken?: string) => {
+    const currentUser = await authService.setSessionFromTokens(accessToken, refreshToken);
+    setUser(currentUser);
   };
 
   /**
@@ -189,6 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     contractLoading,
     needsContractAcceptance,
     login,
+    loginWithTokens,
     register,
     logout,
     refreshUser,
