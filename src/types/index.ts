@@ -46,6 +46,9 @@ export interface User {
   phone: string;
   role: UserRole;
   is_active: boolean;
+  is_deleted?: boolean;
+  agency?: Agency;
+  branch?: Branch;
   created_at: string;
   updated_at: string;
 }

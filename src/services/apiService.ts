@@ -243,6 +243,12 @@ export const saleService = {
     return response.data.data;
   },
 
+  /** Super Admin: satışı başka kullanıcıya ata (broker/şube de değişir) */
+  async assignSeller(id: string, userId: string): Promise<Sale> {
+    const response = await apiClient.put<ApiResponse<Sale>>(`/sales/${id}/assign`, { user_id: userId });
+    return response.data.data;
+  },
+
   /**
    * Komple satış işlemi - Transaction ile tüm adımları tek seferde yapar
    * Müşteri + Araç + Satış + Ödeme hepsi birlikte işlenir

@@ -18,10 +18,11 @@ import { extractRegistrationInfo } from '@/services/ocrService';
 import { toast } from 'sonner';
 import { validateTCKN, validateVKN } from '@/utils/validators';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Customer, Package, CarBrand, CarModel, MotorBrand, MotorModel, Sale, Agency, Branch } from '@/types';
+import type { Customer, Package, PackageCover, CarBrand, CarModel, MotorBrand, MotorModel, Sale, Agency, Branch } from '@/types';
 import { PaymentType, UserRole } from '@/types';
 import PaytrIframe from '@/components/payment/PaytrIframe';
 import { paymentService } from '@/services/apiService';
+import { PackageCoversPreview } from '@/components/sales/PackageCoversPreview';
 import { 
   User, Car, CreditCard, Wallet, Package as PackageIcon,
   Search, CheckCircle, AlertCircle, History, Shield, Building2, Globe,
@@ -127,6 +128,8 @@ export default function NewSale() {
   const [motorModels, setMotorModels] = useState<MotorModel[]>([]);
   const [modelSearchQuery, setModelSearchQuery] = useState(''); // Model arama sorgusu
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [packageCovers, setPackageCovers] = useState<PackageCover[]>([]);
+  const [coversLoading, setCoversLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentType>(PaymentType.PAYTR);
   const [paytrToken, setPaytrToken] = useState<string | null>(null);
   const [isPaytrModalOpen, setIsPaytrModalOpen] = useState(false);
@@ -629,6 +632,8 @@ export default function NewSale() {
     // Seçili paket artık uygun değilse temizle
     if (selectedPackage && !filtered.some(p => p.id === selectedPackage.id)) {
       setSelectedPackage(null);
+      setPackageCovers([]);
+      setCoversLoading(false);
       setSaleForm({
         ...saleForm,
         package_id: '',
@@ -893,6 +898,8 @@ export default function NewSale() {
     setCarModels([]);
     setMotorModels([]);
     setSelectedPackage(null);
+    setPackageCovers([]);
+    setCoversLoading(false);
     setSaleForm({ ...saleForm, package_id: '', price: 0, commission: 0 });
     
     if (vehicleForm.model_year && vehicleForm.usage_type) {
@@ -934,7 +941,7 @@ export default function NewSale() {
   };
 
   // Paket seçildiğinde fiyat ve komisyon hesapla (bakiye ile ödemede komisyon 0)
-  const handlePackageChange = (packageId: string) => {
+  const handlePackageChange = async (packageId: string) => {
     const pkg = packages.find(p => p.id === packageId);
     setSelectedPackage(pkg || null);
     
@@ -956,7 +963,20 @@ export default function NewSale() {
         price: basePrice,
         commission,
       });
+
+      setCoversLoading(true);
+      setPackageCovers([]);
+      try {
+        const covers = await packageService.getCovers(packageId);
+        setPackageCovers(Array.isArray(covers) ? covers : []);
+      } catch {
+        setPackageCovers([]);
+      } finally {
+        setCoversLoading(false);
+      }
     } else {
+      setPackageCovers([]);
+      setCoversLoading(false);
       setSaleForm({
         ...saleForm,
         package_id: '',
@@ -1759,6 +1779,11 @@ export default function NewSale() {
                 <div className="text-sm text-emerald-700 dark:text-emerald-300">
                   {selectedPackage.description || 'Paket detayları'}
                 </div>
+                <PackageCoversPreview
+                  covers={packageCovers}
+                  loading={coversLoading}
+                  variant="emerald"
+                />
                 <div className="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-700">
                   <div className="flex justify-between text-sm">
                     <span>Fiyat:</span>

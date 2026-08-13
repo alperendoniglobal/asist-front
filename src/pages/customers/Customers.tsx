@@ -20,7 +20,7 @@ import { DataPagination } from '@/components/ui/pagination';
 import { customerService, vehicleService, saleService, smsService } from '@/services/apiService';
 import type { Customer, Vehicle, Sale } from '@/types';
 import { 
-  Plus, Search, Edit, Trash2, Eye, Users, Car, ShoppingCart, 
+  Search, Edit, Trash2, Eye, Users, Car, ShoppingCart, 
   Phone, Mail, MapPin, FileText, Calendar, RefreshCcw, Building2, Send, CloudRain
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -44,7 +44,6 @@ export default function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   // Pagination state
@@ -103,17 +102,6 @@ export default function Customers() {
       setLoading(false);
     }
   }, [searchQuery]);
-
-  const handleCreate = async () => {
-    try {
-      await customerService.create(formData);
-      setIsCreateOpen(false);
-      resetForm();
-      fetchCustomers();
-    } catch (error) {
-      console.error('Müşteri oluşturulurken hata:', error);
-    }
-  };
 
   const handleUpdate = async () => {
     if (!selectedCustomer) return;
@@ -298,10 +286,6 @@ export default function Customers() {
           </h1>
           <p className="text-muted-foreground">Müşteri kayıtlarını yönetin</p>
         </div>
-        <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Yeni Müşteri
-        </Button>
       </div>
 
       {/* Arama */}
@@ -481,170 +465,6 @@ export default function Customers() {
           )}
         </CardContent>
       </Card>
-
-      {/* Yeni Müşteri Modal */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Yeni Müşteri</DialogTitle>
-            <DialogDescription>Yeni müşteri kaydı oluşturun</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
-            {/* Kurumsal Toggle */}
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-primary" />
-                <Label className="font-medium">Kurumsal Müşteri</Label>
-              </div>
-              <Switch
-                checked={formData.is_corporate}
-                onCheckedChange={(checked) => setFormData({ 
-                  ...formData, 
-                  is_corporate: checked,
-                  surname: checked ? '' : formData.surname,
-                  tax_office: checked ? formData.tax_office : ''
-                })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tc_vkn">{formData.is_corporate ? 'Vergi Kimlik No' : 'TC Kimlik No'} *</Label>
-              <Input
-                id="tc_vkn"
-                value={formData.tc_vkn}
-                onChange={(e) => setFormData({ ...formData, tc_vkn: e.target.value })}
-                placeholder={formData.is_corporate ? 'Vergi Kimlik Numarası' : 'TC Kimlik Numarası'}
-                maxLength={11}
-              />
-            </div>
-
-            {formData.is_corporate ? (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Ünvan *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Ticari Ünvan"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tax_office">Vergi Dairesi *</Label>
-                  <Input
-                    id="tax_office"
-                    value={formData.tax_office}
-                    onChange={(e) => setFormData({ ...formData, tax_office: e.target.value })}
-                    placeholder="Vergi Dairesi"
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Ad *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="surname">Soyad *</Label>
-                  <Input
-                    id="surname"
-                    value={formData.surname}
-                    onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="birth_date">Doğum Tarihi {!formData.is_corporate && '*'}</Label>
-              <Input
-                id="birth_date"
-                type="date"
-                value={formData.birth_date}
-                onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Telefon *</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="05XX XXX XX XX"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">E-posta</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">İl *</Label>
-                <Select
-                  value={formData.city}
-                  onValueChange={(value) => setFormData({ ...formData, city: value, district: '' })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="İl Seçiniz" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {CITIES.map((city) => (
-                      <SelectItem key={city} value={city}>{city}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="district">İlçe *</Label>
-                <Select
-                  value={formData.district}
-                  onValueChange={(value) => setFormData({ ...formData, district: value })}
-                  disabled={!formData.city}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={formData.city ? 'İlçe Seçiniz' : 'Önce İl Seçiniz'} />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {formData.city && getDistrictsByCity(formData.city).map((district) => (
-                      <SelectItem key={district} value={district}>
-                        {district}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Adres</Label>
-              <Textarea
-                id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                rows={2}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>İptal</Button>
-            <Button onClick={handleCreate}>Kaydet</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Düzenle Modal */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

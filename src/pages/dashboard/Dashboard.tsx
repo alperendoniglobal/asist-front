@@ -15,7 +15,7 @@ import {
   TrendingUp, Users, ShoppingCart, Wallet, 
   Calendar, Package, ArrowUpRight,
   Building2, GitBranch, Activity, Plus, Search, Car, 
-  UserPlus, Clock, CheckCircle, FileText, Zap, 
+  Clock, CheckCircle, FileText, Zap, 
   Sparkles, Eye, RotateCcw, XCircle, AlertTriangle, Phone, MapPin,
   Banknote, CloudRain, Send
 } from 'lucide-react';
@@ -165,6 +165,9 @@ export default function Dashboard() {
   // Kullanıcı admin mi kontrol et
   const isAdmin = user?.role !== UserRole.BRANCH_USER;
   const isBranchRole = user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER;
+  const isAgencyOrBrokerRole =
+    user?.role === UserRole.AGENCY_ADMIN || user?.role === UserRole.SUPER_AGENCY_ADMIN;
+  const showPayableCommission = isBranchRole || isAgencyOrBrokerRole;
   const isManagerRole =
     user?.role === UserRole.SUPER_AGENCY_ADMIN ||
     user?.role === UserRole.AGENCY_ADMIN ||
@@ -196,7 +199,6 @@ export default function Dashboard() {
     const quickActions = [
       { title: 'Yeni Satış', description: 'Paket sat', icon: Plus, link: '/dashboard/sales/new', gradient: 'from-blue-500 to-blue-600' },
       { title: 'Müşteri Ara', description: 'Sorgula', icon: Search, link: '/dashboard/customers', gradient: 'from-cyan-500 to-cyan-600' },
-      { title: 'Yeni Müşteri', description: 'Kayıt oluştur', icon: UserPlus, link: '/dashboard/customers', gradient: 'from-emerald-500 to-emerald-600' },
       { title: 'Araç Ekle', description: 'Araç kaydı', icon: Car, link: '/dashboard/vehicles', gradient: 'from-amber-500 to-amber-600' },
       { title: 'Satışlarım', description: 'Görüntüle', icon: FileText, link: '/dashboard/sales', gradient: 'from-violet-500 to-violet-600' },
       { title: 'Paketler', description: 'İncele', icon: Package, link: '/dashboard/packages', gradient: 'from-pink-500 to-pink-600' }
@@ -511,12 +513,12 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div className="space-y-3">
                 <p className="text-sm font-medium text-violet-100/80 uppercase tracking-wider">
-                  {isBranchRole ? 'Ödenecek Komisyon' : 'Komisyon'}
+                  {showPayableCommission ? 'Ödenecek Komisyon' : 'Komisyon'}
                 </p>
                 <div className="flex items-baseline gap-1">
                   <p className="text-2xl sm:text-3xl font-black tracking-tight">
                     {formatCurrency(
-                      isBranchRole
+                      showPayableCommission
                         ? commissionPayable
                         : (stats?.totalCommissionDisplay ?? stats?.totalCommission)
                     )}
@@ -524,10 +526,8 @@ export default function Dashboard() {
               </div>
                 <div className="flex items-center gap-1.5 text-xs text-violet-100/70">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {isBranchRole
+                  {showPayableCommission
                     ? 'Henüz ödenmemiş alacağınız'
-                    : user?.role === UserRole.AGENCY_ADMIN
-                    ? 'Broker komisyonu'
                     : 'Kazanılan komisyon'}
                 </div>
               </div>
@@ -599,13 +599,15 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <p className="text-sm text-muted-foreground">
-                        {isBranchRole ? 'Kazanılan (Toplam)' : 'Ödenecek (Bakiye)'}
+                        {showPayableCommission ? 'Ödenecek (Bakiye)' : 'Kazanılan (Toplam)'}
                       </p>
                       <p className="text-2xl font-bold text-violet-600">
-                        {formatCurrency(isBranchRole ? commissionEarned : commissionPayable)}
+                        {formatCurrency(showPayableCommission ? commissionPayable : commissionEarned)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {isBranchRole ? 'Satışlardan kayıtlı komisyon toplamı' : 'Henüz ödenmemiş komisyon alacağı'}
+                        {showPayableCommission
+                          ? 'Henüz ödenmemiş komisyon alacağı'
+                          : 'Satışlardan kayıtlı komisyon toplamı'}
                       </p>
                     </div>
                     <div className="p-4 rounded-2xl bg-violet-500/10">
@@ -720,7 +722,7 @@ export default function Dashboard() {
                 </Link>
                 <Link to="/dashboard/customers">
                   <Button variant="outline" size="sm" className="w-full text-xs gap-1 h-9">
-                    <UserPlus className="h-3 w-3" /> Müşteri
+                    <Users className="h-3 w-3" /> Müşteriler
                   </Button>
                 </Link>
                 <Link to="/dashboard/packages">
@@ -1151,8 +1153,8 @@ export default function Dashboard() {
                 <Users className="h-12 w-12 mx-auto text-muted-foreground/20 mb-3" />
                 <p className="text-muted-foreground">Henüz müşteri bulunmuyor</p>
                 <Link to="/dashboard/customers">
-                  <Button size="sm" className="mt-3 gap-1">
-                    <UserPlus className="h-4 w-4" /> Müşteri Ekle
+                  <Button size="sm" variant="outline" className="mt-3 gap-1">
+                    <Users className="h-4 w-4" /> Müşterilere Git
                   </Button>
                 </Link>
               </div>

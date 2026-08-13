@@ -17,15 +17,16 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataPagination } from '@/components/ui/pagination';
-import { saleService, customerService, vehicleService, packageService, paymentService, pdfService } from '@/services/apiService';
+import { saleService, customerService, vehicleService, packageService, paymentService, pdfService, userService } from '@/services/apiService';
 import PaytrIframe from '@/components/payment/PaytrIframe';
+import { PackageCoversPreview } from '@/components/sales/PackageCoversPreview';
 import { useAuth } from '@/contexts/AuthContext';
-import type { Sale, Customer, Vehicle, Package, RefundCalculation } from '@/types';
+import type { Sale, Customer, Vehicle, Package, PackageCover, RefundCalculation, User } from '@/types';
 import { PaymentType, UserRole } from '@/types';
 import { 
-  Plus, Search, Eye, ShoppingCart, User, Car, Package as PackageIcon,
+  Plus, Search, Eye, ShoppingCart, User as UserIcon, Car, Package as PackageIcon,
   Calendar, CreditCard, Wallet, FileText, RefreshCcw,
-  Download, ExternalLink, RotateCcw, AlertTriangle, CheckCircle, XCircle, Pencil, Save
+  Download, ExternalLink, RotateCcw, AlertTriangle, CheckCircle, XCircle, Pencil, Save, UserCog
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -62,6 +63,8 @@ export default function Sales() {
     branch_commission: null as number | null,
     agency_commission: null as number | null
   });
+  const [packageCovers, setPackageCovers] = useState<PackageCover[]>([]);
+  const [coversLoading, setCoversLoading] = useState(false);
   const [paytrToken, setPaytrToken] = useState<string | null>(null);
   const [isPaytrModalOpen, setIsPaytrModalOpen] = useState(false);
   const [paymentData, setPaymentData] = useState({
@@ -96,11 +99,19 @@ export default function Sales() {
     || user?.role === UserRole.BRANCH_ADMIN;
 
   const canEditDates = user?.role === UserRole.SUPER_ADMIN;
+  const canAssignSeller = user?.role === UserRole.SUPER_ADMIN;
   const [editDatesOpen, setEditDatesOpen] = useState(false);
   const [editDatesSale, setEditDatesSale] = useState<Sale | null>(null);
   const [editStartDate, setEditStartDate] = useState('');
   const [editEndDate, setEditEndDate] = useState('');
   const [editDatesLoading, setEditDatesLoading] = useState(false);
+
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignSale, setAssignSale] = useState<Sale | null>(null);
+  const [assignUsers, setAssignUsers] = useState<User[]>([]);
+  const [assignUserId, setAssignUserId] = useState('');
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [assignUsersLoading, setAssignUsersLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -181,6 +192,20 @@ export default function Sales() {
         price: basePrice,
         commission: commission
       });
+
+      setCoversLoading(true);
+      setPackageCovers([]);
+      try {
+        const covers = await packageService.getCovers(packageId);
+        setPackageCovers(Array.isArray(covers) ? covers : []);
+      } catch {
+        setPackageCovers([]);
+      } finally {
+        setCoversLoading(false);
+      }
+    } else {
+      setPackageCovers([]);
+      setCoversLoading(false);
     }
   };
 
@@ -261,6 +286,56 @@ export default function Sales() {
     setEditStartDate(start);
     setEditEndDate(toInputDate(sale.end_date) || (start ? addYearsYmd(start, 1) : ''));
     setEditDatesOpen(true);
+  };
+
+  const openAssignSeller = async (sale: Sale) => {
+    setAssignSale(sale);
+    setAssignUserId(sale.user_id || '');
+    setAssignOpen(true);
+    setAssignUsersLoading(true);
+    try {
+      const users = await userService.getAll();
+      const assignable = (users || []).filter(
+        (u) =>
+          !u.is_deleted &&
+          u.role !== UserRole.SUPPORT &&
+          u.role !== UserRole.USER
+      );
+      setAssignUsers(assignable);
+    } catch (error) {
+      console.error('Kullanıcılar yüklenirken hata:', error);
+      toast.error('Kullanıcı listesi yüklenemedi');
+      setAssignUsers([]);
+    } finally {
+      setAssignUsersLoading(false);
+    }
+  };
+
+  const handleAssignSeller = async () => {
+    if (!assignSale || !assignUserId) {
+      toast.error('Yeni satıcı seçmelisiniz');
+      return;
+    }
+    if (assignUserId === assignSale.user_id) {
+      toast.error('Satış zaten bu kullanıcıya ait');
+      return;
+    }
+    setAssignLoading(true);
+    try {
+      const updated = await saleService.assignSeller(assignSale.id, assignUserId);
+      setSales((prev) => prev.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)));
+      if (selectedSale?.id === updated.id) {
+        setSelectedSale({ ...selectedSale, ...updated });
+      }
+      toast.success('Satış yeni satıcıya atandı');
+      setAssignOpen(false);
+      setAssignSale(null);
+      setAssignUserId('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || 'Atama başarısız');
+    } finally {
+      setAssignLoading(false);
+    }
   };
 
   const handleSaveDates = async () => {
@@ -383,6 +458,8 @@ export default function Sales() {
       branch_commission: null,
       agency_commission: null
     });
+    setPackageCovers([]);
+    setCoversLoading(false);
     setPaymentData({
       payment_type: 'PAYTR' as PaymentType,
       card_number: '',
@@ -621,6 +698,17 @@ export default function Sales() {
                               <Pencil className="h-4 w-4" />
                             </Button>
                           )}
+                          {canAssignSeller && !sale.is_refunded && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openAssignSeller(sale)}
+                              title="Satıcıyı Değiştir"
+                              className="text-violet-600 hover:text-violet-700"
+                            >
+                              <UserCog className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="sm" 
@@ -693,7 +781,7 @@ export default function Sales() {
           {step === 1 && (
             <div className="space-y-4">
               <h3 className="font-semibold flex items-center gap-2">
-                <User className="h-5 w-5" />
+                <UserIcon className="h-5 w-5" />
                 Müşteri ve Araç Seçimi
               </h3>
               <div className="space-y-2">
@@ -802,6 +890,11 @@ export default function Sales() {
                       )}
                     </div>
                   )}
+                  <PackageCoversPreview
+                    covers={packageCovers}
+                    loading={coversLoading}
+                    variant="muted"
+                  />
                 </div>
               )}
             </div>
@@ -966,7 +1059,7 @@ export default function Sales() {
                 {/* Müşteri ve Araç */}
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <User className="h-4 w-4" />
+                    <UserIcon className="h-4 w-4" />
                     <span className="font-medium">Müşteri</span>
                   </div>
                   <p className="font-semibold text-lg">
@@ -1011,7 +1104,7 @@ export default function Sales() {
                 {/* Satışı Yapan ve Broker/Acente */}
                 <div className="p-4 rounded-lg bg-muted/50">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <User className="h-4 w-4" />
+                    <UserIcon className="h-4 w-4" />
                     <span className="font-medium">Satışı Yapan</span>
                   </div>
                   <p className="font-semibold text-lg">
@@ -1019,6 +1112,17 @@ export default function Sales() {
                   </p>
                   {selectedSale?.user?.email && (
                     <p className="text-sm text-muted-foreground mt-1">{selectedSale.user.email}</p>
+                  )}
+                  {canAssignSeller && selectedSale && !selectedSale.is_refunded && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 w-full gap-2"
+                      onClick={() => openAssignSeller(selectedSale)}
+                    >
+                      <UserCog className="h-3.5 w-3.5" />
+                      Satıcıyı Değiştir
+                    </Button>
                   )}
                 </div>
 
@@ -1216,6 +1320,79 @@ export default function Sales() {
             <Button onClick={handleSaveDates} disabled={editDatesLoading || !editStartDate} className="gap-2">
               <Save className="h-4 w-4" />
               {editDatesLoading ? 'Kaydediliyor...' : 'Kaydet'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Super Admin — satıcı atama */}
+      <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCog className="h-5 w-5" />
+              Satıcıyı Değiştir
+            </DialogTitle>
+            <DialogDescription>
+              {assignSale
+                ? `Satış: ${assignSale.id.slice(0, 8).toUpperCase()} — yeni satıcının broker/şubesi de bu satışa yazılır.`
+                : 'Satışı başka bir kullanıcıya ata'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {assignSale && (
+              <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
+                <p>
+                  <span className="text-muted-foreground">Mevcut satıcı: </span>
+                  <span className="font-medium">
+                    {assignSale.user?.name} {assignSale.user?.surname}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Broker: </span>
+                  <span className="font-medium">{assignSale.agency?.name || '-'}</span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">Şube: </span>
+                  <span className="font-medium">{assignSale.branch?.name || '-'}</span>
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Yeni satıcı *</Label>
+              {assignUsersLoading ? (
+                <p className="text-sm text-muted-foreground">Kullanıcılar yükleniyor...</p>
+              ) : (
+                <Select value={assignUserId} onValueChange={setAssignUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Kullanıcı seçin" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {assignUsers.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name} {u.surname || ''} — {u.email}
+                        {u.branch?.name ? ` (${u.branch.name})` : u.agency?.name ? ` (${u.agency.name})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Seçilen kullanıcının broker ve şubesi satışa otomatik yazılır; komisyon yeni oranlara göre güncellenir.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignOpen(false)} disabled={assignLoading}>
+              İptal
+            </Button>
+            <Button
+              onClick={handleAssignSeller}
+              disabled={assignLoading || assignUsersLoading || !assignUserId}
+              className="gap-2"
+            >
+              <UserCog className="h-4 w-4" />
+              {assignLoading ? 'Atanıyor...' : 'Ata'}
             </Button>
           </DialogFooter>
         </DialogContent>
