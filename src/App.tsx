@@ -11,11 +11,6 @@ import { ThemeRouteListener } from "./components/ThemeRouteListener"
 import { ScrollToTop } from "./components/ScrollToTop"
 import Login from "./pages/auth/Login"
 import LandingPage from "./pages/landing/LandingPage"
-import Dashboard from "./pages/dashboard/Dashboard"
-import Agencies from "./pages/agencies/Agencies"
-import AgencyCommissionDistribution from "./pages/agencies/AgencyCommissionDistribution"
-import PerformanceReport from "./pages/agencies/PerformanceReport"
-import SalesDistributionReport from "./pages/reports/SalesDistributionReport"
 
 // Lazy load components
 const DealerApplications = lazy(() => import("./pages/agencies/DealerApplications"))
@@ -26,36 +21,41 @@ const UserForgotPassword = lazy(() => import("./pages/auth/UserForgotPassword"))
 const ContractAcceptance = lazy(() => import("./pages/contract/ContractAcceptance"))
 const ContractManagement = lazy(() => import("./pages/admin/ContractManagement"))
 const CarBrandModelManagement = lazy(() => import("./pages/admin/CarBrandModelManagement"))
-import Branches from "./pages/branches/Branches"
-import BranchDetail from "./pages/branches/BranchDetail"
-import Users from "./pages/users/Users"
-import UserDetail from "./pages/users/UserDetail"
-import Customers from "./pages/customers/Customers"
-import Vehicles from "./pages/vehicles/Vehicles"
-import Packages from "./pages/packages/Packages"
-import Sales from "./pages/sales/Sales"
-import NewSale from "./pages/sales/NewSale"
-import Payments from "./pages/payments/Payments"
-import Commissions from "./pages/commissions/Commissions"
-import Support from "./pages/support/Support"
-import SupportSales from "./pages/support/SupportSales"
-import SupportFiles from "./pages/support/SupportFiles"
-import CreateFile from "./pages/support/CreateFile"
-import Profile from "./pages/profile/Profile"
-import ContentManagement from "./pages/content/ContentManagement"
-import AboutPage from "./pages/about/AboutPage"
-import DistanceSalesContractPage from "./pages/legal/DistanceSalesContractPage"
-import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage"
-import KVKKPage from "./pages/legal/KVKKPage"
-import DeliveryReturnPage from "./pages/legal/DeliveryReturnPage"
-import PublicPackages from "./pages/public/PublicPackages"
-import Purchase from "./pages/public/Purchase"
-import DealerApplication from "./pages/public/DealerApplication"
-import HizmetAraPage from "./pages/public/HizmetAraPage"
-import HizmetDetayPage from "./pages/public/HizmetDetayPage"
-import PaymentSuccess from "./pages/payments/PaymentSuccess"
-import PaymentFail from "./pages/payments/PaymentFail"
-import ViewSaleContract from "./pages/pdf/ViewSaleContract"
+const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"))
+const Agencies = lazy(() => import("./pages/agencies/Agencies"))
+const AgencyCommissionDistribution = lazy(() => import("./pages/agencies/AgencyCommissionDistribution"))
+const PerformanceReport = lazy(() => import("./pages/agencies/PerformanceReport"))
+const SalesDistributionReport = lazy(() => import("./pages/reports/SalesDistributionReport"))
+const Branches = lazy(() => import("./pages/branches/Branches"))
+const BranchDetail = lazy(() => import("./pages/branches/BranchDetail"))
+const Users = lazy(() => import("./pages/users/Users"))
+const UserDetail = lazy(() => import("./pages/users/UserDetail"))
+const Customers = lazy(() => import("./pages/customers/Customers"))
+const Vehicles = lazy(() => import("./pages/vehicles/Vehicles"))
+const Packages = lazy(() => import("./pages/packages/Packages"))
+const Sales = lazy(() => import("./pages/sales/Sales"))
+const NewSale = lazy(() => import("./pages/sales/NewSale"))
+const Payments = lazy(() => import("./pages/payments/Payments"))
+const Commissions = lazy(() => import("./pages/commissions/Commissions"))
+const Support = lazy(() => import("./pages/support/Support"))
+const SupportSales = lazy(() => import("./pages/support/SupportSales"))
+const SupportFiles = lazy(() => import("./pages/support/SupportFiles"))
+const CreateFile = lazy(() => import("./pages/support/CreateFile"))
+const Profile = lazy(() => import("./pages/profile/Profile"))
+const ContentManagement = lazy(() => import("./pages/content/ContentManagement"))
+const AboutPage = lazy(() => import("./pages/about/AboutPage"))
+const DistanceSalesContractPage = lazy(() => import("./pages/legal/DistanceSalesContractPage"))
+const PrivacyPolicyPage = lazy(() => import("./pages/legal/PrivacyPolicyPage"))
+const KVKKPage = lazy(() => import("./pages/legal/KVKKPage"))
+const DeliveryReturnPage = lazy(() => import("./pages/legal/DeliveryReturnPage"))
+const PublicPackages = lazy(() => import("./pages/public/PublicPackages"))
+const Purchase = lazy(() => import("./pages/public/Purchase"))
+const DealerApplication = lazy(() => import("./pages/public/DealerApplication"))
+const HizmetAraPage = lazy(() => import("./pages/public/HizmetAraPage"))
+const HizmetDetayPage = lazy(() => import("./pages/public/HizmetDetayPage"))
+const PaymentSuccess = lazy(() => import("./pages/payments/PaymentSuccess"))
+const PaymentFail = lazy(() => import("./pages/payments/PaymentFail"))
+const ViewSaleContract = lazy(() => import("./pages/pdf/ViewSaleContract"))
 import { UserRole } from "./types" // Force rebuild
 import { Toaster } from "./components/ui/sonner"
 
@@ -68,6 +68,13 @@ function App() {
             <Router>
               <ScrollToTop />
               <ThemeRouteListener />
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center h-screen">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  </div>
+                }
+              >
               <Routes>
                 {/* Landing Page - Public */}
                 <Route path="/" element={<LandingPage />} />
@@ -319,6 +326,7 @@ function App() {
                 {/* Catch all - redirect to landing page */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
+              </Suspense>
             </Router>
             <Toaster richColors position="top-right" />
           </UserCustomerProvider>

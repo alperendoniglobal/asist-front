@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '@/components/ui/table';
@@ -13,15 +14,20 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle
 } from '@/components/ui/dialog';
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { packageService } from '@/services/apiService';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Package, PackageCover } from '@/types';
 import { UserRole, EntityStatus } from '@/types';
 import { 
   Plus, Search, Eye, Package as PackageIcon,
-  Shield, Edit, Trash2, Save, X, Car, Bike, Truck, Clock, Check
+  Shield, Edit, Trash2, Save, X, Car, Bike, Truck, Clock, Check, ShoppingCart
 } from 'lucide-react';
 
 // ===== ARAÇ TÜRLERİ =====
@@ -105,6 +111,17 @@ export default function Packages() {
   // Super Admin kontrolü
   const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN;
 
+  const navigate = useNavigate();
+
+  /** Silme onayı bekleyen paket (yanlışlıkla silmeyi önlemek için ayrı onay) */
+  const [packageToDelete, setPackageToDelete] = useState<Package | null>(null);
+
+  /** Detay modalından yeni satış sayfasına paketi seçili şekilde götür */
+  const handleBuyPackage = (pkg: Package) => {
+    setIsViewOpen(false);
+    navigate(`/dashboard/sales/new?package_id=${encodeURIComponent(pkg.id)}`);
+  };
+
   // ===== VERİ YÜKLEME =====
   useEffect(() => {
     fetchPackages();
@@ -185,16 +202,25 @@ export default function Packages() {
     }
   };
 
-  const handleDelete = async (pkg: Package) => {
-    if (!confirm(`"${pkg.name}" paketini silmek istediğinize emin misiniz?`)) return;
+  /** Silme isteği → onay diyaloğunu açar (doğrudan silmez) */
+  const handleDelete = (pkg: Package) => {
+    setPackageToDelete(pkg);
+  };
+
+  /** Onay diyaloğunda onaylandığında gerçek silme işlemi */
+  const confirmDeletePackage = async () => {
+    const pkg = packageToDelete;
+    if (!pkg) return;
     try {
       await packageService.delete(pkg.id);
-      fetchPackages();
+      setPackageToDelete(null);
       setIsViewOpen(false);
-      alert('Paket başarıyla silindi!');
+      fetchPackages();
+      toast.success(`"${pkg.name}" paketi silindi`);
     } catch (error) {
       console.error('Paket silinirken hata:', error);
-      alert('Paket silinemedi!');
+      setPackageToDelete(null);
+      toast.error('Paket silinemedi!');
     }
   };
 
@@ -306,19 +332,29 @@ export default function Packages() {
             {packages.length} paket • {activeCategories.length} kategori
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {/* Arama */}
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-none">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
               placeholder="Paket ara..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-[200px]"
+              className="pl-10 pr-9 w-full sm:w-[240px]"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  aria-label="Aramayı temizle"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
           {isSuperAdmin && (
-            <Button onClick={() => { resetForm(); setIsCreateOpen(true); }}>
+            <Button onClick={() => { resetForm(); setIsCreateOpen(true); }} className="shrink-0">
               <Plus className="h-4 w-4 mr-2" />
               Yeni Paket
             </Button>
@@ -326,51 +362,125 @@ export default function Packages() {
         </div>
           </div>
 
-      {/* ===== KATEGORİ TAB'LARI ===== */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full justify-start h-auto flex-wrap gap-1 bg-transparent p-0">
-          <TabsTrigger 
-            value="all" 
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4"
-          >
-            Tümü ({packages.length})
-          </TabsTrigger>
-          {activeCategories.map(category => {
-            const Icon = getVehicleIcon(category);
-            return (
-              <TabsTrigger 
-                key={category} 
-                value={category}
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full px-4 gap-2"
-              >
-                <Icon className="h-4 w-4" />
-                {category} ({categoryCounts[category]})
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
+      {/* ===== SOL FİLTRE + SAĞ PAKETLER ===== */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Sol Kolon - Kategori Filtreleri */}
+        <aside className="w-full lg:w-56 xl:w-64 shrink-0 lg:sticky lg:top-20">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Araç Kategorisi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {/* Mobil: yatay kaydırmalı çipler / Masaüstü: dikey liste */}
+              <div className="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('all')}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors shrink-0 lg:w-full whitespace-nowrap",
+                    activeTab === 'all'
+                      ? "bg-primary text-primary-foreground font-medium"
+                      : "hover:bg-muted text-foreground/80"
+                  )}
+                >
+                  <PackageIcon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 text-left">Tümü</span>
+                  <span className={cn(
+                    "text-xs tabular-nums rounded-full px-1.5 py-0.5",
+                    activeTab === 'all' ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground"
+                  )}>
+                    {packages.length}
+                  </span>
+                </button>
 
-        {/* ===== PAKET KARTLARI ===== */}
-        <TabsContent value={activeTab} className="mt-6">
+                {activeCategories.map(category => {
+                  const Icon = getVehicleIcon(category);
+                  const isActive = activeTab === category;
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setActiveTab(category)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors shrink-0 lg:w-full whitespace-nowrap",
+                        isActive
+                          ? "bg-primary text-primary-foreground font-medium"
+                          : "hover:bg-muted text-foreground/80"
+                      )}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1 text-left">{category}</span>
+                      <span className={cn(
+                        "text-xs tabular-nums rounded-full px-1.5 py-0.5",
+                        isActive ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground"
+                      )}>
+                        {categoryCounts[category]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
+
+        {/* Sağ Kolon - Paket Kartları */}
+        <div className="flex-1 min-w-0 w-full">
       {loading ? (
-            <div className="flex items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <div className="h-8 w-8 rounded-lg bg-muted" />
+                        <div className="space-y-1.5 flex-1">
+                          <div className="h-3 w-3/4 rounded bg-muted" />
+                          <div className="h-2.5 w-1/2 rounded bg-muted" />
+                        </div>
+                      </div>
+                      <div className="h-5 w-14 rounded-full bg-muted" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3">
+                    <div className="h-7 w-28 rounded bg-muted" />
+                    <div className="h-3 w-24 rounded bg-muted" />
+                    <div className="h-8 w-full rounded bg-muted" />
+                  </CardContent>
+                </Card>
+              ))}
         </div>
       ) : filteredPackages.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
                 <PackageIcon className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">Bu kategoride paket bulunmuyor</p>
+                {searchQuery ? (
+                  <>
+                    <p className="font-medium">"{searchQuery}" için sonuç bulunamadı</p>
+                    <p className="text-sm text-muted-foreground mt-1">Farklı bir arama deneyin veya filtreyi temizleyin.</p>
+                    <Button variant="outline" size="sm" className="mt-4" onClick={() => setSearchQuery('')}>
+                      <X className="h-4 w-4 mr-1" />
+                      Aramayı Temizle
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">Bu kategoride paket bulunmuyor</p>
+                )}
           </CardContent>
         </Card>
       ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filteredPackages.map((pkg) => {
                 const VehicleIcon = getVehicleIcon(pkg.vehicle_type);
             return (
                     <Card 
                       key={pkg.id} 
-                    className="group hover:shadow-md transition-all cursor-pointer border hover:border-primary/50"
+                    className={cn(
+                      "group flex flex-col hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border hover:border-primary/50",
+                      pkg.status !== EntityStatus.ACTIVE && "opacity-70"
+                    )}
                       onClick={() => handleView(pkg)}
                     >
                     <CardHeader className="pb-3">
@@ -398,29 +508,57 @@ export default function Packages() {
                     </CardHeader>
                     <CardContent className="pt-0">
                       {/* Fiyat */}
-                      <div className="text-2xl font-bold text-primary mb-3">
-                        {formatCurrency(pkg.price)}
+                      <div className="mb-3">
+                        <div className="text-2xl font-bold text-primary leading-tight">
+                          {formatCurrency(pkg.price)}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">KDV dahil / yıllık</p>
                       </div>
-                      
+
                       {/* Bilgiler */}
-                      <div className="flex items-center justify-between text-sm text-muted-foreground border-t pt-3">
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground border-t pt-3">
+                        <span className="flex items-center gap-1">
                           <Clock className="h-3.5 w-3.5" />
-                          <span>Max {pkg.max_vehicle_age} yaş</span>
-                        </div>
-                        <Button variant="ghost" size="sm" className="h-7 px-2 gap-1 text-primary">
+                          Max {pkg.max_vehicle_age} yaş
+                        </span>
+                        {typeof pkg.covers?.length === 'number' && pkg.covers.length > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Shield className="h-3.5 w-3.5" />
+                            {pkg.covers.length} teminat
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Aksiyonlar */}
+                      <div className="flex items-center gap-2 mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 h-8 gap-1"
+                          onClick={(e) => { e.stopPropagation(); handleView(pkg); }}
+                        >
                           <Eye className="h-3.5 w-3.5" />
-                            Detay
+                          Detay
+                        </Button>
+                        {pkg.status === EntityStatus.ACTIVE && (
+                          <Button
+                            size="sm"
+                            className="flex-1 h-8 gap-1"
+                            onClick={(e) => { e.stopPropagation(); handleBuyPackage(pkg); }}
+                          >
+                            <ShoppingCart className="h-3.5 w-3.5" />
+                            Satın Al
                           </Button>
-                        </div>
+                        )}
+                      </div>
                       </CardContent>
                     </Card>
             );
           })}
         </div>
       )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
 
       {/* ===== YENİ PAKET MODAL ===== */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
@@ -624,51 +762,59 @@ export default function Packages() {
 
       {/* ===== PAKET DETAY MODAL ===== */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
+        <DialogContent className="max-w-3xl w-[calc(100vw-2rem)] max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-4 border-b shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-lg bg-primary/10 shrink-0">
                   <PackageIcon className="h-6 w-6 text-primary" />
                 </div>
-                <div>
-                  <DialogTitle>{selectedPackage?.name}</DialogTitle>
-                  <DialogDescription>{selectedPackage?.description || 'Açıklama yok'}</DialogDescription>
+                <div className="min-w-0">
+                  <DialogTitle className="truncate">{selectedPackage?.name}</DialogTitle>
+                  <DialogDescription className="line-clamp-2">{selectedPackage?.description || 'Açıklama yok'}</DialogDescription>
                 </div>
               </div>
-              {isSuperAdmin && selectedPackage && (
-                <div className="flex gap-2">
+              {/* Not: Sil butonu bilinçli olarak burada DEĞİL — modalın kapatma (X)
+                  butonuna yakın olduğu için yanlışlıkla tıklanma riski var.
+                  Silme işlemi modalın en altındaki "Tehlikeli Alan" bölümünde. */}
+              <div className="flex gap-2 shrink-0 mr-8">
+                {isSuperAdmin && selectedPackage && (
                   <Button variant="outline" size="sm" onClick={() => handleEdit(selectedPackage)}>
                     <Edit className="h-4 w-4 mr-1" />
                     Düzenle
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(selectedPackage)}>
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Sil
-                  </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </DialogHeader>
 
+          {/* Kaydırılabilir gövde */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
           {/* Paket Bilgileri */}
           {selectedPackage && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 p-4 bg-muted/50 rounded-lg">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
               <div>
-                <p className="text-sm text-muted-foreground">Fiyat</p>
-                <p className="text-xl font-bold text-primary">{formatCurrency(selectedPackage.price)}</p>
+                <p className="text-xs text-muted-foreground">Fiyat</p>
+                <p className="text-xl font-bold text-primary leading-tight">{formatCurrency(selectedPackage.price)}</p>
+                <p className="text-[11px] text-muted-foreground">KDV dahil / yıllık</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Araç Türü</p>
-                <p className="font-medium">{selectedPackage.vehicle_type}</p>
+                <p className="text-xs text-muted-foreground">Araç Türü</p>
+                <p className="font-medium flex items-center gap-1.5 mt-0.5">
+                  {(() => { const I = getVehicleIcon(selectedPackage.vehicle_type); return <I className="h-4 w-4 text-primary" />; })()}
+                  {selectedPackage.vehicle_type}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Max Araç Yaşı</p>
-                <p className="font-medium">{selectedPackage.max_vehicle_age} yıl</p>
+                <p className="text-xs text-muted-foreground">Max Araç Yaşı</p>
+                <p className="font-medium flex items-center gap-1.5 mt-0.5">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  {selectedPackage.max_vehicle_age} yıl
+                </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Durum</p>
-                <Badge variant={statusColors[selectedPackage.status]}>
+                <p className="text-xs text-muted-foreground">Durum</p>
+                <Badge variant={statusColors[selectedPackage.status]} className="mt-1">
                   {statusLabels[selectedPackage.status]}
                 </Badge>
               </div>
@@ -679,8 +825,11 @@ export default function Packages() {
           <div className="mt-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Shield className="h-5 w-5" />
+                <Shield className="h-5 w-5 text-primary" />
                 Paket Kapsamları
+                {!detailsLoading && packageCovers.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">{packageCovers.length}</Badge>
+                )}
               </h3>
               {isSuperAdmin && (
                 <Button onClick={() => openCoverModal()} size="sm" className="gap-1">
@@ -706,13 +855,15 @@ export default function Packages() {
                 )}
               </div>
             ) : (
-              <div className="rounded-md border">
+              <>
+                {/* Masaüstü: tablo */}
+                <div className="rounded-md border hidden sm:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Teminat</TableHead>
-                      <TableHead className="text-center">Kullanım</TableHead>
-                      <TableHead className="text-right">Limit</TableHead>
+                      <TableHead className="text-center w-[110px]">Kullanım</TableHead>
+                      <TableHead className="text-right w-[140px]">Limit</TableHead>
                       {isSuperAdmin && <TableHead className="w-[80px]"></TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -730,7 +881,7 @@ export default function Packages() {
                         <TableCell className="text-center">
                           <Badge variant="secondary">{cover.usage_count}x</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-medium">
+                        <TableCell className="text-right font-medium tabular-nums">
                           {formatCurrency(cover.limit_amount)}
                         </TableCell>
                         {isSuperAdmin && (
@@ -755,10 +906,107 @@ export default function Packages() {
                   </TableBody>
                 </Table>
               </div>
+
+                {/* Mobil: kart listesi */}
+                <div className="space-y-2 sm:hidden">
+                  {packageCovers.map((cover) => (
+                    <div key={cover.id} className="rounded-lg border p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm">{cover.title}</p>
+                          {cover.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{cover.description}</p>
+                          )}
+                        </div>
+                        {isSuperAdmin && (
+                          <div className="flex gap-1 shrink-0">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openCoverModal(cover)}>
+                              <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => handleDeleteCover(cover)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t text-xs">
+                        <Badge variant="secondary">{cover.usage_count}x kullanım</Badge>
+                        <span className="font-semibold tabular-nums">{formatCurrency(cover.limit_amount)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
+
+          {/* Tehlikeli Alan - kapatma butonundan uzakta, en altta */}
+          {isSuperAdmin && selectedPackage && (
+            <div className="mt-8 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <p className="font-medium text-sm text-destructive">Tehlikeli Alan</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Paketi silmek geri alınamaz. Bu pakete bağlı satışlar etkilenebilir.
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="shrink-0 gap-1"
+                  onClick={() => handleDelete(selectedPackage)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Paketi Sil
+                </Button>
+              </div>
+            </div>
+          )}
+          </div>
+
+          {/* Alt CTA - sabit */}
+          {selectedPackage?.status === EntityStatus.ACTIVE && (
+            <DialogFooter className="p-4 border-t bg-muted/30 shrink-0 sm:justify-between gap-3">
+              <div className="text-sm text-muted-foreground">
+                Toplam:{' '}
+                <span className="text-lg font-bold text-primary">{formatCurrency(selectedPackage.price)}</span>
+                <span className="text-xs ml-1">(KDV dahil)</span>
+              </div>
+              <Button onClick={() => handleBuyPackage(selectedPackage)} className="gap-2">
+                <ShoppingCart className="h-4 w-4" />
+                Bu Paketi Satın Al
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
+
+      {/* ===== PAKET SİLME ONAYI ===== */}
+      <AlertDialog open={!!packageToDelete} onOpenChange={(open) => !open && setPackageToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Paketi silmek istediğinize emin misiniz?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong className="text-foreground">{packageToDelete?.name}</strong> paketi kalıcı olarak
+              silinecek. Bu işlem geri alınamaz ve pakete bağlı satışlar etkilenebilir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeletePackage}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Evet, Sil
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ===== KAPSAM MODAL ===== */}
       <Dialog open={isCoverModalOpen} onOpenChange={setIsCoverModalOpen}>

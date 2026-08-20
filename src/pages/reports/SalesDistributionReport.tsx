@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, TrendingUp, Car, MapPin, Calendar, BarChart3 } from 'lucide-react';
+import { Loader2, TrendingUp, Car, MapPin, Calendar, BarChart3, Wallet, Building2 } from 'lucide-react';
 import { statsService } from '@/services/apiService';
 import TurkeyMap from 'turkey-map-react';
 import { cities as turkeyCities } from 'turkey-map-react/lib/data';
 import React from 'react';
 import { toast } from 'sonner';
 import { useTheme } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -343,41 +342,114 @@ export default function SalesDistributionReport() {
 
 
   // Grafik verileri hazırla
-  const brandChartData = reportData.topCarBrands.slice(0, 10).map((brand: any) => ({
-    name: brand.brandName.length > 15 ? brand.brandName.slice(0, 15) + '...' : brand.brandName,
-    fullName: brand.brandName,
-    value: brand.saleCount,
+  // Pie okunabilirliği: ilk 4 şehir ayrı dilim, kalan tüm şehirler "Diğer" olarak tek dilim
+  const TOP_CITY_SLICES = 4;
+  const rankedCities = [...(reportData.cityDistribution || [])]
+    .filter((c: any) => c.plateNumber && (c.saleCount || 0) > 0)
+    .sort((a: any, b: any) => (b.saleCount || 0) - (a.saleCount || 0));
+
+  const topCitySlices = rankedCities.slice(0, TOP_CITY_SLICES).map((city: any) => ({
+    name: city.city,
+    value: city.saleCount,
+    revenue: city.totalRevenue || 0,
+    isOther: false,
   }));
 
-  const cityChartData = reportData.cityDistribution
-    .filter((c: any) => c.plateNumber)
-    .slice(0, 10)
-    .map((city: any) => ({
-      name: city.city,
-      value: city.saleCount,
-      revenue: city.totalRevenue,
+  const otherCities = rankedCities.slice(TOP_CITY_SLICES);
+  const otherSlice =
+    otherCities.length > 0
+      ? [{
+          name: `Diğer (${otherCities.length} şehir)`,
+          value: otherCities.reduce((sum: number, c: any) => sum + (c.saleCount || 0), 0),
+          revenue: otherCities.reduce((sum: number, c: any) => sum + (c.totalRevenue || 0), 0),
+          isOther: true,
+        }]
+      : [];
+
+  const cityChartData = [...topCitySlices, ...otherSlice];
+  const cityChartTotal = cityChartData.reduce((sum: number, c: any) => sum + (c.value || 0), 0);
+
+  // Model yılı: en yeniden eskiye, okunabilirlik için ilk 12 yıl
+  const yearChartData = [...(reportData.topModelYears || [])]
+    .filter((y: any) => (y.saleCount || 0) > 0)
+    .sort((a: any, b: any) => (b.saleCount || 0) - (a.saleCount || 0))
+    .slice(0, 12)
+    .sort((a: any, b: any) => Number(b.modelYear) - Number(a.modelYear))
+    .map((year: any) => ({
+      year: year.modelYear,
+      age: year.vehicleAge,
+      sales: year.saleCount,
+      label: `${year.modelYear} (${year.vehicleAge} yaş)`,
     }));
-
-  const yearChartData = reportData.topModelYears.map((year: any) => ({
-    year: year.modelYear,
-    age: year.vehicleAge,
-    sales: year.saleCount,
-    label: `${year.modelYear} (${year.vehicleAge} yaş)`,
-  }));
 
   const PIE_COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1'];
 
+  // ===== ÖZET KPI'LAR (mevcut veriden türetiliyor, ek istek yok) =====
+  const kpiTotalSales = rankedCities.reduce((sum: number, c: any) => sum + (c.saleCount || 0), 0);
+  const kpiTotalRevenue = rankedCities.reduce((sum: number, c: any) => sum + (c.totalRevenue || 0), 0);
+  const kpiActiveCities = rankedCities.length;
+  const kpiTopCity = rankedCities[0];
+  const formatTRY = (v: number) =>
+    new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(v || 0);
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Satış Dağılım Raporu</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
+          <BarChart3 className="h-7 w-7 text-primary" />
+          Satış Dağılım Raporu
+        </h1>
+        <p className="text-muted-foreground mt-1.5 text-sm">
           En çok satılan marka, model, model yılı ve şehir bazlı dağılım analizi
         </p>
       </div>
 
-      {/* Şehir Dağılımı - Türkiye Haritası */}
-      <Card>
+      {/* ===== ÖZET KARTLARI ===== */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="card-hover">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">Toplam Satış</p>
+              <TrendingUp className="h-4 w-4 text-primary shrink-0" />
+            </div>
+            <p className="text-2xl font-bold mt-1 tabular-nums">{kpiTotalSales.toLocaleString('tr-TR')}</p>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">Toplam Ciro</p>
+              <Wallet className="h-4 w-4 text-emerald-600 shrink-0" />
+            </div>
+            <p className="text-2xl font-bold mt-1 tabular-nums truncate">{formatTRY(kpiTotalRevenue)}</p>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">Satış Yapılan Şehir</p>
+              <Building2 className="h-4 w-4 text-violet-600 shrink-0" />
+            </div>
+            <p className="text-2xl font-bold mt-1 tabular-nums">{kpiActiveCities}<span className="text-sm text-muted-foreground font-normal"> / 81</span></p>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">Lider Şehir</p>
+              <MapPin className="h-4 w-4 text-amber-600 shrink-0" />
+            </div>
+            <p className="text-2xl font-bold mt-1 truncate">{kpiTopCity?.city || '—'}</p>
+            {kpiTopCity && (
+              <p className="text-xs text-muted-foreground">{kpiTopCity.saleCount} satış</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ===== HARİTA + ŞEHİR PAY GRAFİĞİ (yan yana) ===== */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-6">
+      <Card className="xl:col-span-8">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
@@ -453,256 +525,344 @@ export default function SalesDistributionReport() {
         </CardContent>
       </Card>
 
-      {/* Grafikler */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Marka Dağılımı - Bar Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
-              En Çok Satılan Markalar
-            </CardTitle>
-            <CardDescription>Top 10 otomobil markası satış dağılımı</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={brandChartData} layout="vertical" margin={{ left: 20, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis type="number" axisLine={false} tickLine={false} />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  axisLine={false}
-                  tickLine={false}
-                  width={100}
-                />
-                <Tooltip
-                  formatter={(value: number) => [`${value} satış`, 'Satış']}
-                  labelFormatter={(label, payload) => payload?.[0]?.payload?.fullName || label}
-                />
-                <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
         {/* Şehir Dağılımı - Pie Chart */}
-        <Card>
+        <Card className="xl:col-span-4 flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
               Şehir Bazlı Satış Dağılımı
             </CardTitle>
-            <CardDescription>Top 10 şehir satış oranları</CardDescription>
+            <CardDescription>İlk 4 şehir ayrı, kalanı “Diğer” olarak gruplandı</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={cityChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent || 0 * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {cityChartData.map((_entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number, _name: string, props: any) => [
-                    `${value} satış (${new Intl.NumberFormat('tr-TR', {
-                      style: 'currency',
-                      currency: 'TRY',
-                    }).format(props.payload.revenue)})`,
-                    'Satış'
-                  ]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+          <CardContent className="flex-1 flex flex-col justify-center">
+            {cityChartData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[300px] text-center">
+                <MapPin className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">Henüz şehir bazlı satış verisi yok.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {/* Donut */}
+                <div className="w-full">
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={cityChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={false}
+                        outerRadius={92}
+                        innerRadius={52}
+                        paddingAngle={1}
+                        dataKey="value"
+                      >
+                        {cityChartData.map((entry: any, index: number) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.isOther ? 'hsl(var(--muted-foreground))' : PIE_COLORS[index % PIE_COLORS.length]}
+                            opacity={entry.isOther ? 0.45 : 1}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number, _name: string, props: any) => {
+                          const pct = cityChartTotal > 0 ? (value / cityChartTotal) * 100 : 0;
+                          return [
+                            `${value} satış • %${pct.toFixed(1)} (${new Intl.NumberFormat('tr-TR', {
+                              style: 'currency',
+                              currency: 'TRY',
+                              maximumFractionDigits: 0,
+                            }).format(props.payload.revenue || 0)})`,
+                            props.payload.name,
+                          ];
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Yan liste (legend yerine): okunaklı, çakışmasız */}
+                <ul className="w-full space-y-2">
+                  {cityChartData.map((c: any, i: number) => {
+                    const pct = cityChartTotal > 0 ? (c.value / cityChartTotal) * 100 : 0;
+                    return (
+                      <li key={c.name} className="flex items-center gap-2 text-sm">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{
+                            backgroundColor: c.isOther
+                              ? 'hsl(var(--muted-foreground))'
+                              : PIE_COLORS[i % PIE_COLORS.length],
+                            opacity: c.isOther ? 0.45 : 1,
+                          }}
+                        />
+                        <span className={c.isOther ? 'text-muted-foreground truncate' : 'font-medium truncate'}>
+                          {c.name}
+                        </span>
+                        <span className="ml-auto tabular-nums text-muted-foreground shrink-0">
+                          {c.value} • %{pct.toFixed(1)}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Model Yılı Dağılımı - Bar Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+      {/* ===== MODEL YILI + ŞEHİR SIRALAMASI (yan yana) ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
+      <Card className="lg:col-span-7 flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Calendar className="h-5 w-5 text-emerald-600" />
             Model Yılı Dağılımı
           </CardTitle>
           <CardDescription>Hangi yaştaki araçlar daha çok satılıyor?</CardDescription>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={yearChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+        <CardContent className="flex-1 flex flex-col justify-center">
+          {yearChartData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[280px] text-center">
+              <Calendar className="h-10 w-10 text-muted-foreground/40 mb-3" />
+              <p className="text-sm text-muted-foreground">Henüz model yılı verisi yok.</p>
+            </div>
+          ) : (
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={yearChartData} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              {/* Sadece yıl gösterilir; yaş bilgisi tooltip'te (etiket çakışmasını önler) */}
               <XAxis
-                dataKey="label"
+                dataKey="year"
                 axisLine={false}
                 tickLine={false}
-                angle={-45}
-                textAnchor="end"
-                height={80}
+                tick={{ fontSize: 12 }}
+                interval={0}
               />
-              <YAxis axisLine={false} tickLine={false} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} allowDecimals={false} width={36} />
               <Tooltip
+                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.4 }}
                 formatter={(value: number) => [`${value} satış`, 'Satış']}
-                labelFormatter={(label) => label}
+                labelFormatter={(_label, payload) => payload?.[0]?.payload?.label || _label}
               />
-              <Bar dataKey="sales" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="sales" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={48} />
             </BarChart>
           </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
 
-      {/* Detaylı Tablolar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* En Çok Satılan Markalar Tablosu */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Car className="h-5 w-5" />
-              En Çok Satılan Otomobil Markaları
-            </CardTitle>
-            <CardDescription>Top 10 otomobil markası</CardDescription>
+        {/* Şehir Dağılımı - sıralama listesi */}
+        <Card className="lg:col-span-5 flex flex-col">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  Şehir Dağılımı
+                </CardTitle>
+                <CardDescription>Detay için şehre tıklayın</CardDescription>
+              </div>
+              <Badge variant="secondary" className="shrink-0">{rankedCities.length} şehir</Badge>
+            </div>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sıra</TableHead>
-                  <TableHead>Marka</TableHead>
-                  <TableHead>Satış Sayısı</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reportData.topCarBrands.map((brand: any, index: number) => (
-                  <TableRow key={brand.brandId}>
-                    <TableCell>
-                      <Badge variant={index === 0 ? 'default' : 'secondary'}>
-                        {index + 1}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{brand.brandName}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                        {brand.saleCount}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* En Çok Satılan Modeller Tablosu */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Car className="h-5 w-5" />
-              En Çok Satılan Otomobil Modelleri
-            </CardTitle>
-            <CardDescription>Top 10 otomobil modeli</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sıra</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Marka</TableHead>
-                  <TableHead>Satış</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reportData.topCarModels.map((model: any, index: number) => (
-                  <TableRow key={model.modelId}>
-                    <TableCell>
-                      <Badge variant={index === 0 ? 'default' : 'secondary'}>
-                        {index + 1}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{model.modelName}</TableCell>
-                    <TableCell className="text-muted-foreground">{model.brandName}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                        {model.saleCount}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent className="flex-1">
+            {rankedCities.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[240px] text-center">
+                <MapPin className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">Henüz şehir bazlı satış verisi yok.</p>
+              </div>
+            ) : (
+              <ul className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
+                {rankedCities.map((city: any, index: number) => {
+                  const pct = kpiTotalSales > 0 ? ((city.saleCount || 0) / kpiTotalSales) * 100 : 0;
+                  const max = rankedCities[0]?.saleCount || 1;
+                  return (
+                    <li key={city.city}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCity({ ...city, name: city.city });
+                          setIsCityDetailOpen(true);
+                        }}
+                        className="w-full text-left rounded-lg px-2.5 py-2 hover:bg-muted/60 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className={cn(
+                              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums",
+                              index === 0 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {index + 1}
+                          </span>
+                          <span className="font-medium text-sm truncate flex-1">{city.city}</span>
+                          <span className="text-sm font-semibold tabular-nums shrink-0">{city.saleCount}</span>
+                          <span className="text-xs text-muted-foreground tabular-nums w-11 text-right shrink-0">
+                            %{pct.toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="mt-1.5 ml-[34px] flex items-center gap-2">
+                          <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-primary/70"
+                              style={{ width: `${Math.min(100, ((city.saleCount || 0) / max) * 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
+                            {formatTRY(city.totalRevenue)}
+                          </span>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Şehir Detayları Tablosu */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Şehir Detayları
-          </CardTitle>
-          <CardDescription>Tüm şehirlerin satış istatistikleri</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Şehir</TableHead>
-                <TableHead>Satış Sayısı</TableHead>
-                <TableHead>Müşteri Sayısı</TableHead>
-                <TableHead>Toplam Ciro</TableHead>
-                <TableHead>İşlem</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {reportData.cityDistribution
-                .sort((a: any, b: any) => b.saleCount - a.saleCount)
-                .map((city: any) => (
-                  <TableRow key={city.city}>
-                    <TableCell className="font-medium">{city.city}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{city.saleCount}</Badge>
-                    </TableCell>
-                    <TableCell>{city.customerCount}</TableCell>
-                    <TableCell>
-                      {new Intl.NumberFormat('tr-TR', {
-                        style: 'currency',
-                        currency: 'TRY',
-                      }).format(city.totalRevenue)}
-                    </TableCell>
-                    <TableCell>
-                      {city.plateNumber && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedCity({
-                              ...city,
-                              name: city.city,
-                            });
-                            setIsCityDetailOpen(true);
-                          }}
-                        >
-                          Detay
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* ===== EN ÇOK SATILANLAR (tablo yerine kompakt sıralama listeleri) ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 items-start">
+        {/* Markalar */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Car className="h-5 w-5 text-primary" />
+              En Çok Satılan Markalar
+            </CardTitle>
+            <CardDescription>Satış adedine göre ilk 10 marka</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const rows = [...(reportData.topCarBrands || [])]
+                .filter((b: any) => (b.saleCount || 0) > 0)
+                .sort((a: any, b: any) => (b.saleCount || 0) - (a.saleCount || 0))
+                .slice(0, 10);
+              const max = Math.max(1, ...rows.map((r: any) => r.saleCount || 0));
+              const total = rows.reduce((sum: number, r: any) => sum + (r.saleCount || 0), 0);
+              if (rows.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <Car className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                    <p className="text-sm text-muted-foreground">Henüz marka verisi yok.</p>
+                  </div>
+                );
+              }
+              return (
+                <ul className="space-y-1">
+                  {rows.map((brand: any, index: number) => {
+                    const pct = total > 0 ? ((brand.saleCount || 0) / total) * 100 : 0;
+                    return (
+                      <li
+                        key={brand.brandId ?? index}
+                        className="group relative rounded-lg px-3 py-2 hover:bg-muted/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={cn(
+                              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums",
+                              index === 0
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {index + 1}
+                          </span>
+                          <span className="font-medium text-sm truncate flex-1">{brand.brandName}</span>
+                          <span className="text-sm font-semibold tabular-nums shrink-0">{brand.saleCount}</span>
+                          <span className="text-xs text-muted-foreground tabular-nums w-12 text-right shrink-0">
+                            %{pct.toFixed(1)}
+                          </span>
+                        </div>
+                        {/* Pay çubuğu - satırın altında ince şerit */}
+                        <div className="mt-1.5 ml-9 h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary/80 transition-all"
+                            style={{ width: `${((brand.saleCount || 0) / max) * 100}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()}
+          </CardContent>
+        </Card>
+
+        {/* Modeller */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Car className="h-5 w-5 text-violet-500" />
+              En Çok Satılan Modeller
+            </CardTitle>
+            <CardDescription>Satış adedine göre ilk 10 model</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const rows = [...(reportData.topCarModels || [])]
+                .filter((m: any) => (m.saleCount || 0) > 0)
+                .sort((a: any, b: any) => (b.saleCount || 0) - (a.saleCount || 0))
+                .slice(0, 10);
+              const max = Math.max(1, ...rows.map((r: any) => r.saleCount || 0));
+              const total = rows.reduce((sum: number, r: any) => sum + (r.saleCount || 0), 0);
+              if (rows.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <Car className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                    <p className="text-sm text-muted-foreground">Henüz model verisi yok.</p>
+                  </div>
+                );
+              }
+              return (
+                <ul className="space-y-1">
+                  {rows.map((model: any, index: number) => {
+                    const pct = total > 0 ? ((model.saleCount || 0) / total) * 100 : 0;
+                    return (
+                      <li
+                        key={model.modelId ?? index}
+                        className="group relative rounded-lg px-3 py-2 hover:bg-muted/60 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={cn(
+                              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums",
+                              index === 0
+                                ? "bg-violet-500 text-white"
+                                : "bg-muted text-muted-foreground"
+                            )}
+                          >
+                            {index + 1}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-medium text-sm truncate">{model.modelName}</span>
+                            <span className="block text-xs text-muted-foreground truncate">{model.brandName}</span>
+                          </span>
+                          <span className="text-sm font-semibold tabular-nums shrink-0">{model.saleCount}</span>
+                          <span className="text-xs text-muted-foreground tabular-nums w-12 text-right shrink-0">
+                            %{pct.toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="mt-1.5 ml-9 h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-violet-500/80 transition-all"
+                            style={{ width: `${((model.saleCount || 0) / max) * 100}%` }}
+                          />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Şehir Detay Modal */}
       <Dialog open={isCityDetailOpen} onOpenChange={setIsCityDetailOpen}>
