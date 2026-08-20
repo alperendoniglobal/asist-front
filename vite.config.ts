@@ -27,6 +27,14 @@ export default defineConfig({
           // React ve React runtime'ına bağlı tüm paketler TEK chunk'ta olmalı.
           // Aksi halde charts/editor gibi chunk'lar React yüklenmeden çalışıp
           // "Cannot read properties of undefined (reading 'forwardRef')" veriyor.
+          // React'ı AYRI bir chunk'a ALMIYORUZ; entry (index) chunk'ında kalıyor.
+          // Ayrı bir react-vendor chunk'ı yapıldığında Rollup, CJS interop
+          // helper'ını (getDefaultExportFromCjs) charts chunk'ına yerleştirip
+          // react-vendor'dan oraya import ekliyor. Oluşan
+          // react-vendor <-> charts döngüsünde charts, React binding'i
+          // initialize olmadan çalışıyor ve canlıda
+          // "Cannot read properties of undefined (reading 'forwardRef')" veriyor.
+          // Entry chunk her zaman ilk yüklendiği için bu sıra sorunu ortadan kalkıyor.
           const reactCore = new Set([
             'react',
             'react-dom',
@@ -37,14 +45,8 @@ export default defineConfig({
             'prop-types',
             'react-router',
             'react-router-dom',
-            'react-redux',
-            '@reduxjs/toolkit',
-            'redux',
-            'redux-thunk',
-            'reselect',
-            'immer',
           ]);
-          if (reactCore.has(pkg)) return 'react-vendor';
+          if (reactCore.has(pkg)) return;
 
           // Dinamik ikon seti (import * as LucideIcons) ana bundle'ı şişiriyordu
           if (pkg === 'lucide-react') return 'icons';
