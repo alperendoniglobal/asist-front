@@ -318,8 +318,8 @@ export default function Commissions() {
       const cmp = nameA.localeCompare(nameB, 'tr');
       return summarySortOrder === 'desc' ? -cmp : cmp;
     }
-    const valA = summarySortBy === 'balance' ? a.balance : summarySortBy === 'totalEarned' ? a.totalEarned : a.totalPaid;
-    const valB = summarySortBy === 'balance' ? b.balance : summarySortBy === 'totalEarned' ? b.totalEarned : b.totalPaid;
+    const valA = summarySortBy === 'balance' ? a.balance : summarySortBy === 'totalEarned' ? (a.totalEarnedDisplay ?? a.totalEarned) : a.totalPaid;
+    const valB = summarySortBy === 'balance' ? b.balance : summarySortBy === 'totalEarned' ? (b.totalEarnedDisplay ?? b.totalEarned) : b.totalPaid;
     const numA = Number(valA) || 0;
     const numB = Number(valB) || 0;
     // desc = yüksekten düşüğe: büyük önce gelsin → numB - numA (negatif when numA > numB → a önce)
@@ -327,7 +327,9 @@ export default function Commissions() {
     return summarySortOrder === 'desc' ? -diff : diff;
   });
   /** Filtrelenmiş özet toplamları (Number ile güvenli toplam) */
-  const filteredTotalBalance = filteredSummary.reduce((s, i) => s + (Number(i.balance) || 0), 0);
+  // Kendi paneline bakan acente/broker negatif toplam bakiye görmesin
+  const filteredTotalBalanceRaw = filteredSummary.reduce((s, i) => s + (Number(i.balance) || 0), 0);
+  const filteredTotalBalance = isSuperAdmin ? filteredTotalBalanceRaw : Math.max(0, filteredTotalBalanceRaw);
   const filteredTotalPaid = filteredSummary.reduce((s, i) => s + (Number(i.totalPaid) || 0), 0);
   /** Dropdown için benzersiz broker listesi (agencyId + agencyName) */
   const uniqueBrokers = Array.from(
@@ -814,9 +816,12 @@ export default function Commissions() {
                         <TableCell className="font-medium">
                           {row.branchId && row.branchName ? `${row.agencyName} — ${row.branchName}` : row.agencyName}
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(Number(row.totalEarned) || 0)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(Number(row.totalEarnedDisplay ?? row.totalEarned) || 0)}</TableCell>
                         <TableCell className="text-right text-emerald-600">{formatCurrency(Number(row.totalPaid) || 0)}</TableCell>
-                        <TableCell className="text-right text-violet-600">{formatCurrency(Number(row.balance) || 0)}</TableCell>
+                        <TableCell className="text-right text-violet-600">
+                          {/* Kendi paneline bakan acente/broker negatif bakiye (geçmişte fazla ödenmiş komisyon) görmesin */}
+                          {formatCurrency(isSuperAdmin ? Number(row.balance) || 0 : Math.max(0, Number(row.balance) || 0))}
+                        </TableCell>
                         <TableCell className="text-right text-amber-600 text-sm">
                           {(row.balancePaidCount ?? 0) > 0 || (row.balancePaidAmount ?? 0) > 0
                             ? `${row.balancePaidCount ?? 0} adet · ${formatCurrency(row.balancePaidAmount ?? 0)}`

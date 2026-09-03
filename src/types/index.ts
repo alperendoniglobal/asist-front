@@ -330,10 +330,11 @@ export interface CommissionSummaryItem {
   agencyName: string;
   branchId?: string | null;
   branchName?: string | null;
+  /** Satışlarda fiilen kayıtlı komisyon toplamı (bazı eski kayıtlarda KDV düşülmeden hesaplanmıştır) */
   totalEarned: number;
-  /** KDV dahil satış fiyatı × oran ile hesaplanan kazanılan komisyon (panel gösterimi) */
+  /** KDV hariç net fiyat × oran ile hesaplanan doğru kazanılan komisyon (panel gösteriminde esas alınmalı) */
   totalEarnedDisplay?: number;
-  /** Kayıtlı komisyon ile KDV dahil formül uyuşmayan satış adedi */
+  /** Kayıtlı komisyon ile KDV hariç doğru formül uyuşmayan (eski dönem hatalı) satış adedi */
   legacyMismatchCount?: number;
   totalPaid: number;
   balance: number;

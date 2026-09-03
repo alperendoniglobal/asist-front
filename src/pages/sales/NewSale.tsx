@@ -268,7 +268,8 @@ export default function NewSale() {
         user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER
           ? Number(currentBranch?.commission_rate ?? currentAgency?.commission_rate) || 20
           : Number(currentAgency?.commission_rate) || 20;
-      const commission = (saleForm.price * commissionRate) / 100;
+      // KDV hariç net fiyat üzerinden komisyon (ör. 1000 TL KDV dahil → 833,33 TL net × %30 = 250 TL)
+      const commission = (saleForm.price / 1.20 * commissionRate) / 100;
       setSaleForm((prev) => ({ ...prev, commission }));
     }
   }, [paymentMethod]);
@@ -956,11 +957,11 @@ export default function NewSale() {
         user?.role === UserRole.BRANCH_ADMIN || user?.role === UserRole.BRANCH_USER
           ? Number(currentBranch?.commission_rate ?? currentAgency?.commission_rate) || 20
           : Number(currentAgency?.commission_rate) || 20;
-      // KDV dahil paket fiyatı üzerinden komisyon (ör. 1000 TL × %30 = 300 TL)
+      // KDV hariç net fiyat üzerinden komisyon (ör. 1000 TL KDV dahil → 833,33 TL net × %30 = 250 TL)
       const commission =
         paymentMethod === PaymentType.BALANCE
           ? 0
-          : (basePrice * commissionRate) / 100;
+          : (basePrice / 1.20 * commissionRate) / 100;
       
       setSaleForm({
         ...saleForm,

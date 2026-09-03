@@ -173,11 +173,14 @@ export default function Dashboard() {
     user?.role === UserRole.AGENCY_ADMIN ||
     user?.role === UserRole.BRANCH_ADMIN;
   const commissionPaid = (stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.totalPaid) || 0), 0);
-  const commissionPayable = (stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.balance) || 0), 0);
+  const commissionPayableRaw = (stats?.commissionSummary ?? []).reduce((s, i) => s + (Number(i.balance) || 0), 0);
+  // Acente/broker/şube kendi panelinde negatif bakiye (geçmişte fazla ödenmiş komisyon) görmesin —
+  // bu SUPER_ADMIN/muhasebe tarafında ayrıca ele alınan bir durum, kullanıcıyı ürkütmemek için 0'da sınırlanır.
+  const commissionPayable = showPayableCommission ? Math.max(0, commissionPayableRaw) : commissionPayableRaw;
   const commissionEarned = (stats?.commissionSummary ?? []).reduce(
-    (s, i) => s + (Number(i.totalEarned) || 0),
+    (s, i) => s + (Number(i.totalEarnedDisplay ?? i.totalEarned) || 0),
     0
-  ) || Number(stats?.totalCommission) || 0;
+  ) || Number(stats?.totalCommissionDisplay ?? stats?.totalCommission) || 0;
   const commissionLegacyWarning = stats?.commissionLegacyWarning;
 
   if (loading) {
@@ -238,7 +241,7 @@ export default function Dashboard() {
                     <p className="text-xl font-bold text-violet-600">
                       {formatCurrency(commissionEarned)}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">Sistemde kayıtlı komisyon toplamı</p>
+                    <p className="text-xs text-muted-foreground mt-1">Satışlardan kazanılan toplam komisyon</p>
                     <Wallet className="h-6 w-6 text-violet-500 mt-2 opacity-70" />
                   </CardContent>
                 </Card>
